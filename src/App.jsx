@@ -57,6 +57,23 @@ function App() {
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
 
+  // Tipe Pelanggan & Skema Harga (UMUM: +15rb, GURU: +5rb, GROSIR: Base)
+  const [customerType, setCustomerType] = useState('UMUM'); // 'UMUM' | 'GURU' | 'GROSIR'
+
+  // Modal Pilihan Varian POS
+  const [posSelectedCategory, setPosSelectedCategory] = useState(null);
+  const [posModalProductId, setPosModalProductId] = useState('');
+  const [posModalVariantId, setPosModalVariantId] = useState('');
+  const [posModalQty, setPosModalQty] = useState(1);
+
+  // Perhitungan Harga Jual Berdasarkan Tipe Pelanggan
+  const getAdjustedPrice = (basePrice, type = customerType) => {
+    const p = Number(basePrice || 0);
+    if (type === 'GURU') return p + 5000;
+    if (type === 'GROSIR') return p;
+    return p + 15000; // Default UMUM
+  };
+
   // Search & Filter State
   const [posSearchQuery, setPosSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
@@ -148,22 +165,21 @@ function App() {
   };
 
   // Cart operations
-  const addToCart = (variant) => {
-    // Cari apakah sudah ada di cart
+  const addToCart = (variant, qtyToAdd = 1) => {
     const existing = cart.find(item => item.id === variant.id);
     const product = db.find('products', p => p.id === variant.product_id);
 
     if (existing) {
-      if (existing.quantity >= variant.stock_quantity) {
+      if (existing.quantity + qtyToAdd > variant.stock_quantity) {
         alert('Stok tidak mencukupi untuk menambah item.');
         return;
       }
       setCart(cart.map(item =>
-        item.id === variant.id ? { ...item, quantity: item.quantity + 1 } : item
+        item.id === variant.id ? { ...item, quantity: item.quantity + qtyToAdd } : item
       ));
     } else {
-      if (variant.stock_quantity <= 0) {
-        alert('Stok kosong.');
+      if (variant.stock_quantity < qtyToAdd) {
+        alert('Stok tidak mencukupi.');
         return;
       }
       setCart([...cart, {
@@ -172,8 +188,8 @@ function App() {
         name: product ? `${product.name} (${variant.size})` : variant.sku,
         size: variant.size,
         color: variant.color,
-        price_per_unit: variant.selling_price,
-        quantity: 1,
+        base_selling_price: variant.selling_price,
+        quantity: qtyToAdd,
         maxStock: variant.stock_quantity
       }]);
     }
@@ -199,7 +215,7 @@ function App() {
   };
 
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.price_per_unit * item.quantity), 0);
+    return cart.reduce((total, item) => total + (getAdjustedPrice(item.base_selling_price) * item.quantity), 0);
   };
 
   // Add Customer (Quick in POS)
@@ -263,7 +279,7 @@ function App() {
     const items = cart.map(item => ({
       variant_id: item.id,
       quantity: item.quantity,
-      price_per_unit: item.price_per_unit
+      price_per_unit: getAdjustedPrice(item.base_selling_price)
     }));
 
     try {
@@ -906,70 +922,103 @@ function App() {
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Ketik nama seragam, SKU, atau ukuran... (misal: S, M, SD)"
+                      placeholder="Cari cepat nama seragam, SKU, atau ukuran... (misal: S, M, Hem)"
                       value={posSearchQuery}
                       onChange={(e) => setPosSearchQuery(e.target.value)}
                       style={{ paddingLeft: '40px' }}
                     />
                     <Search size={18} style={{ position: 'absolute', left: '14px', top: '12px', color: 'var(--text-muted)' }} />
                   </div>
-
-                  <select
-                    className="form-control"
-                    value={selectedCategoryFilter}
-                    onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                    style={{ maxWidth: '200px' }}
-                  >
-                    <option value="">Semua Kategori</option>
-                    {allCategories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
                 </div>
 
-                {/* Grid of product variants */}
-                <div className="products-grid">
-                  {filteredPOSProducts.map(variant => {
-                    const product = allProducts.find(p => p.id === variant.product_id);
-                    const isLowStock = variant.stock_quantity < 5;
+                {/* Grid of Category Cards */}
+                <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: 'var(--text-secondary)' }}>Pilih Kategori Seragam:</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                  {allCategories.map(cat => {
+                    const catProducts = allProducts.filter(p => p.category_id === cat.id);
+                    const catVariantsCount = allVariants.filter(v => catProducts.some(p => p.id === v.product_id)).length;
 
                     return (
-                      <div
-                        key={variant.id}
-                        className={`product-item-card ${variant.stock_quantity === 0 ? 'disabled' : ''}`}
-                        onClick={() => variant.stock_quantity > 0 && addToCart(variant)}
-                        style={{ opacity: variant.stock_quantity === 0 ? 0.6 : 1 }}
+                      <div 
+                        key={cat.id} 
+                        className="card"
+                        onClick={() => {
+                          setPosSelectedCategory(cat);
+                          if (catProducts.length > 0) {
+                            setPosModalProductId(catProducts[0].id);
+                            const vars = allVariants.filter(v => v.product_id === catProducts[0].id);
+                            if (vars.length > 0) setPosModalVariantId(vars[0].id);
+                            else setPosModalVariantId('');
+                          } else {
+                            setPosModalProductId('');
+                            setPosModalVariantId('');
+                          }
+                          setPosModalQty(1);
+                          setActiveModal('pos-select-item');
+                        }}
+                        style={{ cursor: 'pointer', border: '1px solid var(--card-border)', transition: 'transform 0.15s, box-shadow 0.15s', padding: '16px' }}
                       >
-                        <div>
-                          <div className="product-item-name">{product.name}</div>
-                          <div className="product-item-sku">{variant.sku}</div>
-
-                          <div className="product-item-details">
-                            <span className="product-item-size">{variant.size} - {variant.color}</span>
-                            <span className={`product-item-stock ${isLowStock ? 'low' : 'ok'}`}>
-                              Stok: {variant.stock_quantity}
-                            </span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Package size={20} />
                           </div>
+                          <span className="badge info">{catProducts.length} Baju</span>
                         </div>
-
-                        <div>
-                          {currentUser.role === 'OWNER' && (
-                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                              Modal: {formatRupiah(variant.cost_price)}
-                            </div>
-                          )}
-                          <div className="product-item-price">{formatRupiah(variant.selling_price)}</div>
+                        <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>{cat.name}</h4>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+                          {catVariantsCount} Varian Ukuran/Warna
+                        </p>
+                        <div style={{ marginTop: '12px', fontSize: '12px', fontWeight: 'bold', color: 'var(--primary)' }}>
+                          + Pilih Barang & Ukuran &rarr;
                         </div>
                       </div>
                     );
                   })}
-
-                  {filteredPOSProducts.length === 0 && (
-                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                      Produk tidak ditemukan atau ketik pencarian berbeda.
-                    </div>
-                  )}
                 </div>
+
+                {/* Instant Search Results if posSearchQuery typed */}
+                {posSearchQuery && (
+                  <>
+                    <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: 'var(--text-secondary)' }}>Hasil Pencarian:</h3>
+                    <div className="products-grid">
+                      {filteredPOSProducts.map(variant => {
+                        const product = allProducts.find(p => p.id === variant.product_id);
+                        const isLowStock = variant.stock_quantity < 5;
+
+                        return (
+                          <div
+                            key={variant.id}
+                            className={`product-item-card ${variant.stock_quantity === 0 ? 'disabled' : ''}`}
+                            onClick={() => variant.stock_quantity > 0 && addToCart(variant)}
+                            style={{ opacity: variant.stock_quantity === 0 ? 0.6 : 1 }}
+                          >
+                            <div>
+                              <div className="product-item-name">{product ? product.name : 'Unknown'}</div>
+                              <div className="product-item-sku">{variant.sku}</div>
+
+                              <div className="product-item-details">
+                                <span className="product-item-size">{variant.size} - {variant.color}</span>
+                                <span className={`product-item-stock ${isLowStock ? 'low' : 'ok'}`}>
+                                  Stok: {variant.stock_quantity}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="product-item-price">{formatRupiah(getAdjustedPrice(variant.selling_price))}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {filteredPOSProducts.length === 0 && (
+                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
+                          Produk tidak ditemukan.
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Cart Panel (Right) */}
@@ -996,7 +1045,7 @@ function App() {
                         <button type="button" className="cart-item-delete" onClick={() => removeFromCart(item.id)}>
                           <Trash2 size={16} />
                         </button>
-                        <span className="cart-item-subtotal">{formatRupiah(item.price_per_unit * item.quantity)}</span>
+                        <span className="cart-item-subtotal">{formatRupiah(getAdjustedPrice(item.base_selling_price) * item.quantity)}</span>
                       </div>
                     </div>
                   ))}
@@ -1004,7 +1053,7 @@ function App() {
                   {cart.length === 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
                       <ShoppingCart size={40} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                      <p>Keranjang kosong. Klik produk di sebelah kiri untuk menambah.</p>
+                      <p>Keranjang kosong. Klik kategori di sebelah kiri untuk memilih barang.</p>
                     </div>
                   )}
                 </div>
@@ -1012,6 +1061,34 @@ function App() {
                 {/* Checkout Form Actions */}
                 {cart.length > 0 && (
                   <div className="cart-summary">
+
+                    {/* Tipe Pelanggan & Skema Harga Selector */}
+                    <div className="form-group" style={{ marginBottom: '12px' }}>
+                      <label className="form-label">Tipe Pelanggan & Skema Harga</label>
+                      <div className="segmented-control">
+                        <button
+                          type="button"
+                          className={`segmented-option ${customerType === 'UMUM' ? 'active' : ''}`}
+                          onClick={() => setCustomerType('UMUM')}
+                        >
+                          Umum (+15rb)
+                        </button>
+                        <button
+                          type="button"
+                          className={`segmented-option ${customerType === 'GURU' ? 'active' : ''}`}
+                          onClick={() => setCustomerType('GURU')}
+                        >
+                          Guru (+5rb)
+                        </button>
+                        <button
+                          type="button"
+                          className={`segmented-option ${customerType === 'GROSIR' ? 'active' : ''}`}
+                          onClick={() => setCustomerType('GROSIR')}
+                        >
+                          Grosir (Base)
+                        </button>
+                      </div>
+                    </div>
 
                     {/* Select Customer */}
                     <div className="form-group" style={{ marginBottom: '8px' }}>
@@ -1267,7 +1344,7 @@ function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {allProducts.map(product => {
                 const category = allCategories.find(c => c.id === product.category_id);
-                const variants = allVariants.filter(v => v.product_id === product.id);
+                const variants = allVariants.filter(v => v.product_id === product.id).sort((a, b) => a.sku.localeCompare(b.sku));
 
                 return (
                   <div key={product.id} className="card">
@@ -1377,62 +1454,111 @@ function App() {
         {/* 4. OWNER: MANAGE DEBT / KASBON */}
         {activeTab === 'debt' && currentUser.role === 'OWNER' && (
           <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {(() => {
+              const activeDebtCustomers = allCustomers.filter(c => c.total_debt > 0);
+              const settledCustomers = allCustomers.filter(c => c.total_debt === 0);
 
-            {/* List Customers with outstanding debt */}
-            <div className="card">
-              <h2 className="card-title">Daftar Piutang & Kasbon Pelanggan</h2>
-              <div className="table-wrapper">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Nama Pelanggan</th>
-                      <th>Nomor HP</th>
-                      <th>Total Utang Aktif</th>
-                      <th>Tanggal Terdaftar</th>
-                      <th style={{ textAlign: 'right' }}>Tindakan</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allCustomers.map(cust => (
-                      <tr key={cust.id}>
-                        <td><strong>{cust.name}</strong></td>
-                        <td>{cust.phone_number}</td>
-                        <td>
-                          <span style={{
-                            fontWeight: 'bold',
-                            color: cust.total_debt > 0 ? 'var(--danger)' : 'var(--success)',
-                            fontSize: '15px'
-                          }}>
-                            {formatRupiah(cust.total_debt)}
-                          </span>
-                        </td>
-                        <td>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
-                        <td style={{ textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            className="btn btn-success btn-sm"
-                            disabled={cust.total_debt <= 0}
-                            onClick={() => {
-                              setSelectedCustomer(cust);
-                              setDebtRepayAmount('');
-                              setDebtRepayMethod('CASH');
-                              setActiveModal('repay-debt');
-                            }}
-                          >
-                            <CreditCard size={14} /> Catat Pembayaran Cicilan
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {allCustomers.length === 0 && (
-                      <tr>
-                        <td colSpan="5" style={{ textAlign: 'center' }}>Belum ada pelanggan terdaftar.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+              return (
+                <>
+                  {/* List Customers with outstanding debt */}
+                  <div className="card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <h2 className="card-title" style={{ margin: 0 }}>Daftar Piutang & Kasbon Aktif</h2>
+                      <span className="badge warning">{activeDebtCustomers.length} Pelanggan Belum Lunas</span>
+                    </div>
+                    <div className="table-wrapper">
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th>Nama Pelanggan</th>
+                            <th>Nomor HP</th>
+                            <th>Total Utang Aktif</th>
+                            <th>Tanggal Terdaftar</th>
+                            <th style={{ textAlign: 'right' }}>Tindakan</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {activeDebtCustomers.map(cust => (
+                            <tr key={cust.id}>
+                              <td><strong>{cust.name}</strong></td>
+                              <td>{cust.phone_number}</td>
+                              <td>
+                                <span style={{
+                                  fontWeight: 'bold',
+                                  color: 'var(--danger)',
+                                  fontSize: '15px'
+                                }}>
+                                  {formatRupiah(cust.total_debt)}
+                                </span>
+                              </td>
+                              <td>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
+                              <td style={{ textAlign: 'right' }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-success btn-sm"
+                                  onClick={() => {
+                                    setSelectedCustomer(cust);
+                                    setDebtRepayAmount('');
+                                    setDebtRepayMethod('CASH');
+                                    setActiveModal('repay-debt');
+                                  }}
+                                >
+                                  <CreditCard size={14} /> Catat Pembayaran Cicilan
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {activeDebtCustomers.length === 0 && (
+                            <tr>
+                              <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                                Tidak ada piutang/kasbon aktif. Semua pelanggan dalam kondisi lunas! 🎉
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* List Settled Customers */}
+                  <div className="card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <h2 className="card-title" style={{ margin: 0 }}>Daftar Pelanggan Lunas (Bebas Utang)</h2>
+                      <span className="badge success">{settledCustomers.length} Pelanggan Lunas</span>
+                    </div>
+                    <div className="table-wrapper">
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th>Nama Pelanggan</th>
+                            <th>Nomor HP</th>
+                            <th>Status Utang</th>
+                            <th>Tanggal Terdaftar</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {settledCustomers.map(cust => (
+                            <tr key={cust.id}>
+                              <td><strong>{cust.name}</strong></td>
+                              <td>{cust.phone_number}</td>
+                              <td>
+                                <span className="badge success">LUNAS (Rp 0)</span>
+                              </td>
+                              <td>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
+                            </tr>
+                          ))}
+                          {settledCustomers.length === 0 && (
+                            <tr>
+                              <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada pelanggan lunas.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Debt Payments History */}
             <div className="card">
@@ -1582,6 +1708,7 @@ function App() {
                       const searchStr = `${p.name} ${v.sku} ${v.size} ${v.color}`.toLowerCase();
                       return searchStr.includes(stockSearchQuery.toLowerCase());
                     })
+                    .sort((a, b) => a.sku.localeCompare(b.sku))
                     .map(variant => {
                       const product = allProducts.find(p => p.id === variant.product_id);
                       const isLow = variant.stock_quantity < 5;
@@ -1965,6 +2092,150 @@ function App() {
                   Tutup
                 </button>
               </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* A2. POS ITEM SELECTION MODAL (CATEGORY BASED) */}
+      {activeModal === 'pos-select-item' && posSelectedCategory && (() => {
+        const catProducts = allProducts.filter(p => p.category_id === posSelectedCategory.id);
+        const currentProd = allProducts.find(p => p.id === posModalProductId) || (catProducts[0] || null);
+        const prodVariants = currentProd ? allVariants.filter(v => v.product_id === currentProd.id) : [];
+        const currentVariant = prodVariants.find(v => v.id === posModalVariantId) || (prodVariants[0] || null);
+
+        const currentUnitPrice = currentVariant ? getAdjustedPrice(currentVariant.selling_price) : 0;
+        const currentSubtotal = currentUnitPrice * (posModalQty || 1);
+
+        return (
+          <div className="modal-overlay">
+            <div className="modal-content" style={{ maxWidth: '480px' }}>
+              <header className="modal-header">
+                <h2 className="modal-title">Pilih Barang - {posSelectedCategory.name}</h2>
+                <button type="button" className="modal-close" onClick={() => setActiveModal(null)}><X size={20} /></button>
+              </header>
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (!currentVariant) {
+                  alert('Silakan pilih varian produk.');
+                  return;
+                }
+                addToCart(currentVariant, Number(posModalQty));
+                setActiveModal(null);
+              }}>
+                {/* 1. Select Product */}
+                <div className="form-group">
+                  <label htmlFor="pos-select-prod" className="form-label">1. Pilih Jenis Seragam / Baju</label>
+                  <select 
+                    id="pos-select-prod"
+                    className="form-control"
+                    value={currentProd ? currentProd.id : ''}
+                    onChange={(e) => {
+                      const pId = e.target.value;
+                      setPosModalProductId(pId);
+                      const vars = allVariants.filter(v => v.product_id === pId);
+                      if (vars.length > 0) setPosModalVariantId(vars[0].id);
+                      else setPosModalVariantId('');
+                    }}
+                    required
+                  >
+                    {catProducts.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                    {catProducts.length === 0 && <option value="">(Belum ada produk di kategori ini)</option>}
+                  </select>
+                </div>
+
+                {/* 2. Select Variant (Size & Color) */}
+                <div className="form-group">
+                  <label className="form-label">2. Pilih Ukuran & Warna Varian</label>
+                  {prodVariants.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px', maxHeight: '160px', overflowY: 'auto', padding: '4px' }}>
+                      {prodVariants.map(v => {
+                        const isSelected = currentVariant && currentVariant.id === v.id;
+                        const isOut = v.stock_quantity <= 0;
+
+                        return (
+                          <div 
+                            key={v.id}
+                            onClick={() => !isOut && setPosModalVariantId(v.id)}
+                            style={{
+                              padding: '10px',
+                              borderRadius: '8px',
+                              border: isSelected ? '2px solid var(--primary)' : '1px solid var(--card-border)',
+                              backgroundColor: isSelected ? 'var(--primary-light)' : 'var(--card-bg)',
+                              opacity: isOut ? 0.5 : 1,
+                              cursor: isOut ? 'not-allowed' : 'pointer',
+                              textAlign: 'center'
+                            }}
+                          >
+                            <div style={{ fontWeight: 'bold', fontSize: '14px', color: isSelected ? 'var(--primary)' : 'inherit' }}>
+                              Ukuran {v.size}
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                              Warna: {v.color}
+                            </div>
+                            <div style={{ fontSize: '11px', marginTop: '4px', fontWeight: '600', color: isOut ? 'var(--danger)' : 'var(--success)' }}>
+                              {isOut ? 'Habis' : `Stok: ${v.stock_quantity}`}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '8px 0' }}>
+                      Belum ada varian ukuran/warna untuk produk ini.
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Select Quantity */}
+                <div className="form-group">
+                  <label htmlFor="pos-modal-qty" className="form-label">3. Jumlah Pembelian (Pcs)</label>
+                  <input 
+                    id="pos-modal-qty"
+                    type="number"
+                    min="1"
+                    max={currentVariant ? currentVariant.stock_quantity : 1}
+                    className="form-control"
+                    value={posModalQty}
+                    onChange={(e) => setPosModalQty(Math.max(1, Number(e.target.value)))}
+                    required
+                  />
+                </div>
+
+                {/* Price Summary Calculation */}
+                {currentVariant && (
+                  <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px 16px', borderRadius: '12px', marginBottom: '16px', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Harga Pricelist Base:</span>
+                      <span>{formatRupiah(currentVariant.selling_price)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Penyesuaian Tipe Pelanggan ({customerType}):</span>
+                      <span style={{ color: customerType === 'GROSIR' ? 'var(--text-primary)' : 'var(--primary)', fontWeight: 'bold' }}>
+                        {customerType === 'GURU' ? '+ Rp 5.000' : customerType === 'GROSIR' ? '+ Rp 0 (Base)' : '+ Rp 15.000'}
+                      </span>
+                    </div>
+                    <div style={{ borderTop: '1px dashed var(--card-border)', paddingTop: '6px', marginTop: '6px', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14px' }}>
+                      <span>Harga per Unit ({customerType}):</span>
+                      <span style={{ color: 'var(--primary)' }}>{formatRupiah(currentUnitPrice)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '15px', marginTop: '4px' }}>
+                      <span>Subtotal ({posModalQty} Pcs):</span>
+                      <span style={{ color: 'var(--success)' }}>{formatRupiah(currentSubtotal)}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setActiveModal(null)}>Batal</button>
+                  <button type="submit" className="btn btn-primary" disabled={!currentVariant || currentVariant.stock_quantity <= 0}>
+                    + Tambah ke Keranjang
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         );
