@@ -94,6 +94,7 @@ function App() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [debtRepayAmount, setDebtRepayAmount] = useState('');
   const [debtRepayMethod, setDebtRepayMethod] = useState('CASH');
+  const [selectedDebtPayment, setSelectedDebtPayment] = useState(null);
 
   // Form states (Add Product & Variant)
   const [newProductCategory, setNewProductCategory] = useState('');
@@ -330,13 +331,17 @@ function App() {
       return;
     }
 
-    db.addDebtPayment(selectedCustomer.id, amount, debtRepayMethod, currentUser.id);
+    const res = db.addDebtPayment(selectedCustomer.id, amount, debtRepayMethod, currentUser.id);
     setSelectedCustomer(null);
     setDebtRepayAmount('');
     setDebtRepayMethod('CASH');
-    setActiveModal(null);
+    if (res && res.payment) {
+      setSelectedDebtPayment(res.payment);
+      setActiveModal('debt-receipt');
+    } else {
+      setActiveModal(null);
+    }
     setRefreshKey(prev => prev + 1);
-    alert('Pembayaran cicilan berhasil dicatat.');
   };
 
   // Unified Add Product & Variant
@@ -2087,6 +2092,95 @@ function App() {
                   setActiveModal(null);
                 }}>
                   Kirim WhatsApp
+                </button>
+                <button type="button" className="btn btn-primary btn-sm" onClick={() => setActiveModal(null)}>
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* A3. DEBT PAYMENT RECEIPT MODAL */}
+      {activeModal === 'debt-receipt' && selectedDebtPayment && (() => {
+        const cashier = db.find('users', u => u.id === selectedDebtPayment.cashier_id);
+        const customer = db.find('customers', c => c.id === selectedDebtPayment.customer_id);
+        const remainingDebt = customer ? customer.total_debt : 0;
+
+        return (
+          <div className="modal-overlay">
+            <div className="modal-content" style={{ maxWidth: '400px' }}>
+              <header className="modal-header">
+                <h2 className="modal-title">Struk Pembayaran Cicilan / Utang</h2>
+                <button type="button" className="modal-close" onClick={() => setActiveModal(null)}><X size={20} /></button>
+              </header>
+
+              <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '16px', borderRadius: '12px', overflow: 'hidden' }}>
+                <div className="receipt-paper" id="thermal-receipt">
+                  <div className="receipt-text-center">
+                    <span className="receipt-title">OLIVIANA</span><br />
+                    <span>Jl. Semeru No. 81, Sukodono<br />Lumajang</span><br />
+                    <span>HP: 0812-XXXX-XXXX</span>
+                  </div>
+
+                  <div className="receipt-divider"></div>
+
+                  <div className="receipt-text-center" style={{ fontWeight: 'bold', fontSize: '11px', marginBottom: '8px' }}>
+                    BUKTI PEMBAYARAN KASBON / UTANG
+                  </div>
+
+                  <div className="receipt-flex">
+                    <span>No Bukti:</span>
+                    <span>{selectedDebtPayment.id}</span>
+                  </div>
+                  <div className="receipt-flex">
+                    <span>Tanggal:</span>
+                    <span>{new Date(selectedDebtPayment.created_at).toLocaleDateString('id-ID')} {new Date(selectedDebtPayment.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <div className="receipt-flex">
+                    <span>Kasir Penerima:</span>
+                    <span>{cashier ? cashier.name : 'Kasir'}</span>
+                  </div>
+                  {customer && (
+                    <div className="receipt-flex">
+                      <span>Pelanggan:</span>
+                      <span>{customer.name}</span>
+                    </div>
+                  )}
+
+                  <div className="receipt-divider"></div>
+
+                  <div className="receipt-flex" style={{ fontSize: '13px', fontWeight: 'bold' }}>
+                    <span>NOMINAL DIBAYAR:</span>
+                    <span style={{ color: '#008000' }}>Rp {Number(selectedDebtPayment.amount_paid).toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="receipt-flex">
+                    <span>Metode Pembayaran:</span>
+                    <span>{selectedDebtPayment.payment_method}</span>
+                  </div>
+
+                  <div className="receipt-divider"></div>
+
+                  <div className="receipt-flex" style={{ fontWeight: 'bold' }}>
+                    <span>SISA UTANG SEKARANG:</span>
+                    <span style={{ color: remainingDebt > 0 ? '#d9534f' : '#28a745' }}>
+                      {remainingDebt > 0 ? `Rp ${Number(remainingDebt).toLocaleString('id-ID')}` : 'LUNAS (Rp 0) 🎉'}
+                    </span>
+                  </div>
+
+                  <div className="receipt-divider"></div>
+
+                  <div className="receipt-text-center" style={{ fontSize: '10px', marginTop: '12px' }}>
+                    Terima kasih atas pembayaran Anda.<br />
+                    Simpan struk ini sebagai bukti pembayaran yang sah.
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer" style={{ justifyContent: 'center' }}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={triggerPrintSim}>
+                  <Printer size={14} /> Print Struk (Browser)
                 </button>
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => setActiveModal(null)}>
                   Tutup
