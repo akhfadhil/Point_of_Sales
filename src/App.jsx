@@ -1577,6 +1577,7 @@ function App() {
                       <th>Jumlah Bayar</th>
                       <th>Metode</th>
                       <th>Kasir Penerima</th>
+                      <th style={{ textAlign: 'right' }}>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1594,12 +1595,24 @@ function App() {
                             <span className="badge info">{payment.payment_method}</span>
                           </td>
                           <td>{cashier ? cashier.name : 'Kasir'}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setSelectedDebtPayment(payment);
+                                setActiveModal('debt-receipt');
+                              }}
+                            >
+                              <Printer size={12} /> Struk
+                            </button>
+                          </td>
                         </tr>
                       );
                     })}
                     {allDebtPayments.length === 0 && (
                       <tr>
-                        <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada riwayat cicilan.</td>
+                        <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada riwayat cicilan.</td>
                       </tr>
                     )}
                   </tbody>
