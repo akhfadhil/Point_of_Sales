@@ -991,19 +991,72 @@ h1, h2, h3, h4, h5, h6 {
   .app-container {
     flex-direction: column;
   }
-  .sidebar {
-    display: none !important; /* Sembunyikan sidebar di HP */
+
+  .mobile-header {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--card-border);
+    position: sticky;
+    top: 0;
+    z-index: 900;
   }
+
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--card-shadow-hover);
+    display: flex !important;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .mobile-sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+  }
+
   .main-content {
     margin-left: 0 !important;
-    padding: 16px 16px 88px 16px !important; /* Tambah bottom padding agar tidak tertutup nav bar */
+    padding: 16px 16px 88px 16px !important;
   }
+
   .bottom-nav {
-    display: flex; /* Munculkan bottom nav di HP */
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--card-border);
+    justify-content: space-around;
+    align-items: center;
+    z-index: 900;
   }
+
   .pos-mobile-toggle {
-    display: flex; /* Munculkan toggle POS di HP */
+    display: flex !important;
+    margin-bottom: 16px;
   }
+
   .pos-layout {
     flex-direction: column;
     height: auto;

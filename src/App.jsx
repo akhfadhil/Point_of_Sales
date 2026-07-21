@@ -24,7 +24,8 @@ import {
   RefreshCw,
   PlusCircle,
   X,
-  Database
+  Database,
+  Menu
 } from 'lucide-react';
 
 function App() {
@@ -80,6 +81,7 @@ function App() {
   const [stockSearchQuery, setStockSearchQuery] = useState('');
   const [selectedDbTable, setSelectedDbTable] = useState('users');
   const [mobilePosActiveView, setMobilePosActiveView] = useState('products'); // 'products' | 'cart'
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Modals state
   const [activeModal, setActiveModal] = useState(null); // 'checkout-success' | 'factory-inbound' | 'repay-debt' | 'add-product' | 'add-variant'
@@ -582,8 +584,13 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* MOBILE OVERLAY */}
+      {isMobileMenuOpen && (
+        <div className="mobile-sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
+
       {/* SIDEBAR NAVIGATION */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
         <div>
           <div className="sidebar-brand">
             <span className="sidebar-logo">Oliviana POS</span>
@@ -595,7 +602,7 @@ function App() {
                 <button
                   type="button"
                   className={`sidebar-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('dashboard')}
+                  onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
                 >
                   <TrendingUp size={18} />
                   Ringkasan Keuangan
@@ -603,7 +610,7 @@ function App() {
                 <button
                   type="button"
                   className={`sidebar-item ${activeTab === 'inventory' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('inventory')}
+                  onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }}
                 >
                   <Package size={18} />
                   Kelola Stok & Produk
@@ -611,7 +618,7 @@ function App() {
                 <button
                   type="button"
                   className={`sidebar-item ${activeTab === 'debt' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('debt')}
+                  onClick={() => { setActiveTab('debt'); setIsMobileMenuOpen(false); }}
                 >
                   <Users size={18} />
                   Utang & Kasbon
@@ -619,7 +626,7 @@ function App() {
                 <button
                   type="button"
                   className={`sidebar-item ${activeTab === 'history' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('history')}
+                  onClick={() => { setActiveTab('history'); setIsMobileMenuOpen(false); }}
                 >
                   <History size={18} />
                   Riwayat Transaksi
@@ -627,7 +634,7 @@ function App() {
                 <button
                   type="button"
                   className={`sidebar-item ${activeTab === 'db-viewer' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('db-viewer')}
+                  onClick={() => { setActiveTab('db-viewer'); setIsMobileMenuOpen(false); }}
                 >
                   <Database size={18} />
                   Inspektor Database
@@ -638,7 +645,7 @@ function App() {
             <button
               type="button"
               className={`sidebar-item ${activeTab === 'pos' ? 'active' : ''}`}
-              onClick={() => setActiveTab('pos')}
+              onClick={() => { setActiveTab('pos'); setIsMobileMenuOpen(false); }}
             >
               <ShoppingCart size={18} />
               Kasir POS
@@ -647,7 +654,7 @@ function App() {
             <button
               type="button"
               className={`sidebar-item ${activeTab === 'check-stock' ? 'active' : ''}`}
-              onClick={() => setActiveTab('check-stock')}
+              onClick={() => { setActiveTab('check-stock'); setIsMobileMenuOpen(false); }}
             >
               <Eye size={18} />
               Cek Stok Barang
@@ -701,6 +708,31 @@ function App() {
 
       {/* MAIN CONTAINER */}
       <main className="main-content">
+        {/* MOBILE TOP HEADER BAR */}
+        <div className="mobile-header" style={{ display: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm btn-icon"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              title="Menu Navigasi"
+            >
+              <Menu size={20} />
+            </button>
+            <span style={{ fontWeight: 'bold', fontSize: '18px', background: 'linear-gradient(135deg, var(--primary), var(--info))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              OLIVIANA
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm btn-icon"
+              onClick={() => setDarkMode(!darkMode)}
+            >
+              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+          </div>
+        </div>
 
         {/* HEADER BAR */}
         <header className="header-bar">
@@ -2616,7 +2648,59 @@ function App() {
             </form>
           </div>
         </div>
-      )}
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <nav className="bottom-nav">
+        {currentUser.role === 'OWNER' && (
+          <button
+            type="button"
+            className={`bottom-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
+          >
+            <TrendingUp size={20} />
+            <span>Ringkasan</span>
+          </button>
+        )}
+
+        {currentUser.role === 'OWNER' && (
+          <button
+            type="button"
+            className={`bottom-nav-item ${activeTab === 'inventory' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }}
+          >
+            <Package size={20} />
+            <span>Stok</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          className={`bottom-nav-item ${activeTab === 'pos' ? 'active' : ''}`}
+          onClick={() => { setActiveTab('pos'); setIsMobileMenuOpen(false); }}
+        >
+          <ShoppingCart size={20} />
+          <span>Kasir POS</span>
+        </button>
+
+        {currentUser.role === 'OWNER' && (
+          <button
+            type="button"
+            className={`bottom-nav-item ${activeTab === 'debt' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('debt'); setIsMobileMenuOpen(false); }}
+          >
+            <CreditCard size={20} />
+            <span>Kasbon</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          className={`bottom-nav-item ${activeTab === 'check-stock' ? 'active' : ''}`}
+          onClick={() => { setActiveTab('check-stock'); setIsMobileMenuOpen(false); }}
+        >
+          <Search size={20} />
+          <span>Cek Stok</span>
+        </button>
+      </nav>
 
     </div>
   );
