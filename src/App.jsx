@@ -25,7 +25,8 @@ import {
   PlusCircle,
   X,
   Database,
-  Menu
+  Menu,
+  AlertTriangle
 } from 'lucide-react';
 
 function App() {
@@ -48,6 +49,37 @@ function App() {
   // Data Refresh State
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Toast Notification & Custom Confirmation Modal State
+  const [toast, setToast] = useState(null); // { message, type, id }
+  const [confirmConfig, setConfirmConfig] = useState(null); // { title, message, confirmText, cancelText, confirmVariant, onConfirm }
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type, id: Date.now() });
+  };
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const askConfirmation = ({ title, message, confirmText = 'Ya, Lanjutkan', cancelText = 'Batal', confirmVariant = 'danger', onConfirm }) => {
+    setConfirmConfig({
+      title,
+      message,
+      confirmText,
+      cancelText,
+      confirmVariant,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(null);
+      }
+    });
+  };
+
   // Cart State (POS)
   const [cart, setCart] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -62,8 +94,7 @@ function App() {
   const [customerType, setCustomerType] = useState('UMUM'); // 'UMUM' | 'GURU' | 'GROSIR'
 
   // Modal Pilihan Varian POS
-  const [posSelectedCategory, setPosSelectedCategory] = useState(null);
-  const [posModalProductId, setPosModalProductId] = useState('');
+  const [posSelectedProduct, setPosSelectedProduct] = useState(null);
   const [posModalVariantId, setPosModalVariantId] = useState('');
   const [posModalQty, setPosModalQty] = useState(1);
 
@@ -159,12 +190,18 @@ function App() {
   };
 
   const handleResetDB = () => {
-    if (window.confirm('Apakah Anda yakin ingin me-reset database simulasi ke kondisi awal? Semua transaksi baru akan terhapus.')) {
-      db.reset();
-      setRefreshKey(prev => prev + 1);
-      setCart([]);
-      alert('Database berhasil di-reset.');
-    }
+    askConfirmation({
+      title: 'Reset Database Simulasi',
+      message: 'Apakah Anda yakin ingin me-reset database simulasi ke kondisi awal? Semua transaksi dan data baru akan terhapus.',
+      confirmText: 'Reset Database',
+      confirmVariant: 'danger',
+      onConfirm: () => {
+        db.reset();
+        setRefreshKey(prev => prev + 1);
+        setCart([]);
+        showToast('Database berhasil di-reset ke kondisi awal.', 'success');
+      }
+    });
   };
 
   // Cart operations
@@ -174,7 +211,7 @@ function App() {
 
     if (existing) {
       if (existing.quantity + qtyToAdd > variant.stock_quantity) {
-        alert('Stok tidak mencukupi untuk menambah item.');
+        showToast('Stok tidak mencukupi untuk menambah item.', 'error');
         return;
       }
       setCart(cart.map(item =>
@@ -182,7 +219,7 @@ function App() {
       ));
     } else {
       if (variant.stock_quantity < qtyToAdd) {
-        alert('Stok tidak mencukupi.');
+        showToast('Stok tidak mencukupi.', 'error');
         return;
       }
       setCart([...cart, {
@@ -196,6 +233,7 @@ function App() {
         maxStock: variant.stock_quantity
       }]);
     }
+    showToast(`${product ? product.name : 'Barang'} (${variant.size}) ditambahkan ke keranjang`, 'success');
   };
 
   const updateCartQty = (id, delta) => {
@@ -204,7 +242,7 @@ function App() {
         const newQty = item.quantity + delta;
         if (newQty <= 0) return null;
         if (newQty > item.maxStock) {
-          alert('Stok maksimum tercapai.');
+          showToast('Stok maksimum tercapai.', 'warning');
           return item;
         }
         return { ...item, quantity: newQty };
@@ -249,7 +287,7 @@ function App() {
 
     if (paymentMethod === 'DEBT') {
       if (!selectedCustomerId) {
-        alert('Pelanggan wajib dipilih untuk metode pembayaran Kasbon/Utang.');
+        showToast('Pelanggan wajib dipilih untuk metode pembayaran Kasbon/Utang.', 'warning');
         return;
       }
       if (paid === 0) {
@@ -257,13 +295,13 @@ function App() {
       } else if (paid < total) {
         status = 'PARTIAL';
       } else {
-        alert('Pembayaran tunai penuh tidak bisa bermetode Kasbon.');
+        showToast('Pembayaran tunai penuh tidak bisa bermetode Kasbon.', 'warning');
         return;
       }
     } else {
       // Pembayaran cash/transfer/qris non-hutang
       if (paid < total) {
-        alert('Jumlah pembayaran kurang dari total belanja.');
+        showToast('Jumlah pembayaran kurang dari total belanja.', 'error');
         return;
       }
     }
@@ -294,9 +332,10 @@ function App() {
       setPaidAmount('');
       setRefreshKey(prev => prev + 1);
       setActiveModal('checkout-success');
+      showToast('Transaksi penjualan berhasil diproses!', 'success');
     } catch (err) {
       console.error(err);
-      alert('Terjadi kesalahan saat memproses transaksi.');
+      showToast('Terjadi kesalahan saat memproses transaksi.', 'error');
     }
   };
 
@@ -306,7 +345,7 @@ function App() {
     if (!selectedVariant || !factoryInQty) return;
     const qty = Number(factoryInQty);
     if (qty <= 0) {
-      alert('Jumlah harus lebih dari 0.');
+      showToast('Jumlah harus lebih dari 0.', 'warning');
       return;
     }
 
@@ -316,7 +355,7 @@ function App() {
     setFactoryInNotes('');
     setActiveModal(null);
     setRefreshKey(prev => prev + 1);
-    alert('Stok dari pabrik berhasil ditambahkan.');
+    showToast(`Stok ${qty} Pcs dari pabrik berhasil ditambahkan.`, 'success');
   };
 
   // Debt payment
@@ -325,11 +364,11 @@ function App() {
     if (!selectedCustomer || !debtRepayAmount) return;
     const amount = Number(debtRepayAmount);
     if (amount <= 0) {
-      alert('Jumlah pembayaran harus lebih dari 0.');
+      showToast('Jumlah pembayaran harus lebih dari 0.', 'warning');
       return;
     }
     if (amount > selectedCustomer.total_debt) {
-      alert('Jumlah pembayaran melebihi utang yang dimiliki.');
+      showToast('Jumlah pembayaran melebihi utang yang dimiliki.', 'warning');
       return;
     }
 
@@ -344,6 +383,7 @@ function App() {
       setActiveModal(null);
     }
     setRefreshKey(prev => prev + 1);
+    showToast('Pembayaran cicilan utang berhasil dicatat.', 'success');
   };
 
   // Unified Add Product & Variant
@@ -356,7 +396,7 @@ function App() {
     // A. Buat Produk Baru jika dipilih
     if (newVariantProductId === 'NEW_PRODUCT') {
       if (!newProductName || !newProductCategory) {
-        alert('Nama produk dan kategori wajib diisi.');
+        showToast('Nama produk dan kategori wajib diisi.', 'warning');
         return;
       }
 
@@ -369,13 +409,13 @@ function App() {
     }
 
     if (!targetProductId) {
-      alert('Pilih produk atau buat produk baru.');
+      showToast('Pilih produk atau buat produk baru.', 'warning');
       return;
     }
 
     const product = db.find('products', p => p.id === targetProductId);
     if (!product) {
-      alert('Produk tidak ditemukan.');
+      showToast('Produk tidak ditemukan.', 'error');
       return;
     }
 
@@ -435,7 +475,7 @@ function App() {
 
     setActiveModal(null);
     setRefreshKey(prev => prev + 1);
-    alert('Produk dan Varian berhasil disimpan.');
+    showToast('Produk dan Varian berhasil disimpan.', 'success');
   };
 
   // Calculate Owner Dashboard metrics
@@ -968,101 +1008,154 @@ function App() {
                   </div>
                 </div>
 
-                {/* Grid of Category Cards */}
-                <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: 'var(--text-secondary)' }}>Pilih Kategori Seragam:</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                {/* Filter Chips Kategori */}
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', marginBottom: '16px' }}>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${selectedCategoryFilter === '' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setSelectedCategoryFilter('')}
+                    style={{ borderRadius: '20px', whiteSpace: 'nowrap' }}
+                  >
+                    Semua Kategori ({allProducts.length})
+                  </button>
                   {allCategories.map(cat => {
-                    const catProducts = allProducts.filter(p => p.category_id === cat.id);
-                    const catVariantsCount = allVariants.filter(v => catProducts.some(p => p.id === v.product_id)).length;
-
+                    const count = allProducts.filter(p => p.category_id === cat.id).length;
                     return (
-                      <div 
-                        key={cat.id} 
-                        className="card"
-                        onClick={() => {
-                          setPosSelectedCategory(cat);
-                          if (catProducts.length > 0) {
-                            setPosModalProductId(catProducts[0].id);
-                            const vars = allVariants.filter(v => v.product_id === catProducts[0].id);
-                            if (vars.length > 0) setPosModalVariantId(vars[0].id);
-                            else setPosModalVariantId('');
-                          } else {
-                            setPosModalProductId('');
-                            setPosModalVariantId('');
-                          }
-                          setPosModalQty(1);
-                          setActiveModal('pos-select-item');
-                        }}
-                        style={{ cursor: 'pointer', border: '1px solid var(--card-border)', transition: 'transform 0.15s, box-shadow 0.15s', padding: '16px' }}
+                      <button
+                        key={cat.id}
+                        type="button"
+                        className={`btn btn-sm ${selectedCategoryFilter === cat.id ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setSelectedCategoryFilter(cat.id)}
+                        style={{ borderRadius: '20px', whiteSpace: 'nowrap' }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Package size={20} />
-                          </div>
-                          <span className="badge info">{catProducts.length} Baju</span>
-                        </div>
-                        <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>{cat.name}</h4>
-                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
-                          {catVariantsCount} Varian Ukuran/Warna
-                        </p>
-                        <div style={{ marginTop: '12px', fontSize: '12px', fontWeight: 'bold', color: 'var(--primary)' }}>
-                          + Pilih Barang & Ukuran &rarr;
-                        </div>
-                      </div>
+                        {cat.name} ({count})
+                      </button>
                     );
                   })}
                 </div>
 
-                {/* Instant Search Results if posSearchQuery typed */}
-                {posSearchQuery && (
-                  <>
-                    <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: 'var(--text-secondary)' }}>Hasil Pencarian:</h3>
-                    <div className="products-grid">
-                      {filteredPOSProducts.map(variant => {
-                        const product = allProducts.find(p => p.id === variant.product_id);
-                        const isLowStock = variant.stock_quantity < 5;
+                {/* Grid of Product Cards (Jenis Produk) */}
+                <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: 'var(--text-secondary)' }}>
+                  Pilih Jenis Produk Seragam:
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                  {(() => {
+                    const displayedProds = allProducts.filter(prod => {
+                      if (selectedCategoryFilter && prod.category_id !== selectedCategoryFilter) return false;
+                      if (posSearchQuery) {
+                        const q = posSearchQuery.toLowerCase();
+                        const prodVariants = allVariants.filter(v => v.product_id === prod.id);
+                        const matchName = prod.name.toLowerCase().includes(q);
+                        const matchCategory = (allCategories.find(c => c.id === prod.category_id)?.name || '').toLowerCase().includes(q);
+                        const matchVariant = prodVariants.some(v => 
+                          v.sku.toLowerCase().includes(q) || 
+                          v.size.toLowerCase().includes(q) || 
+                          v.color.toLowerCase().includes(q)
+                        );
+                        return matchName || matchCategory || matchVariant;
+                      }
+                      return true;
+                    });
 
-                        return (
-                          <div
-                            key={variant.id}
-                            className={`product-item-card ${variant.stock_quantity === 0 ? 'disabled' : ''}`}
-                            onClick={() => variant.stock_quantity > 0 && addToCart(variant)}
-                            style={{ opacity: variant.stock_quantity === 0 ? 0.6 : 1 }}
-                          >
-                            <div>
-                              <div className="product-item-name">{product ? product.name : 'Unknown'}</div>
-                              <div className="product-item-sku">{variant.sku}</div>
+                    return (
+                      <>
+                        {displayedProds.map(prod => {
+                          const category = allCategories.find(c => c.id === prod.category_id);
+                          const prodVariants = allVariants.filter(v => v.product_id === prod.id);
+                          const totalStock = prodVariants.reduce((sum, v) => sum + v.stock_quantity, 0);
+                          const prices = prodVariants.map(v => getAdjustedPrice(v.selling_price));
+                          const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+                          const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+                          const priceRangeStr = prices.length === 0 
+                            ? '-' 
+                            : (minPrice === maxPrice ? formatRupiah(minPrice) : `${formatRupiah(minPrice)} - ${formatRupiah(maxPrice)}`);
 
-                              <div className="product-item-details">
-                                <span className="product-item-size">{variant.size} - {variant.color}</span>
-                                <span className={`product-item-stock ${isLowStock ? 'low' : 'ok'}`}>
-                                  Stok: {variant.stock_quantity}
-                                </span>
+                          return (
+                            <div
+                              key={prod.id}
+                              className="card"
+                              onClick={() => {
+                                setPosSelectedProduct(prod);
+                                if (prodVariants.length > 0) {
+                                  setPosModalVariantId(prodVariants[0].id);
+                                } else {
+                                  setPosModalVariantId('');
+                                }
+                                setPosModalQty(1);
+                                setActiveModal('pos-select-item');
+                              }}
+                              style={{
+                                cursor: 'pointer',
+                                border: '1px solid var(--card-border)',
+                                transition: 'transform 0.15s, box-shadow 0.15s',
+                                padding: '16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                                backgroundColor: 'var(--card-bg)'
+                              }}
+                            >
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                  <span className="badge info" style={{ fontSize: '11px' }}>{category ? category.name : 'Umum'}</span>
+                                  <span className={`badge ${totalStock > 0 ? 'success' : 'danger'}`} style={{ fontSize: '11px' }}>
+                                    Stok: {totalStock} Pcs
+                                  </span>
+                                </div>
+                                <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '6px', color: 'var(--text-primary)' }}>
+                                  {prod.name}
+                                </h4>
+                                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 12px 0' }}>
+                                  {prodVariants.length > 0 ? `${prodVariants.length} Ukuran (${prodVariants.map(v => v.size).join(', ')})` : 'Belum ada varian'}
+                                </p>
+                              </div>
+
+                              <div style={{ borderTop: '1px dashed var(--card-border)', paddingTop: '10px', marginTop: '4px' }}>
+                                <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '8px' }}>
+                                  {priceRangeStr}
+                                </div>
+                                <button type="button" className="btn btn-primary btn-sm" style={{ width: '100%', fontSize: '12px' }}>
+                                  + Pilih Size & Jumlah
+                                </button>
                               </div>
                             </div>
+                          );
+                        })}
 
-                            <div>
-                              <div className="product-item-price">{formatRupiah(getAdjustedPrice(variant.selling_price))}</div>
-                            </div>
+                        {displayedProds.length === 0 && (
+                          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                            Tidak ada produk seragam yang ditemukan.
                           </div>
-                        );
-                      })}
-
-                      {filteredPOSProducts.length === 0 && (
-                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
-                          Produk tidak ditemukan.
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
 
               {/* Cart Panel (Right) */}
               <form onSubmit={handleCheckout} className="pos-cart-panel">
                 <header className="cart-header">
-                  <h3>Keranjang Belanja</h3>
-                  <span className="badge info">{cart.reduce((s, i) => s + i.quantity, 0)} Barang</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ShoppingCart size={18} style={{ color: 'var(--primary)' }} />
+                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>Keranjang Belanja</h3>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="badge info" style={{ padding: '4px 10px', fontSize: '12px' }}>
+                      {cart.reduce((s, i) => s + i.quantity, 0)} Item
+                    </span>
+                    {cart.length > 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '3px 8px', fontSize: '11px', color: 'var(--danger)' }}
+                        onClick={() => setCart([])}
+                        title="Kosongkan Keranjang"
+                      >
+                        Kosongkan
+                      </button>
+                    )}
+                  </div>
                 </header>
 
                 <div className="cart-items-list">
@@ -1070,16 +1163,24 @@ function App() {
                     <div key={item.id} className="cart-item">
                       <div className="cart-item-info">
                         <span className="cart-item-title">{item.name}</span>
-                        <span className="cart-item-sku">{item.sku} - {item.color}</span>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', margin: '2px 0 6px' }}>
+                          <span className="cart-item-sku">{item.sku}</span>
+                          {item.color && item.color !== 'Standard' && (
+                            <span className="badge info" style={{ fontSize: '10px', padding: '1px 6px' }}>{item.color}</span>
+                          )}
+                        </div>
                         <div className="cart-item-qty-control">
                           <button type="button" className="qty-btn" onClick={() => updateCartQty(item.id, -1)}>-</button>
                           <span className="qty-val">{item.quantity}</span>
                           <button type="button" className="qty-btn" onClick={() => updateCartQty(item.id, 1)}>+</button>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginLeft: '6px' }}>
+                            @ {formatRupiah(getAdjustedPrice(item.base_selling_price))}
+                          </span>
                         </div>
                       </div>
 
                       <div className="cart-item-price-info">
-                        <button type="button" className="cart-item-delete" onClick={() => removeFromCart(item.id)}>
+                        <button type="button" className="cart-item-delete" title="Hapus Item" onClick={() => removeFromCart(item.id)}>
                           <Trash2 size={16} />
                         </button>
                         <span className="cart-item-subtotal">{formatRupiah(getAdjustedPrice(item.base_selling_price) * item.quantity)}</span>
@@ -1088,9 +1189,10 @@ function App() {
                   ))}
 
                   {cart.length === 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
-                      <ShoppingCart size={40} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                      <p>Keranjang kosong. Klik kategori di sebelah kiri untuk memilih barang.</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', minHeight: '200px', color: 'var(--text-muted)' }}>
+                      <ShoppingCart size={44} style={{ marginBottom: '12px', opacity: 0.4 }} />
+                      <p style={{ fontWeight: '600', fontSize: '14px' }}>Keranjang masih kosong</p>
+                      <p style={{ fontSize: '12px', marginTop: '4px', textAlign: 'center' }}>Klik produk di sebelah kiri untuk memasukkan barang ke keranjang.</p>
                     </div>
                   )}
                 </div>
@@ -1395,12 +1497,18 @@ function App() {
                         type="button"
                         className="btn btn-danger btn-sm"
                         onClick={() => {
-                          if (window.confirm(`Yakin ingin menghapus produk "${product.name}" beserta semua variannya?`)) {
-                            db.delete('products', product.id);
-                            // Hapus varian-varian produk ini
-                            variants.forEach(v => db.delete('product_variants', v.id));
-                            setRefreshKey(prev => prev + 1);
-                          }
+                          askConfirmation({
+                            title: `Hapus Produk "${product.name}"`,
+                            message: `Apakah Anda yakin ingin menghapus produk "${product.name}" beserta seluruh varian ukurannya? Tindakan ini tidak dapat dibatalkan.`,
+                            confirmText: 'Hapus Produk',
+                            confirmVariant: 'danger',
+                            onConfirm: () => {
+                              db.delete('products', product.id);
+                              variants.forEach(v => db.delete('product_variants', v.id));
+                              setRefreshKey(prev => prev + 1);
+                              showToast(`Produk "${product.name}" berhasil dihapus.`, 'info');
+                            }
+                          });
                         }}
                       >
                         Hapus Produk
@@ -1453,10 +1561,17 @@ function App() {
                                     type="button"
                                     className="btn btn-danger btn-sm btn-icon"
                                     onClick={() => {
-                                      if (window.confirm(`Hapus varian SKU: ${variant.sku}?`)) {
-                                        db.delete('product_variants', variant.id);
-                                        setRefreshKey(prev => prev + 1);
-                                      }
+                                      askConfirmation({
+                                        title: `Hapus Varian SKU ${variant.sku}`,
+                                        message: `Apakah Anda yakin ingin menghapus varian ukuran ${variant.size} (${variant.color}) ini?`,
+                                        confirmText: 'Hapus Varian',
+                                        confirmVariant: 'danger',
+                                        onConfirm: () => {
+                                          db.delete('product_variants', variant.id);
+                                          setRefreshKey(prev => prev + 1);
+                                          showToast(`Varian SKU ${variant.sku} berhasil dihapus.`, 'info');
+                                        }
+                                      });
                                     }}
                                   >
                                     <Trash2 size={12} />
@@ -2236,61 +2351,44 @@ function App() {
         );
       })()}
 
-      {/* A2. POS ITEM SELECTION MODAL (CATEGORY BASED) */}
-      {activeModal === 'pos-select-item' && posSelectedCategory && (() => {
-        const catProducts = allProducts.filter(p => p.category_id === posSelectedCategory.id);
-        const currentProd = allProducts.find(p => p.id === posModalProductId) || (catProducts[0] || null);
-        const prodVariants = currentProd ? allVariants.filter(v => v.product_id === currentProd.id) : [];
+      {/* A2. POS ITEM SELECTION MODAL (PRODUCT BASED) */}
+      {activeModal === 'pos-select-item' && posSelectedProduct && (() => {
+        const prodVariants = allVariants.filter(v => v.product_id === posSelectedProduct.id);
         const currentVariant = prodVariants.find(v => v.id === posModalVariantId) || (prodVariants[0] || null);
+        const category = allCategories.find(c => c.id === posSelectedProduct.category_id);
 
         const currentUnitPrice = currentVariant ? getAdjustedPrice(currentVariant.selling_price) : 0;
         const currentSubtotal = currentUnitPrice * (posModalQty || 1);
 
         return (
           <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '480px' }}>
+            <div className="modal-content" style={{ maxWidth: '500px' }}>
               <header className="modal-header">
-                <h2 className="modal-title">Pilih Barang - {posSelectedCategory.name}</h2>
+                <div>
+                  <span className="badge info" style={{ fontSize: '11px', marginBottom: '4px' }}>{category ? category.name : 'Umum'}</span>
+                  <h2 className="modal-title" style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>{posSelectedProduct.name}</h2>
+                </div>
                 <button type="button" className="modal-close" onClick={() => setActiveModal(null)}><X size={20} /></button>
               </header>
 
               <form onSubmit={(e) => {
                 e.preventDefault();
                 if (!currentVariant) {
-                  alert('Silakan pilih varian produk.');
+                  alert('Silakan pilih ukuran varian.');
+                  return;
+                }
+                if (currentVariant.stock_quantity < posModalQty) {
+                  alert('Stok tidak mencukupi.');
                   return;
                 }
                 addToCart(currentVariant, Number(posModalQty));
                 setActiveModal(null);
               }}>
-                {/* 1. Select Product */}
+                {/* 1. Select Size / Variant */}
                 <div className="form-group">
-                  <label htmlFor="pos-select-prod" className="form-label">1. Pilih Jenis Seragam / Baju</label>
-                  <select 
-                    id="pos-select-prod"
-                    className="form-control"
-                    value={currentProd ? currentProd.id : ''}
-                    onChange={(e) => {
-                      const pId = e.target.value;
-                      setPosModalProductId(pId);
-                      const vars = allVariants.filter(v => v.product_id === pId);
-                      if (vars.length > 0) setPosModalVariantId(vars[0].id);
-                      else setPosModalVariantId('');
-                    }}
-                    required
-                  >
-                    {catProducts.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                    {catProducts.length === 0 && <option value="">(Belum ada produk di kategori ini)</option>}
-                  </select>
-                </div>
-
-                {/* 2. Select Variant (Size & Color) */}
-                <div className="form-group">
-                  <label className="form-label">2. Pilih Ukuran & Warna Varian</label>
+                  <label className="form-label" style={{ fontWeight: 'bold' }}>1. Pilih Ukuran Varian</label>
                   {prodVariants.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px', maxHeight: '160px', overflowY: 'auto', padding: '4px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', maxHeight: '180px', overflowY: 'auto', padding: '4px' }}>
                       {prodVariants.map(v => {
                         const isSelected = currentVariant && currentVariant.id === v.id;
                         const isOut = v.stock_quantity <= 0;
@@ -2306,42 +2404,71 @@ function App() {
                               backgroundColor: isSelected ? 'var(--primary-light)' : 'var(--card-bg)',
                               opacity: isOut ? 0.5 : 1,
                               cursor: isOut ? 'not-allowed' : 'pointer',
-                              textAlign: 'center'
+                              textAlign: 'center',
+                              transition: 'all 0.15s ease'
                             }}
                           >
-                            <div style={{ fontWeight: 'bold', fontSize: '14px', color: isSelected ? 'var(--primary)' : 'inherit' }}>
+                            <div style={{ fontWeight: 'bold', fontSize: '15px', color: isSelected ? 'var(--primary)' : 'inherit' }}>
                               Ukuran {v.size}
                             </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                              Warna: {v.color}
+                            {v.color && v.color !== 'Standard' && (
+                              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                {v.color}
+                              </div>
+                            )}
+                            <div style={{ fontSize: '12px', fontWeight: 'bold', marginTop: '4px', color: 'var(--primary)' }}>
+                              {formatRupiah(getAdjustedPrice(v.selling_price))}
                             </div>
-                            <div style={{ fontSize: '11px', marginTop: '4px', fontWeight: '600', color: isOut ? 'var(--danger)' : 'var(--success)' }}>
-                              {isOut ? 'Habis' : `Stok: ${v.stock_quantity}`}
+                            <div style={{ fontSize: '11px', marginTop: '2px', fontWeight: '600', color: isOut ? 'var(--danger)' : 'var(--success)' }}>
+                              {isOut ? 'Stok Habis' : `Stok: ${v.stock_quantity}`}
                             </div>
                           </div>
                         );
                       })}
                     </div>
                   ) : (
-                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '8px 0' }}>
-                      Belum ada varian ukuran/warna untuk produk ini.
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '12px 0' }}>
+                      Belum ada varian ukuran untuk produk ini.
                     </div>
                   )}
                 </div>
 
-                {/* 3. Select Quantity */}
+                {/* 2. Select Quantity */}
                 <div className="form-group">
-                  <label htmlFor="pos-modal-qty" className="form-label">3. Jumlah Pembelian (Pcs)</label>
-                  <input 
-                    id="pos-modal-qty"
-                    type="number"
-                    min="1"
-                    max={currentVariant ? currentVariant.stock_quantity : 1}
-                    className="form-control"
-                    value={posModalQty}
-                    onChange={(e) => setPosModalQty(Math.max(1, Number(e.target.value)))}
-                    required
-                  />
+                  <label htmlFor="pos-modal-qty" className="form-label" style={{ fontWeight: 'bold' }}>2. Jumlah Pembelian (Pcs)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary"
+                      style={{ width: '40px', height: '40px', fontSize: '18px', padding: 0, fontWeight: 'bold' }}
+                      onClick={() => setPosModalQty(Math.max(1, posModalQty - 1))}
+                    >
+                      -
+                    </button>
+                    <input 
+                      id="pos-modal-qty"
+                      type="number"
+                      min="1"
+                      max={currentVariant ? currentVariant.stock_quantity : 1}
+                      className="form-control"
+                      style={{ textAlign: 'center', fontSize: '16px', fontWeight: 'bold' }}
+                      value={posModalQty}
+                      onChange={(e) => setPosModalQty(Math.max(1, Number(e.target.value)))}
+                      required
+                    />
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary"
+                      style={{ width: '40px', height: '40px', fontSize: '18px', padding: 0, fontWeight: 'bold' }}
+                      onClick={() => {
+                        if (currentVariant && posModalQty < currentVariant.stock_quantity) {
+                          setPosModalQty(posModalQty + 1);
+                        }
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
 
                 {/* Price Summary Calculation */}
@@ -2352,7 +2479,7 @@ function App() {
                       <span>{formatRupiah(currentVariant.selling_price)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Penyesuaian Tipe Pelanggan ({customerType}):</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>Skema Harga ({customerType}):</span>
                       <span style={{ color: customerType === 'GROSIR' ? 'var(--text-primary)' : 'var(--primary)', fontWeight: 'bold' }}>
                         {customerType === 'GURU' ? '+ Rp 5.000' : customerType === 'GROSIR' ? '+ Rp 0 (Base)' : '+ Rp 15.000'}
                       </span>
@@ -2361,7 +2488,7 @@ function App() {
                       <span>Harga per Unit ({customerType}):</span>
                       <span style={{ color: 'var(--primary)' }}>{formatRupiah(currentUnitPrice)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '15px', marginTop: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '16px', marginTop: '6px' }}>
                       <span>Subtotal ({posModalQty} Pcs):</span>
                       <span style={{ color: 'var(--success)' }}>{formatRupiah(currentSubtotal)}</span>
                     </div>
@@ -2370,7 +2497,11 @@ function App() {
 
                 <div className="modal-footer">
                   <button type="button" className="btn btn-secondary" onClick={() => setActiveModal(null)}>Batal</button>
-                  <button type="submit" className="btn btn-primary" disabled={!currentVariant || currentVariant.stock_quantity <= 0}>
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary" 
+                    disabled={!currentVariant || currentVariant.stock_quantity <= 0}
+                  >
                     + Tambah ke Keranjang
                   </button>
                 </div>
@@ -2648,6 +2779,8 @@ function App() {
             </form>
           </div>
         </div>
+      )}
+
       {/* MOBILE BOTTOM NAVIGATION BAR */}
       <nav className="bottom-nav">
         {currentUser.role === 'OWNER' && (
@@ -2701,6 +2834,67 @@ function App() {
           <span>Cek Stok</span>
         </button>
       </nav>
+
+      {/* GLOBAL TOAST NOTIFICATION */}
+      {toast && (
+        <div className={`toast-notification toast-${toast.type}`}>
+          <div className="toast-content">
+            {toast.type === 'success' && <CheckCircle size={18} className="toast-icon success" />}
+            {toast.type === 'error' && <X size={18} className="toast-icon danger" />}
+            {toast.type === 'warning' && <AlertTriangle size={18} className="toast-icon warning" />}
+            {toast.type === 'info' && <CheckCircle size={18} className="toast-icon info" />}
+            <span>{toast.message}</span>
+          </div>
+          <button type="button" className="toast-close" onClick={() => setToast(null)}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* GLOBAL CUSTOM CONFIRMATION MODAL */}
+      {confirmConfig && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: '420px', textAlign: 'center', padding: '28px 24px' }}>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              backgroundColor: confirmConfig.confirmVariant === 'danger' ? 'var(--danger-light)' : 'var(--primary-light)',
+              color: confirmConfig.confirmVariant === 'danger' ? 'var(--danger)' : 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px'
+            }}>
+              {confirmConfig.confirmVariant === 'danger' ? <Trash2 size={24} /> : <AlertTriangle size={24} />}
+            </div>
+            
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>{confirmConfig.title}</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.5' }}>
+              {confirmConfig.message}
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                style={{ flex: 1 }}
+                onClick={() => setConfirmConfig(null)}
+              >
+                {confirmConfig.cancelText}
+              </button>
+              <button 
+                type="button" 
+                className={`btn btn-${confirmConfig.confirmVariant}`}
+                style={{ flex: 1 }}
+                onClick={confirmConfig.onConfirm}
+              >
+                {confirmConfig.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
