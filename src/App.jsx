@@ -1992,7 +1992,7 @@ function App() {
                   {/* List Customers with outstanding debt */}
                   <div className="card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                      <h2 className="card-title" style={{ margin: 0 }}>Daftar Piutang & Kasbon Aktif</h2>
+                      <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, color: 'var(--text-primary)' }}>Daftar Piutang & Kasbon Aktif</h2>
                       <span className="badge warning">{activeDebtCustomers.length} Piutang Aktif</span>
                     </div>
 
@@ -2001,19 +2001,19 @@ function App() {
                       <table className="table">
                         <thead>
                           <tr>
-                            <th>Nama Pelanggan</th>
-                            <th>Nomor HP</th>
-                            <th>Total Utang Aktif</th>
-                            <th>Tanggal Terdaftar</th>
-                            <th style={{ textAlign: 'right' }}>Tindakan</th>
+                            <th style={{ minWidth: '180px' }}>Nama Pelanggan</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Nomor HP</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Total Utang Aktif</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Tanggal Terdaftar</th>
+                            <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Tindakan</th>
                           </tr>
                         </thead>
                         <tbody>
                           {paginatedActiveDebt.map(cust => (
                             <tr key={cust.id}>
                               <td><strong>{cust.name}</strong></td>
-                              <td>{cust.phone_number}</td>
-                              <td>
+                              <td style={{ whiteSpace: 'nowrap' }}>{cust.phone_number}</td>
+                              <td style={{ whiteSpace: 'nowrap' }}>
                                 <span style={{
                                   fontWeight: 'bold',
                                   color: 'var(--danger)',
@@ -2022,11 +2022,12 @@ function App() {
                                   {formatRupiah(cust.total_debt)}
                                 </span>
                               </td>
-                              <td>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
-                              <td style={{ textAlign: 'right' }}>
+                              <td style={{ whiteSpace: 'nowrap' }}>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
+                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                                 <button
                                   type="button"
                                   className="btn btn-success btn-sm"
+                                  style={{ whiteSpace: 'nowrap' }}
                                   onClick={() => {
                                     setSelectedCustomer(cust);
                                     setDebtRepayAmount('');
@@ -2138,7 +2139,7 @@ function App() {
                   {/* List Settled Customers */}
                   <div className="card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                      <h2 className="card-title" style={{ margin: 0 }}>Daftar Pelanggan Bebas Utang</h2>
+                      <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, color: 'var(--text-primary)' }}>Daftar Pelanggan Bebas Utang</h2>
                       <span className="badge success">{settledCustomers.length} Bebas Utang</span>
                     </div>
 
@@ -2147,21 +2148,21 @@ function App() {
                       <table className="table">
                         <thead>
                           <tr>
-                            <th>Nama Pelanggan</th>
-                            <th>Nomor HP</th>
-                            <th>Status Utang</th>
-                            <th>Tanggal Terdaftar</th>
+                            <th style={{ minWidth: '180px' }}>Nama Pelanggan</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Nomor HP</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Status Utang</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Tanggal Terdaftar</th>
                           </tr>
                         </thead>
                         <tbody>
                           {paginatedSettled.map(cust => (
                             <tr key={cust.id}>
                               <td><strong>{cust.name}</strong></td>
-                              <td>{cust.phone_number}</td>
-                              <td>
+                              <td style={{ whiteSpace: 'nowrap' }}>{cust.phone_number}</td>
+                              <td style={{ whiteSpace: 'nowrap' }}>
                                 <span className="badge success">Bebas Utang (Rp 0)</span>
                               </td>
-                              <td>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
+                              <td style={{ whiteSpace: 'nowrap' }}>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
                             </tr>
                           ))}
                           {settledCustomers.length === 0 && (
@@ -2256,7 +2257,7 @@ function App() {
               return (
                 <div className="card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                    <h2 className="card-title" style={{ margin: 0 }}>Riwayat Pembayaran Cicilan</h2>
+                    <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, color: 'var(--text-primary)' }}>Riwayat Pembayaran Cicilan</h2>
                     <span className="badge info">{filteredDebtPayments.length} Transaksi Cicilan</span>
                   </div>
 
@@ -2265,12 +2266,12 @@ function App() {
                     <table className="table">
                       <thead>
                         <tr>
-                          <th>Tanggal</th>
-                          <th>Nama Pelanggan</th>
-                          <th>Jumlah Bayar</th>
-                          <th>Metode</th>
-                          <th>Kasir Penerima</th>
-                          <th style={{ textAlign: 'right' }}>Aksi</th>
+                          <th style={{ whiteSpace: 'nowrap' }}>Tanggal</th>
+                          <th style={{ minWidth: '180px' }}>Nama Pelanggan</th>
+                          <th style={{ whiteSpace: 'nowrap' }}>Jumlah Bayar</th>
+                          <th style={{ whiteSpace: 'nowrap' }}>Metode</th>
+                          <th style={{ whiteSpace: 'nowrap' }}>Kasir Penerima</th>
+                          <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Aksi</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2279,19 +2280,20 @@ function App() {
                           const cashier = db.find('users', u => u.id === payment.cashier_id);
                           return (
                             <tr key={payment.id}>
-                              <td>{new Date(payment.created_at).toLocaleString('id-ID')}</td>
+                              <td style={{ whiteSpace: 'nowrap' }}>{new Date(payment.created_at).toLocaleString('id-ID')}</td>
                               <td><strong>{cust ? cust.name : 'Unknown'}</strong></td>
-                              <td style={{ color: 'var(--success)', fontWeight: 'bold' }}>
+                              <td style={{ color: 'var(--success)', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                                 {formatRupiah(payment.amount_paid)}
                               </td>
-                              <td>
+                              <td style={{ whiteSpace: 'nowrap' }}>
                                 <span className="badge info">{payment.payment_method}</span>
                               </td>
-                              <td>{cashier ? cashier.name : 'Kasir'}</td>
-                              <td style={{ textAlign: 'right' }}>
+                              <td style={{ whiteSpace: 'nowrap' }}>{cashier ? cashier.name : 'Kasir'}</td>
+                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                                 <button
                                   type="button"
                                   className="btn btn-secondary btn-sm"
+                                  style={{ whiteSpace: 'nowrap' }}
                                   onClick={() => {
                                     setSelectedDebtPayment(payment);
                                     setActiveModal('debt-receipt');
