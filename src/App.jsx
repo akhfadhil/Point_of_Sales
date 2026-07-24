@@ -26,7 +26,9 @@ import {
   X,
   Database,
   Menu,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 function App() {
@@ -96,6 +98,8 @@ function App() {
   // Modal Pilihan Varian POS
   const [posSelectedProduct, setPosSelectedProduct] = useState(null);
   const [posModalVariantId, setPosModalVariantId] = useState('');
+  const [posModalSize, setPosModalSize] = useState('');
+  const [posModalColor, setPosModalColor] = useState('');
   const [posModalQty, setPosModalQty] = useState(1);
 
   // Perhitungan Harga Jual Berdasarkan Tipe Pelanggan
@@ -106,8 +110,50 @@ function App() {
     return p + 15000; // Default UMUM
   };
 
+  // Helper Size & Color Sorting (Prioritas Angka -> S/M/L/XL -> Warna)
+  const SIZE_HIERARCHY = {
+    'XS': 99, 'S': 100, 'M': 101, 'L': 102, 'XL': 103, 'XXL': 104, '2XL': 104, '3XL': 105, '4XL': 106, '5XL': 107, 'ALL SIZE': 200, 'STANDARD': 201
+  };
+
+  const parseSizeWeight = (size) => {
+    const s = String(size || '').trim().toUpperCase();
+    if (SIZE_HIERARCHY[s] !== undefined) return SIZE_HIERARCHY[s];
+    const num = parseFloat(s);
+    if (!isNaN(num)) return num;
+    return 300;
+  };
+
+  const compareVariants = (a, b) => {
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    const weightA = parseSizeWeight(a.size);
+    const weightB = parseSizeWeight(b.size);
+    if (weightA !== weightB) return weightA - weightB;
+
+    const sizeCmp = String(a.size || '').localeCompare(String(b.size || ''), 'id', { numeric: true });
+    if (sizeCmp !== 0) return sizeCmp;
+
+    return String(a.color || '').localeCompare(String(b.color || ''), 'id', { sensitivity: 'base' });
+  };
+
+  const sortSizes = (sizes) => {
+    if (!Array.isArray(sizes)) return [];
+    return sizes.slice().sort((a, b) => {
+      const wA = parseSizeWeight(a);
+      const wB = parseSizeWeight(b);
+      if (wA !== wB) return wA - wB;
+      return String(a || '').localeCompare(String(b || ''), 'id', { numeric: true });
+    });
+  };
+
   // Search & Filter State
   const [posSearchQuery, setPosSearchQuery] = useState('');
+  const [inventorySearchQuery, setInventorySearchQuery] = useState('');
+  const [inventoryProductFilter, setInventoryProductFilter] = useState('');
+  const [inventorySizeFilter, setInventorySizeFilter] = useState('');
+  const [inventoryColorFilter, setInventoryColorFilter] = useState('');
+  const [expandedProductIds, setExpandedProductIds] = useState([]);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
   const [stockSearchQuery, setStockSearchQuery] = useState('');
   const [selectedDbTable, setSelectedDbTable] = useState('users');
@@ -120,6 +166,9 @@ function App() {
 
   // Selected variant for Factory Inbound
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [restockProductId, setRestockProductId] = useState('');
+  const [restockSize, setRestockSize] = useState('');
+  const [restockColor, setRestockColor] = useState('');
   const [factoryInQty, setFactoryInQty] = useState('');
   const [factoryInNotes, setFactoryInNotes] = useState('');
 
@@ -444,7 +493,6 @@ function App() {
       sku: finalSku,
       size: newVariantSize,
       color: newVariantColor || 'Standard',
-      cost_price: Number(newVariantCostPrice || 0),
       selling_price: Number(newVariantSellingPrice),
       stock_quantity: Number(newVariantStock || 0)
     };
@@ -482,27 +530,16 @@ function App() {
   const getDashboardData = () => {
     const sales = db.get('sales');
     const saleItems = db.get('sale_items');
-    const variants = db.get('product_variants');
     const customers = db.get('customers');
 
     let totalGrossSales = 0;
-    let totalCostOfGoodsSold = 0;
-
     sales.forEach(sale => {
       totalGrossSales += sale.total_amount;
     });
 
+    let totalItemsSold = 0;
     saleItems.forEach(item => {
-      const variant = variants.find(v => v.id === item.variant_id);
-      const cost = variant ? variant.cost_price : 0;
-      totalCostOfGoodsSold += (cost * item.quantity);
-    });
-
-    const netProfit = totalGrossSales - totalCostOfGoodsSold;
-
-    let totalStockValuation = 0;
-    variants.forEach(v => {
-      totalStockValuation += (v.cost_price * v.stock_quantity);
+      totalItemsSold += item.quantity;
     });
 
     let totalOutstandingDebt = 0;
@@ -512,8 +549,8 @@ function App() {
 
     return {
       grossSales: totalGrossSales,
-      netProfit: netProfit,
-      stockValuation: totalStockValuation,
+      totalTransactions: sales.length,
+      totalItemsSold: totalItemsSold,
       outstandingDebt: totalOutstandingDebt
     };
   };
@@ -846,11 +883,11 @@ function App() {
 
               <div className="card stat-card">
                 <div className="stat-icon-wrapper primary">
-                  <TrendingUp size={24} />
+                  <ShoppingCart size={24} />
                 </div>
                 <div className="stat-info">
-                  <span className="stat-label">Keuntungan Bersih (Profit)</span>
-                  <span className="stat-value">{formatRupiah(dashboardMetrics.netProfit)}</span>
+                  <span className="stat-label">Total Transaksi</span>
+                  <span className="stat-value">{dashboardMetrics.totalTransactions} Transaksi</span>
                 </div>
               </div>
 
@@ -859,8 +896,8 @@ function App() {
                   <Package size={24} />
                 </div>
                 <div className="stat-info">
-                  <span className="stat-label">Valuasi Stok Toko (Modal)</span>
-                  <span className="stat-value">{formatRupiah(dashboardMetrics.stockValuation)}</span>
+                  <span className="stat-label">Total Barang Terjual</span>
+                  <span className="stat-value">{dashboardMetrics.totalItemsSold} Pcs</span>
                 </div>
               </div>
 
@@ -1078,8 +1115,12 @@ function App() {
                                 setPosSelectedProduct(prod);
                                 if (prodVariants.length > 0) {
                                   setPosModalVariantId(prodVariants[0].id);
+                                  setPosModalSize(prodVariants[0].size);
+                                  setPosModalColor(prodVariants[0].color);
                                 } else {
                                   setPosModalVariantId('');
+                                  setPosModalSize('');
+                                  setPosModalColor('');
                                 }
                                 setPosModalQty(1);
                                 setActiveModal('pos-select-item');
@@ -1450,116 +1491,393 @@ function App() {
         )}
 
         {/* 3. OWNER: MANAGE PRODUCTS & INVENTORY */}
-        {activeTab === 'inventory' && currentUser.role === 'OWNER' && (
-          <section>
+        {activeTab === 'inventory' && currentUser.role === 'OWNER' && (() => {
+          // List options for filter selects
+          const inventoryProductsList = allProducts.slice().sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || ''), 'id', { sensitivity: 'base' }));
+          const inventorySizesList = sortSizes(Array.from(new Set(allVariants.map(v => v.size))));
+          const inventoryColorsList = Array.from(new Set(allVariants.map(v => v.color))).sort((a, b) => String(a || '').localeCompare(String(b || ''), 'id', { sensitivity: 'base' }));
 
-            {/* Header section action buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '24px' }}>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  setNewProductName('');
-                  setNewProductDesc('');
-                  if (allCategories.length > 0) setNewProductCategory(allCategories[0].id);
-                  if (allProducts.length > 0) {
-                    setNewVariantProductId(allProducts[0].id);
-                  } else {
-                    setNewVariantProductId('NEW_PRODUCT');
-                  }
-                  setNewVariantSize('S');
-                  setNewVariantColor('Standard');
-                  setNewVariantCostPrice('');
-                  setNewVariantSellingPrice('');
-                  setNewVariantStock('0');
-                  setActiveModal('add-product-variant');
-                }}
-              >
-                <Plus size={16} /> Tambah Produk / Varian Baru
-              </button>
-            </div>
+          const isAnyFilterActive = Boolean(inventoryProductFilter || inventorySizeFilter || inventoryColorFilter || inventorySearchQuery.trim());
 
-            {/* List Products and their variants */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              {allProducts.map(product => {
-                const category = allCategories.find(c => c.id === product.category_id);
-                const variants = allVariants.filter(v => v.product_id === product.id).sort((a, b) => a.sku.localeCompare(b.sku));
+          // Filter Inventory products based on multi-filters
+          const filteredInventoryProducts = allProducts.filter(product => {
+            // Filter product dropdown
+            if (inventoryProductFilter && product.id !== inventoryProductFilter) return false;
 
-                return (
-                  <div key={product.id} className="card">
-                    <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--card-border)', paddingBottom: '12px', marginBottom: '16px' }}>
-                      <div>
-                        <span className="badge info" style={{ marginBottom: '6px' }}>{category ? category.name : 'Umum'}</span>
-                        <h2 style={{ fontSize: '20px', fontWeight: 'bold' }}>{product.name}</h2>
-                        {product.description && <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{product.description}</p>}
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm"
-                        onClick={() => {
-                          askConfirmation({
-                            title: `Hapus Produk "${product.name}"`,
-                            message: `Apakah Anda yakin ingin menghapus produk "${product.name}" beserta seluruh varian ukurannya? Tindakan ini tidak dapat dibatalkan.`,
-                            confirmText: 'Hapus Produk',
-                            confirmVariant: 'danger',
-                            onConfirm: () => {
-                              db.delete('products', product.id);
-                              variants.forEach(v => db.delete('product_variants', v.id));
-                              setRefreshKey(prev => prev + 1);
-                              showToast(`Produk "${product.name}" berhasil dihapus.`, 'info');
-                            }
-                          });
+            // Get product variants
+            let pVariants = allVariants.filter(v => v.product_id === product.id);
+
+            // Filter size dropdown
+            if (inventorySizeFilter) {
+              pVariants = pVariants.filter(v => v.size === inventorySizeFilter);
+            }
+
+            // Filter color dropdown
+            if (inventoryColorFilter) {
+              pVariants = pVariants.filter(v => v.color === inventoryColorFilter);
+            }
+
+            // Filter text search query
+            if (inventorySearchQuery.trim()) {
+              const q = inventorySearchQuery.toLowerCase().trim();
+              const category = allCategories.find(c => c.id === product.category_id);
+              const catName = category ? category.name.toLowerCase() : '';
+              const prodName = product.name.toLowerCase();
+              const hasMatchingVariant = pVariants.some(v =>
+                `${v.sku} ${v.size} ${v.color}`.toLowerCase().includes(q)
+              );
+              if (!prodName.includes(q) && !catName.includes(q) && !hasMatchingVariant) return false;
+            }
+
+            // If size or color filter is active, only include products that have matching variants
+            if ((inventorySizeFilter || inventoryColorFilter) && pVariants.length === 0) {
+              return false;
+            }
+
+            return true;
+          });
+
+          const toggleExpand = (productId) => {
+            setExpandedProductIds(prev =>
+              prev.includes(productId)
+                ? prev.filter(id => id !== productId)
+                : [...prev, productId]
+            );
+          };
+
+          return (
+            <section>
+              {/* Header section action buttons */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Manajemen Stok & Produk</h2>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>Kelola daftar baju, varian ukuran/warna, dan pasokan pabrik.</p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={() => {
+                      if (allProducts.length > 0) {
+                        const firstProd = allProducts[0];
+                        setRestockProductId(firstProd.id);
+                        const pVars = allVariants.filter(v => v.product_id === firstProd.id);
+                        if (pVars.length > 0) {
+                          setRestockSize(pVars[0].size);
+                          setRestockColor(pVars[0].color);
+                        } else {
+                          setRestockSize('');
+                          setRestockColor('');
+                        }
+                      }
+                      setFactoryInQty('');
+                      setFactoryInNotes('Terima pasokan dari pabrik');
+                      setActiveModal('factory-inbound-unified');
+                    }}
+                  >
+                    <Plus size={16} /> Terima Barang Pabrik
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      setNewProductName('');
+                      setNewProductDesc('');
+                      if (allCategories.length > 0) setNewProductCategory(allCategories[0].id);
+                      if (allProducts.length > 0) {
+                        setNewVariantProductId(allProducts[0].id);
+                      } else {
+                        setNewVariantProductId('NEW_PRODUCT');
+                      }
+                      setNewVariantSize('S');
+                      setNewVariantColor('Standard');
+                      setNewVariantSellingPrice('');
+                      setNewVariantStock('0');
+                      setActiveModal('add-product-variant');
+                    }}
+                  >
+                    <Plus size={16} /> Tambah Produk Baru
+                  </button>
+                </div>
+              </div>
+
+              {/* Multi-Filter Card Bar */}
+              <div className="card" style={{ marginBottom: '24px', padding: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', alignItems: 'end' }}>
+                  {/* 1. Filter Produk */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="inv-filter-prod" className="form-label" style={{ fontSize: '12px', fontWeight: 'bold' }}>Pilih Produk</label>
+                    <select
+                      id="inv-filter-prod"
+                      className="form-control"
+                      style={{ fontSize: '13px', padding: '8px 12px' }}
+                      value={inventoryProductFilter}
+                      onChange={(e) => setInventoryProductFilter(e.target.value)}
+                    >
+                      <option value="">-- Semua Produk --</option>
+                      {inventoryProductsList.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 2. Filter Ukuran */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="inv-filter-size" className="form-label" style={{ fontSize: '12px', fontWeight: 'bold' }}>Pilih Ukuran</label>
+                    <select
+                      id="inv-filter-size"
+                      className="form-control"
+                      style={{ fontSize: '13px', padding: '8px 12px' }}
+                      value={inventorySizeFilter}
+                      onChange={(e) => setInventorySizeFilter(e.target.value)}
+                    >
+                      <option value="">-- Semua Ukuran --</option>
+                      {inventorySizesList.map(sz => (
+                        <option key={sz} value={sz}>Ukuran {sz}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 3. Filter Warna */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="inv-filter-color" className="form-label" style={{ fontSize: '12px', fontWeight: 'bold' }}>Pilih Warna</label>
+                    <select
+                      id="inv-filter-color"
+                      className="form-control"
+                      style={{ fontSize: '13px', padding: '8px 12px' }}
+                      value={inventoryColorFilter}
+                      onChange={(e) => setInventoryColorFilter(e.target.value)}
+                    >
+                      <option value="">-- Semua Warna --</option>
+                      {inventoryColorsList.map(col => (
+                        <option key={col} value={col}>{col}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 4. Keyword / SKU Search */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="inv-filter-search" className="form-label" style={{ fontSize: '12px', fontWeight: 'bold' }}>Kata Kunci / SKU</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        id="inv-filter-search"
+                        type="text"
+                        className="form-control"
+                        style={{ fontSize: '13px', padding: '8px 12px' }}
+                        placeholder="Cari SKU / nama..."
+                        value={inventorySearchQuery}
+                        onChange={(e) => setInventorySearchQuery(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Reset Filter Button */}
+                  {isAnyFilterActive && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '12px', padding: '8px 14px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                      onClick={() => {
+                        setInventoryProductFilter('');
+                        setInventorySizeFilter('');
+                        setInventoryColorFilter('');
+                        setInventorySearchQuery('');
+                      }}
+                    >
+                      <X size={14} /> Reset Filter
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* List Products and their variants */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {filteredInventoryProducts.map(product => {
+                  const category = allCategories.find(c => c.id === product.category_id);
+                  let variants = allVariants.filter(v => v.product_id === product.id);
+                  if (inventorySizeFilter) variants = variants.filter(v => v.size === inventorySizeFilter);
+                  if (inventoryColorFilter) variants = variants.filter(v => v.color === inventoryColorFilter);
+                  variants.sort(compareVariants);
+
+                  const totalStock = variants.reduce((sum, v) => sum + v.stock_quantity, 0);
+                  const uniqueSizes = sortSizes(Array.from(new Set(variants.map(v => v.size))));
+                  const uniqueColors = Array.from(new Set(variants.map(v => v.color))).sort((a, b) => String(a || '').localeCompare(String(b || ''), 'id', { sensitivity: 'base' }));
+
+                  // Expanded if explicitly toggled OR when any filter is active
+                  const isExpanded = expandedProductIds.includes(product.id) || isAnyFilterActive;
+
+                  return (
+                    <div key={product.id} className="card" style={{ padding: '0', overflow: 'hidden' }}>
+                      {/* Product Accordion Header */}
+                      <header
+                        onClick={() => toggleExpand(product.id)}
+                        style={{
+                          display: 'flex',
+                          justify: 'space-between',
+                          alignItems: 'center',
+                          padding: '16px 20px',
+                          cursor: 'pointer',
+                          backgroundColor: isExpanded ? 'var(--bg-tertiary)' : 'var(--card-bg)',
+                          borderBottom: isExpanded ? '1px solid var(--card-border)' : 'none',
+                          transition: 'background-color 0.15s ease'
                         }}
                       >
-                        Hapus Produk
-                      </button>
-                    </header>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                          <span className="badge info" style={{ fontSize: '11px' }}>{category ? category.name : 'Umum'}</span>
+                          <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>{product.name}</h2>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <span className="badge secondary" style={{ fontSize: '11px' }}>{variants.length} Varian</span>
+                            <span className="badge secondary" style={{ fontSize: '11px' }}>{uniqueSizes.length} Ukuran</span>
+                            <span className="badge secondary" style={{ fontSize: '11px' }}>{uniqueColors.length} Warna</span>
+                            <span className={`badge ${totalStock > 0 ? 'success' : 'danger'}`} style={{ fontSize: '11px' }}>
+                              Total Stok: {totalStock} Pcs
+                            </span>
+                          </div>
+                        </div>
 
-                    {/* Variants Table */}
-                    <div className="table-wrapper">
-                      <table className="table">
-                        <thead>
-                          <tr>
-                            <th>SKU</th>
-                            <th>Ukuran</th>
-                            <th>Warna</th>
-                            <th>Harga Modal (Pabrik)</th>
-                            <th>Harga Jual (Toko)</th>
-                            <th>Sisa Stok</th>
-                            <th style={{ textAlign: 'right' }}>Aksi</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {variants.map(variant => (
-                            <tr key={variant.id}>
-                              <td><code style={{ fontSize: '13px' }}>{variant.sku}</code></td>
-                              <td><strong>{variant.size}</strong></td>
-                              <td>{variant.color}</td>
-                              <td>{formatRupiah(variant.cost_price)}</td>
-                              <td>{formatRupiah(variant.selling_price)}</td>
-                              <td>
-                                <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`}>
-                                  {variant.stock_quantity} Pcs
-                                </span>
-                              </td>
-                              <td style={{ textAlign: 'right' }}>
-                                <div style={{ display: 'inline-flex', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => toggleExpand(product.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}
+                          >
+                            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            {isExpanded ? 'Sembunyikan Varian' : `Tampilkan Varian (${variants.length})`}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() => {
+                              askConfirmation({
+                                title: `Hapus Produk "${product.name}"`,
+                                message: `Apakah Anda yakin ingin menghapus produk "${product.name}" beserta seluruh varian ukurannya? Tindakan ini tidak dapat dibatalkan.`,
+                                confirmText: 'Hapus Produk',
+                                confirmVariant: 'danger',
+                                onConfirm: () => {
+                                  db.delete('products', product.id);
+                                  variants.forEach(v => db.delete('product_variants', v.id));
+                                  setRefreshKey(prev => prev + 1);
+                                  showToast(`Produk "${product.name}" berhasil dihapus.`, 'info');
+                                }
+                              });
+                            }}
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      </header>
+
+                      {/* Dropdown Body: Variants (Hidden by Default) */}
+                      {isExpanded && (
+                        <div style={{ padding: '16px' }}>
+                          {product.description && (
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                              {product.description}
+                            </p>
+                          )}
+
+                          {/* Desktop View Table */}
+                          <div className="table-wrapper desktop-only">
+                            <table className="table">
+                              <thead>
+                                <tr>
+                                  <th>SKU</th>
+                                  <th>Ukuran</th>
+                                  <th>Warna</th>
+                                  <th>Harga Jual (Toko)</th>
+                                  <th>Sisa Stok</th>
+                                  <th style={{ textAlign: 'right' }}>Aksi</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {variants.map(variant => (
+                                  <tr key={variant.id}>
+                                    <td><code style={{ fontSize: '13px' }}>{variant.sku}</code></td>
+                                    <td><strong>{variant.size}</strong></td>
+                                    <td>{variant.color}</td>
+                                    <td>{formatRupiah(variant.selling_price)}</td>
+                                    <td>
+                                      <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`}>
+                                        {variant.stock_quantity} Pcs
+                                      </span>
+                                    </td>
+                                    <td style={{ textAlign: 'right' }}>
+                                       <button
+                                         type="button"
+                                         className="btn btn-danger btn-sm btn-icon"
+                                         title="Hapus Varian"
+                                         onClick={() => {
+                                           askConfirmation({
+                                             title: `Hapus Varian SKU ${variant.sku}`,
+                                             message: `Apakah Anda yakin ingin menghapus varian ukuran ${variant.size} (${variant.color}) ini?`,
+                                             confirmText: 'Hapus Varian',
+                                             confirmVariant: 'danger',
+                                             onConfirm: () => {
+                                               db.delete('product_variants', variant.id);
+                                               setRefreshKey(prev => prev + 1);
+                                               showToast(`Varian SKU ${variant.sku} berhasil dihapus.`, 'info');
+                                             }
+                                           });
+                                         }}
+                                       >
+                                         <Trash2 size={14} />
+                                       </button>
+                                     </td>
+                                  </tr>
+                                ))}
+                                {variants.length === 0 && (
+                                  <tr>
+                                    <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px' }}>
+                                      Belum ada varian ukuran/warna untuk produk ini.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Mobile View Card Grid (No horizontal scrolling on phones) */}
+                          <div className="mobile-only">
+                            {variants.map(variant => (
+                              <div
+                                key={variant.id}
+                                style={{
+                                  padding: '12px 14px',
+                                  borderRadius: '8px',
+                                  border: '1px solid var(--card-border)',
+                                  backgroundColor: 'var(--card-bg)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '8px'
+                                }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <code style={{ fontSize: '12px', fontWeight: 'bold' }}>{variant.sku}</code>
+                                  <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`} style={{ fontSize: '11px' }}>
+                                    Stok: {variant.stock_quantity} Pcs
+                                  </span>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
+                                  <div>
+                                    <span style={{ fontWeight: 'bold' }}>Ukuran: {variant.size}</span>
+                                    <span style={{ color: 'var(--text-muted)', margin: '0 6px' }}>•</span>
+                                    <span>Warna: {variant.color}</span>
+                                  </div>
+                                  <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
+                                    {formatRupiah(variant.selling_price)}
+                                  </span>
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '6px', borderTop: '1px dashed var(--card-border)' }}>
                                   <button
                                     type="button"
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => {
-                                      setSelectedVariant(variant);
-                                      setFactoryInQty('');
-                                      setFactoryInNotes(`Penerimaan barang pabrik SKU: ${variant.sku}`);
-                                      setActiveModal('factory-inbound');
-                                    }}
-                                  >
-                                    <Plus size={12} /> Terima Barang Pabrik
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    className="btn btn-danger btn-sm btn-icon"
+                                    className="btn btn-danger btn-sm"
+                                    style={{ fontSize: '11px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
                                     onClick={() => {
                                       askConfirmation({
                                         title: `Hapus Varian SKU ${variant.sku}`,
@@ -1574,34 +1892,33 @@ function App() {
                                       });
                                     }}
                                   >
-                                    <Trash2 size={12} />
+                                    <Trash2 size={12} /> Hapus Varian
                                   </button>
                                 </div>
-                              </td>
-                            </tr>
-                          ))}
-                          {variants.length === 0 && (
-                            <tr>
-                              <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px' }}>
-                                Belum ada varian ukuran/warna untuk produk ini.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })}
+                              </div>
+                            ))}
 
-              {allProducts.length === 0 && (
-                <div className="card" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                  Belum ada produk terdaftar. Klik "Tambah Produk Baru" untuk memulai.
-                </div>
-              )}
-            </div>
-          </section>
-        )}
+                            {variants.length === 0 && (
+                              <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px', fontSize: '13px' }}>
+                                Belum ada varian ukuran/warna untuk produk ini.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {filteredInventoryProducts.length === 0 && (
+                  <div className="card" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    {inventorySearchQuery ? `Tidak ada produk yang cocok dengan "${inventorySearchQuery}".` : 'Belum ada produk terdaftar. Klik "Tambah Produk Baru" untuk memulai.'}
+                  </div>
+                )}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* 4. OWNER: MANAGE DEBT / KASBON */}
         {activeTab === 'debt' && currentUser.role === 'OWNER' && (
@@ -2351,18 +2668,31 @@ function App() {
         );
       })()}
 
-      {/* A2. POS ITEM SELECTION MODAL (PRODUCT BASED) */}
+      {/* A2. POS ITEM SELECTION MODAL (PRODUCT BASED WITH 2-STEP VARIANT SELECTOR) */}
       {activeModal === 'pos-select-item' && posSelectedProduct && (() => {
         const prodVariants = allVariants.filter(v => v.product_id === posSelectedProduct.id);
-        const currentVariant = prodVariants.find(v => v.id === posModalVariantId) || (prodVariants[0] || null);
         const category = allCategories.find(c => c.id === posSelectedProduct.category_id);
+
+        // Extract unique sizes & colors
+        const uniqueSizes = Array.from(new Set(prodVariants.map(v => v.size)));
+        const currentSize = posModalSize || (uniqueSizes[0] || '');
+
+        const variantsForSize = prodVariants.filter(v => v.size === currentSize);
+        const uniqueColorsForSize = Array.from(new Set(variantsForSize.map(v => v.color)));
+        const currentColor = posModalColor || (uniqueColorsForSize[0] || '');
+
+        // Find exact target variant
+        const currentVariant = prodVariants.find(v => v.size === currentSize && v.color === currentColor)
+          || variantsForSize[0]
+          || prodVariants[0]
+          || null;
 
         const currentUnitPrice = currentVariant ? getAdjustedPrice(currentVariant.selling_price) : 0;
         const currentSubtotal = currentUnitPrice * (posModalQty || 1);
 
         return (
           <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '500px' }}>
+            <div className="modal-content" style={{ maxWidth: '520px' }}>
               <header className="modal-header">
                 <div>
                   <span className="badge info" style={{ fontSize: '11px', marginBottom: '4px' }}>{category ? category.name : 'Umum'}</span>
@@ -2374,68 +2704,104 @@ function App() {
               <form onSubmit={(e) => {
                 e.preventDefault();
                 if (!currentVariant) {
-                  alert('Silakan pilih ukuran varian.');
+                  showToast('Silakan pilih ukuran & warna varian.', 'warning');
                   return;
                 }
                 if (currentVariant.stock_quantity < posModalQty) {
-                  alert('Stok tidak mencukupi.');
+                  showToast('Stok tidak mencukupi.', 'error');
                   return;
                 }
                 addToCart(currentVariant, Number(posModalQty));
                 setActiveModal(null);
               }}>
-                {/* 1. Select Size / Variant */}
-                <div className="form-group">
-                  <label className="form-label" style={{ fontWeight: 'bold' }}>1. Pilih Ukuran Varian</label>
-                  {prodVariants.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', maxHeight: '180px', overflowY: 'auto', padding: '4px' }}>
-                      {prodVariants.map(v => {
-                        const isSelected = currentVariant && currentVariant.id === v.id;
-                        const isOut = v.stock_quantity <= 0;
+                {/* 1. Pilih Ukuran */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label className="form-label" style={{ fontWeight: 'bold' }}>1. Pilih Ukuran</label>
+                  {uniqueSizes.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {uniqueSizes.map(sz => {
+                        const isSelected = currentSize === sz;
+                        const hasStock = prodVariants.some(v => v.size === sz && v.stock_quantity > 0);
 
                         return (
-                          <div 
-                            key={v.id}
-                            onClick={() => !isOut && setPosModalVariantId(v.id)}
+                          <button
+                            type="button"
+                            key={sz}
+                            onClick={() => {
+                              setPosModalSize(sz);
+                              const colors = Array.from(new Set(prodVariants.filter(v => v.size === sz).map(v => v.color)));
+                              if (colors.length > 0) setPosModalColor(colors[0]);
+                            }}
+                            className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
                             style={{
-                              padding: '10px',
+                              padding: '8px 16px',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
                               borderRadius: '8px',
-                              border: isSelected ? '2px solid var(--primary)' : '1px solid var(--card-border)',
-                              backgroundColor: isSelected ? 'var(--primary-light)' : 'var(--card-bg)',
-                              opacity: isOut ? 0.5 : 1,
-                              cursor: isOut ? 'not-allowed' : 'pointer',
-                              textAlign: 'center',
-                              transition: 'all 0.15s ease'
+                              opacity: hasStock ? 1 : 0.5
                             }}
                           >
-                            <div style={{ fontWeight: 'bold', fontSize: '15px', color: isSelected ? 'var(--primary)' : 'inherit' }}>
-                              Ukuran {v.size}
-                            </div>
-                            {v.color && v.color !== 'Standard' && (
-                              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                                {v.color}
-                              </div>
-                            )}
-                            <div style={{ fontSize: '12px', fontWeight: 'bold', marginTop: '4px', color: 'var(--primary)' }}>
-                              {formatRupiah(getAdjustedPrice(v.selling_price))}
-                            </div>
-                            <div style={{ fontSize: '11px', marginTop: '2px', fontWeight: '600', color: isOut ? 'var(--danger)' : 'var(--success)' }}>
-                              {isOut ? 'Stok Habis' : `Stok: ${v.stock_quantity}`}
-                            </div>
-                          </div>
+                            Ukuran {sz}
+                          </button>
                         );
                       })}
                     </div>
                   ) : (
-                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '12px 0' }}>
-                      Belum ada varian ukuran untuk produk ini.
-                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Belum ada ukuran tersedia.</div>
                   )}
                 </div>
 
-                {/* 2. Select Quantity */}
+                {/* 2. Pilih Warna */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label className="form-label" style={{ fontWeight: 'bold' }}>2. Pilih Warna</label>
+                  {uniqueColorsForSize.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {uniqueColorsForSize.map(col => {
+                        const isSelected = currentColor === col;
+                        const matchingVariant = prodVariants.find(v => v.size === currentSize && v.color === col);
+                        const isOut = !matchingVariant || matchingVariant.stock_quantity <= 0;
+
+                        return (
+                          <button
+                            type="button"
+                            key={col}
+                            onClick={() => !isOut && setPosModalColor(col)}
+                            disabled={isOut}
+                            className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                            style={{
+                              padding: '6px 14px',
+                              fontSize: '13px',
+                              borderRadius: '20px',
+                              border: isSelected ? '2px solid var(--primary)' : '1px solid var(--card-border)',
+                              opacity: isOut ? 0.4 : 1,
+                              cursor: isOut ? 'not-allowed' : 'pointer'
+                            }}
+                          >
+                            {col} {matchingVariant ? `(${matchingVariant.stock_quantity} Pcs)` : ''}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Silakan pilih ukuran terlebih dahulu.</div>
+                  )}
+                </div>
+
+                {/* Detail Varian Terpilih */}
+                {currentVariant && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--bg-tertiary)', padding: '8px 12px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      SKU: <code>{currentVariant.sku}</code>
+                    </span>
+                    <span className={`badge ${currentVariant.stock_quantity > 0 ? 'success' : 'danger'}`}>
+                      Stok: {currentVariant.stock_quantity} Pcs
+                    </span>
+                  </div>
+                )}
+
+                {/* 3. Select Quantity */}
                 <div className="form-group">
-                  <label htmlFor="pos-modal-qty" className="form-label" style={{ fontWeight: 'bold' }}>2. Jumlah Pembelian (Pcs)</label>
+                  <label htmlFor="pos-modal-qty" className="form-label" style={{ fontWeight: 'bold' }}>3. Jumlah Pembelian (Pcs)</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <button 
                       type="button" 
@@ -2511,51 +2877,182 @@ function App() {
         );
       })()}
 
-      {/* B. FACTORY INBOUND (RESTOCK) */}
-      {activeModal === 'factory-inbound' && selectedVariant && (() => {
-        const prod = allProducts.find(p => p.id === selectedVariant.product_id);
+      {/* B. UNIFIED FACTORY INBOUND (RESTOCK) */}
+      {activeModal === 'factory-inbound-unified' && (() => {
+        const prod = allProducts.find(p => p.id === restockProductId) || (allProducts[0] || null);
+        const prodVariants = prod ? allVariants.filter(v => v.product_id === prod.id) : [];
+
+        const uniqueSizes = Array.from(new Set(prodVariants.map(v => v.size)));
+        const currentSize = restockSize || (uniqueSizes[0] || '');
+
+        const variantsForSize = prodVariants.filter(v => v.size === currentSize);
+        const uniqueColors = Array.from(new Set(variantsForSize.map(v => v.color)));
+        const currentColor = restockColor || (uniqueColors[0] || '');
+
+        const targetVariant = prodVariants.find(v => v.size === currentSize && v.color === currentColor)
+          || variantsForSize[0]
+          || prodVariants[0]
+          || null;
+
         return (
           <div className="modal-overlay">
-            <div className="modal-content">
+            <div className="modal-content" style={{ maxWidth: '520px' }}>
               <header className="modal-header">
-                <h2 className="modal-title">Terima Barang dari Pabrik</h2>
-                <button type="button" className="modal-close" onClick={() => { setActiveModal(null); setSelectedVariant(null); }}><X size={20} /></button>
+                <div>
+                  <h2 className="modal-title" style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Terima Barang dari Pabrik (Restock)</h2>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Tambah pasokan stok masuk dari konveksi pabrik.</p>
+                </div>
+                <button type="button" className="modal-close" onClick={() => setActiveModal(null)}><X size={20} /></button>
               </header>
 
-              <form onSubmit={handleFactoryInbound}>
-                <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
-                  <strong>Produk:</strong> {prod ? prod.name : 'Unknown'}<br />
-                  <strong>SKU:</strong> <code>{selectedVariant.sku}</code> | <strong>Ukuran:</strong> {selectedVariant.size} | <strong>Stok Saat Ini:</strong> {selectedVariant.stock_quantity}
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (!targetVariant) {
+                  showToast('Silakan pilih varian produk.', 'warning');
+                  return;
+                }
+                const qty = Number(factoryInQty);
+                if (qty <= 0) {
+                  showToast('Jumlah barang masuk harus lebih dari 0.', 'warning');
+                  return;
+                }
+                db.addStockFromFactory(targetVariant.id, qty, factoryInNotes, currentUser.id);
+                setActiveModal(null);
+                setRefreshKey(prev => prev + 1);
+                showToast(`Stok ${qty} Pcs untuk ${prod ? prod.name : ''} (${targetVariant.size} - ${targetVariant.color}) berhasil ditambahkan!`, 'success');
+              }}>
+
+                {/* 1. Pilih Produk Utama */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label htmlFor="restock-product-select" className="form-label" style={{ fontWeight: 'bold' }}>1. Pilih Produk Utama</label>
+                  <select
+                    id="restock-product-select"
+                    className="form-control"
+                    value={prod ? prod.id : ''}
+                    onChange={(e) => {
+                      setRestockProductId(e.target.value);
+                      const pVars = allVariants.filter(v => v.product_id === e.target.value);
+                      if (pVars.length > 0) {
+                        setRestockSize(pVars[0].size);
+                        setRestockColor(pVars[0].color);
+                      } else {
+                        setRestockSize('');
+                        setRestockColor('');
+                      }
+                    }}
+                    required
+                  >
+                    {allProducts.slice().sort((a, b) => a.name.localeCompare(b.name, 'id', { sensitivity: 'base' })).map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
                 </div>
 
+                {/* 2. Pilih Ukuran */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label className="form-label" style={{ fontWeight: 'bold' }}>2. Pilih Ukuran</label>
+                  {uniqueSizes.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {uniqueSizes.map(sz => {
+                        const isSelected = currentSize === sz;
+                        return (
+                          <button
+                            type="button"
+                            key={sz}
+                            onClick={() => {
+                              setRestockSize(sz);
+                              const colors = Array.from(new Set(prodVariants.filter(v => v.size === sz).map(v => v.color)));
+                              if (colors.length > 0) setRestockColor(colors[0]);
+                            }}
+                            className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                            style={{ padding: '6px 14px', fontSize: '13px', fontWeight: 'bold', borderRadius: '8px' }}
+                          >
+                            Ukuran {sz}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Tidak ada varian ukuran untuk produk ini.</div>
+                  )}
+                </div>
+
+                {/* 3. Pilih Warna */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label className="form-label" style={{ fontWeight: 'bold' }}>3. Pilih Warna</label>
+                  {uniqueColors.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {uniqueColors.map(col => {
+                        const isSelected = currentColor === col;
+                        const v = prodVariants.find(x => x.size === currentSize && x.color === col);
+                        return (
+                          <button
+                            type="button"
+                            key={col}
+                            onClick={() => setRestockColor(col)}
+                            className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                            style={{
+                              padding: '6px 14px',
+                              fontSize: '13px',
+                              borderRadius: '20px',
+                              border: isSelected ? '2px solid var(--primary)' : '1px solid var(--card-border)'
+                            }}
+                          >
+                            {col} {v ? `(Stok: ${v.stock_quantity} Pcs)` : ''}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Pilih ukuran terlebih dahulu.</div>
+                  )}
+                </div>
+
+                {/* Target Variant Info Box */}
+                {targetVariant && (
+                  <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span>SKU Terpilih:</span>
+                      <code>{targetVariant.sku}</code>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                      <span>Stok Toko Saat Ini:</span>
+                      <span className="badge success">{targetVariant.stock_quantity} Pcs</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Input Jumlah Masuk */}
                 <div className="form-group">
-                  <label htmlFor="factory-qty" className="form-label">Jumlah Barang Masuk (Pcs)</label>
+                  <label htmlFor="unified-factory-qty" className="form-label" style={{ fontWeight: 'bold' }}>4. Jumlah Barang Masuk (Pcs)</label>
                   <input
-                    id="factory-qty"
+                    id="unified-factory-qty"
                     type="number"
+                    min="1"
                     className="form-control"
-                    placeholder="Masukkan jumlah masuk..."
+                    placeholder="Masukkan jumlah pasokan pcs..."
                     value={factoryInQty}
                     onChange={(e) => setFactoryInQty(e.target.value)}
                     required
                   />
                 </div>
 
+                {/* 5. Catatan */}
                 <div className="form-group">
-                  <label htmlFor="factory-notes" className="form-label">Catatan Tambahan</label>
-                  <textarea
-                    id="factory-notes"
+                  <label htmlFor="unified-factory-notes" className="form-label">Catatan Tambahan (Opsional)</label>
+                  <input
+                    id="unified-factory-notes"
+                    type="text"
                     className="form-control"
-                    placeholder="Catatan pengerjaan atau nomor bundel..."
+                    placeholder="Misal: Surat Jalan No. 102, Pabrik Mas Joko..."
                     value={factoryInNotes}
                     onChange={(e) => setFactoryInNotes(e.target.value)}
-                    rows="3"
                   />
                 </div>
 
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => { setActiveModal(null); setSelectedVariant(null); }}>Batal</button>
-                  <button type="submit" className="btn btn-primary">Simpan Stok Masuk</button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setActiveModal(null)}>Batal</button>
+                  <button type="submit" className="btn btn-primary" disabled={!targetVariant}>Simpan Stok Masuk</button>
                 </div>
               </form>
             </div>
@@ -2632,16 +3129,19 @@ function App() {
       {/* D. ADD NEW PRODUCT & VARIANT (UNIFIED) */}
       {activeModal === 'add-product-variant' && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content" style={{ maxWidth: '520px' }}>
             <header className="modal-header">
-              <h2 className="modal-title">Tambah Baju / Varian</h2>
+              <div>
+                <h2 className="modal-title" style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Tambah Produk & Varian Baru</h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Buat produk baru atau tambahkan varian ukuran/warna baru.</p>
+              </div>
               <button type="button" className="modal-close" onClick={() => setActiveModal(null)}><X size={20} /></button>
             </header>
 
             <form onSubmit={handleUnifiedAddProductVariant}>
               {/* Product Selection / Creation Mode */}
               <div className="form-group">
-                <label htmlFor="variant-prod" className="form-label">Pilih Produk Utama</label>
+                <label htmlFor="variant-prod" className="form-label" style={{ fontWeight: 'bold' }}>1. Pilih Produk Utama</label>
                 <select
                   id="variant-prod"
                   className="form-control"
@@ -2650,7 +3150,7 @@ function App() {
                   required
                 >
                   <option value="NEW_PRODUCT">+ Buat Produk Induk Baru</option>
-                  {allProducts.map(p => (
+                  {allProducts.slice().sort((a, b) => a.name.localeCompare(b.name, 'id', { sensitivity: 'base' })).map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
@@ -2683,7 +3183,7 @@ function App() {
                       id="prod-name"
                       type="text"
                       className="form-control"
-                      placeholder="Misal: Hem Putih Panjang, Rok Span, Atribut..."
+                      placeholder="Misal: Hem Putih Panjang, Rok Span, Sabuk..."
                       value={newProductName}
                       onChange={(e) => setNewProductName(e.target.value)}
                       required={newVariantProductId === 'NEW_PRODUCT'}
@@ -2691,7 +3191,7 @@ function App() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="prod-desc" className="form-label">Deskripsi / Catatan Bahan</label>
+                    <label htmlFor="prod-desc" className="form-label">Deskripsi (Opsional)</label>
                     <textarea
                       id="prod-desc"
                       className="form-control"
@@ -2705,59 +3205,46 @@ function App() {
               )}
 
               {/* Varian details section */}
-              <h3 style={{ fontSize: '14px', margin: '16px 0 12px', fontWeight: 'bold' }}>Detail Ukuran & Harga</h3>
+              <h3 style={{ fontSize: '14px', margin: '16px 0 12px', fontWeight: 'bold' }}>2. Detail Varian (Ukuran & Warna)</h3>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="variant-size" className="form-label">Ukuran</label>
+                  <label htmlFor="variant-size" className="form-label">Ukuran Varian</label>
                   <input
                     id="variant-size"
                     type="text"
                     className="form-control"
-                    placeholder="S, M, L, XL, 3, 4, All Size, dll"
+                    placeholder="Misal: 2, 3, S, M, L, XL"
                     value={newVariantSize}
                     onChange={(e) => setNewVariantSize(e.target.value)}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="variant-color" className="form-label">Warna / Varian Tambahan</label>
+                  <label htmlFor="variant-color" className="form-label">Warna Varian</label>
                   <input
                     id="variant-color"
                     type="text"
                     className="form-control"
-                    placeholder="Standard, Merah, Putih, dll"
+                    placeholder="Misal: Merah, Putih, Pramuka"
                     value={newVariantColor}
                     onChange={(e) => setNewVariantColor(e.target.value)}
+                    required
                   />
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="variant-cost" className="form-label">Harga Modal Pabrik (Rp)</label>
-                  <input
-                    id="variant-cost"
-                    type="number"
-                    className="form-control"
-                    placeholder="Harga modal..."
-                    value={newVariantCostPrice}
-                    onChange={(e) => setNewVariantCostPrice(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="variant-selling" className="form-label">Harga Jual Toko (Rp)</label>
-                  <input
-                    id="variant-selling"
-                    type="number"
-                    className="form-control"
-                    placeholder="Harga jual..."
-                    value={newVariantSellingPrice}
-                    onChange={(e) => setNewVariantSellingPrice(e.target.value)}
-                    required
-                  />
-                </div>
+              <div className="form-group">
+                <label htmlFor="variant-selling" className="form-label">Harga Jual Toko (Rp)</label>
+                <input
+                  id="variant-selling"
+                  type="number"
+                  className="form-control"
+                  placeholder="Masukkan harga jual..."
+                  value={newVariantSellingPrice}
+                  onChange={(e) => setNewVariantSellingPrice(e.target.value)}
+                  required
+                />
               </div>
 
               <div className="form-group">
@@ -2900,4 +3387,49 @@ function App() {
   );
 }
 
-export default App;
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("React ErrorBoundary caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '40px 20px', textAlign: 'center', fontFamily: 'sans-serif' }}>
+          <h2 style={{ color: '#ef4444', marginBottom: '12px' }}>Terjadi Kendala Tampilan</h2>
+          <p style={{ color: '#64748b', marginBottom: '20px' }}>
+            {this.state.error ? this.state.error.toString() : 'Terjadi kendala sistem.'}
+          </p>
+          <button
+            onClick={() => {
+              localStorage.removeItem('oliviana_db_version');
+              window.location.reload();
+            }}
+            style={{ padding: '10px 20px', backgroundColor: '#4f46e5', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            Muat Ulang Aplikasi (Reset Database & Cache)
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+export default function AppWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
