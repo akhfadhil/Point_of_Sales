@@ -975,18 +975,27 @@ h1, h2, h3, h4, h5, h6 {
 .receipt-paper {
   background: #ffffff;
   color: #000000;
-  padding: 24px;
-  font-family: 'Courier New', Courier, monospace;
-  box-shadow: 0 0 10px rgba(0,0,0,0.15);
-  border: 1px solid #ddd;
-  width: 320px;
+  padding: 20px 24px;
+  font-family: 'Courier New', 'Consolas', monospace;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+  border: 2px dashed #000000;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 580px;
   margin: 0 auto;
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: 11px;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.receipt-paper code {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-weight: bold;
+  color: #000000;
 }
 
 .receipt-divider {
-  border-top: 1px dashed #000;
+  border-top: 1px dashed #000000;
   margin: 8px 0;
 }
 
@@ -1498,5 +1507,101 @@ h1, h2, h3, h4, h5, h6 {
     display: flex !important;
     flex-direction: column;
     gap: 10px;
+  }
+}
+
+/* Optimized Mobile Display for Receipt Modals (HP View) */
+@media (max-width: 640px) {
+  .modal-content.receipt-modal-content {
+    padding: 12px 10px !important;
+    width: 98% !important;
+    max-width: 100% !important;
+    margin: 4px auto !important;
+    border-radius: 12px !important;
+  }
+
+  .receipt-paper-wrapper {
+    padding: 8px 4px !important;
+    border-radius: 8px !important;
+    overflow-x: auto !important;
+  }
+
+  .receipt-paper {
+    padding: 14px 10px !important;
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+    border-width: 1.5px !important;
+  }
+
+  .receipt-paper th,
+  .receipt-paper td {
+    padding: 4px 2px !important;
+    font-size: 9.5px !important;
+  }
+
+  .receipt-modal-footer {
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+    padding-top: 12px !important;
+  }
+
+  .receipt-modal-footer .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Precise Print Stylesheet for Receipt / Continuous Form Printing */
+@media print {
+  @page {
+    size: A5 landscape;
+    margin: 4mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .modal-overlay,
+  .modal-content,
+  .receipt-paper-wrapper {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  .receipt-paper,
+  .receipt-paper * {
+    visibility: visible !important;
+  }
+
+  .receipt-paper {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 5px !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .modal-header,
+  .modal-footer,
+  .modal-close,
+  .receipt-modal-footer,
+  .btn,
+  .sidebar,
+  .main-header {
+    display: none !important;
   }
 }

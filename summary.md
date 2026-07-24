@@ -65,12 +65,22 @@ Aplikasi **Point of Sales (POS) & Sistem Manajemen Stok Seragam** modern, cepat,
 
 ---
 
-### 🛡️ Arsitektur Teknologi & Responsive System
-* **Core:** React.js, Vite, Vanilla CSS design system.
-* **Responsive Breakpoint (1024px):** Dukungan penuh layar iPad / Tablet (768px - 1024px) dan HP (< 768px).
-* **Header & Drawer Mobile:** Header mobile 100% full-width edge-to-edge + drawer menu sidebar sleek width `min(320px, 85vw)`.
-* **Persistence:** Custom LocalStorage Database Engine (`src/db.js`) v11 dengan data dummy awal.
+### 7. 🖨️ Nota Faktur Dot Matrix & WhatsApp PDF Direct Sharing
+* **📜 Format Faktur Toko Resmi (Lebar ~580px / A5 Landscape):**
+  * Desain beralih dari struk thermal sempit ke **Faktur Toko Continuous Form Klasik Monokrom (`#000000`)** dengan font `Courier New` / `Consolas`.
+  * **Header Berdampingan:** Identitas Toko (TOKO SERAGAM OLIVIANA), No. Invoice/Bukti, Tanggal & Jam, Kasir, dan Pelanggan.
+  * **Tabel Barang Bergaris Klasik:** Kolom `NO` | `SKU` | `NAMA BARANG / VARIAN` | `QTY` | `HARGA` | `SUBTOTAL` dengan border putus-putus (*dashed/dotted*).
+  * **Titik Dua (`:`) Presisi:** Posisi titik dua pada metadata & ringkasan total 100% lurus presisi menggunakan CSS Sub-Grid.
+  * **Area Tanda Tangan Simetris:** Kolom *Tanda Terima (Pelanggan)* & *Hormat Kami (Kasir Toko)* berdampingan rapi dengan nama terang bernoda garis bawah (*Underline*).
+* **🖨️ Multi-Device Single-Page Print System (Iframe Isolation):**
+  * Menggunakan modul cetak **Isolated Print Iframe** yang terkunci khusus pada ukuran **A5 Landscape (`210mm x 148mm`)**.
+  * Hasil cetakan di **Laptop, iPad, maupun HP Android/iPhone 100% SAMA PERSIS, Pas 1 Halaman A5 (Zero Page-Break)**, tanpa kepotong 2 halaman dan bebas dari elemen luar browser.
+* **📲 WhatsApp Direct Link & Auto-Download PDF:**
+  * **Kirim WhatsApp:** Otomatis mengubah nomor HP pelanggan ke format internasional (`628xxx`) dan membuka chat WhatsApp (`wa.me`) lengkap dengan draf rincian nota.
+  * **Auto PDF Generation:** Secara bersamaan men-generate dan mengunduh file PDF Nota Dot Matrix (`Nota_Penjualan_xxx.pdf` / `Nota_Kasbon_xxx.pdf`) secara otomatis.
+* **📱 Responsive Mobile Display (HP View):**
+  * Tampilan modal nota di layar HP (< 640px) dioptimalkan dengan skala font & padding yang pas serta tombol aksi full-width yang mudah di-tap jari.
 
 ---
 
-*Status Project: **ALL MENUS COMPLETE & FULLY RESPONSIVE (POS, Inventory, Debt, Sales History, Stock Checker, Financial Summary, DB Inspector DONE)*** 🚀
+*Status Project: **ALL MENUS COMPLETE, DOT MATRIX INVOICE & MULTI-DEVICE PRINTING READY (POS, Inventory, Debt, Sales History, Stock Checker, Financial Summary, DB Inspector, Dot Matrix Receipt DONE)*** 🚀

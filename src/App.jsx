@@ -28,6 +28,7 @@ import {
   Menu,
   AlertTriangle,
   ChevronDown,
+  Send,
   ChevronUp
 } from 'lucide-react';
 
@@ -656,6 +657,88 @@ function App() {
     );
   }
 
+  // Isolated Print Iframe Helper for 100% Consistent Single-Page A5 Printing across Laptop, iPad, & HP
+  const printReceipt = (elementId) => {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    let printFrame = document.getElementById('receipt-print-iframe');
+    if (!printFrame) {
+      printFrame = document.createElement('iframe');
+      printFrame.id = 'receipt-print-iframe';
+      printFrame.style.position = 'fixed';
+      printFrame.style.right = '0';
+      printFrame.style.bottom = '0';
+      printFrame.style.width = '0px';
+      printFrame.style.height = '0px';
+      printFrame.style.border = 'none';
+      printFrame.style.zIndex = '-9999';
+      document.body.appendChild(printFrame);
+    }
+
+    const frameDoc = printFrame.contentWindow.document;
+    frameDoc.open();
+    frameDoc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Nota Toko Oliviana</title>
+          <style>
+            @page {
+              size: A5 landscape;
+              margin: 4mm;
+            }
+            *, *:before, *:after {
+              box-sizing: border-box;
+              margin: 0;
+              padding: 0;
+            }
+            body {
+              font-family: 'Courier New', 'Consolas', monospace;
+              font-size: 11px;
+              color: #000000;
+              background: #ffffff;
+              line-height: 1.35;
+              padding: 2mm;
+            }
+            .receipt-paper {
+              width: 100%;
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+            .receipt-paper code {
+              font-family: 'Courier New', 'Consolas', monospace;
+              font-weight: bold;
+            }
+            .receipt-divider {
+              border-top: 1px dashed #000000;
+              margin: 6px 0;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 11px;
+            }
+            th, td {
+              font-size: 11px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-paper">
+            ${element.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    frameDoc.close();
+
+    setTimeout(() => {
+      printFrame.contentWindow.focus();
+      printFrame.contentWindow.print();
+    }, 250);
+  };
+
   const dashboardMetrics = getDashboardData();
   const allVariants = db.get('product_variants');
   const allProducts = db.get('products');
@@ -974,7 +1057,7 @@ function App() {
                             <td style={{ whiteSpace: 'nowrap' }}><strong>{formatRupiah(sale.total_amount)}</strong></td>
                             <td style={{ whiteSpace: 'nowrap' }}>
                               <span className={`badge ${sale.payment_method === 'CASH' ? 'success' :
-                                  sale.payment_method === 'DEBT' ? 'danger' : 'info'
+                                sale.payment_method === 'DEBT' ? 'danger' : 'info'
                                 }`}>
                                 {sale.payment_method}
                               </span>
@@ -1120,9 +1203,9 @@ function App() {
                         const prodVariants = allVariants.filter(v => v.product_id === prod.id);
                         const matchName = prod.name.toLowerCase().includes(q);
                         const matchCategory = (allCategories.find(c => c.id === prod.category_id)?.name || '').toLowerCase().includes(q);
-                        const matchVariant = prodVariants.some(v => 
-                          v.sku.toLowerCase().includes(q) || 
-                          v.size.toLowerCase().includes(q) || 
+                        const matchVariant = prodVariants.some(v =>
+                          v.sku.toLowerCase().includes(q) ||
+                          v.size.toLowerCase().includes(q) ||
                           v.color.toLowerCase().includes(q)
                         );
                         return matchName || matchCategory || matchVariant;
@@ -1139,17 +1222,17 @@ function App() {
                           const prices = prodVariants.map(v => getAdjustedPrice(v.selling_price));
                           const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
                           const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
-                          const priceRangeStr = prices.length === 0 
-                            ? '-' 
+                          const priceRangeStr = prices.length === 0
+                            ? '-'
                             : (minPrice === maxPrice ? formatRupiah(minPrice) : `${formatRupiah(minPrice)} - ${formatRupiah(maxPrice)}`);
 
                           const uniqueSizes = sortSizes(Array.from(new Set(prodVariants.map(v => v.size))));
                           const sizeDisplayStr = uniqueSizes.length === 0
                             ? 'Belum ada varian'
-                            : (uniqueSizes.length <= 4 
-                                ? `${uniqueSizes.length} Ukuran (${uniqueSizes.join(', ')})`
-                                : `${uniqueSizes.length} Ukuran (${uniqueSizes.slice(0, 4).join(', ')}, +${uniqueSizes.length - 4} lainnya)`
-                              );
+                            : (uniqueSizes.length <= 4
+                              ? `${uniqueSizes.length} Ukuran (${uniqueSizes.join(', ')})`
+                              : `${uniqueSizes.length} Ukuran (${uniqueSizes.slice(0, 4).join(', ')}, +${uniqueSizes.length - 4} lainnya)`
+                            );
 
                           return (
                             <div
@@ -1850,27 +1933,27 @@ function App() {
                                       </span>
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
-                                       <button
-                                         type="button"
-                                         className="btn btn-danger btn-sm btn-icon"
-                                         title="Hapus Varian"
-                                         onClick={() => {
-                                           askConfirmation({
-                                             title: `Hapus Varian SKU ${variant.sku}`,
-                                             message: `Apakah Anda yakin ingin menghapus varian ukuran ${variant.size} (${variant.color}) ini?`,
-                                             confirmText: 'Hapus Varian',
-                                             confirmVariant: 'danger',
-                                             onConfirm: () => {
-                                               db.delete('product_variants', variant.id);
-                                               setRefreshKey(prev => prev + 1);
-                                               showToast(`Varian SKU ${variant.sku} berhasil dihapus.`, 'info');
-                                             }
-                                           });
-                                         }}
-                                       >
-                                         <Trash2 size={14} />
-                                       </button>
-                                     </td>
+                                      <button
+                                        type="button"
+                                        className="btn btn-danger btn-sm btn-icon"
+                                        title="Hapus Varian"
+                                        onClick={() => {
+                                          askConfirmation({
+                                            title: `Hapus Varian SKU ${variant.sku}`,
+                                            message: `Apakah Anda yakin ingin menghapus varian ukuran ${variant.size} (${variant.color}) ini?`,
+                                            confirmText: 'Hapus Varian',
+                                            confirmVariant: 'danger',
+                                            onConfirm: () => {
+                                              db.delete('product_variants', variant.id);
+                                              setRefreshKey(prev => prev + 1);
+                                              showToast(`Varian SKU ${variant.sku} berhasil dihapus.`, 'info');
+                                            }
+                                          });
+                                        }}
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </td>
                                   </tr>
                                 ))}
                                 {variants.length === 0 && (
@@ -2619,7 +2702,7 @@ function App() {
                                 <td style={{ whiteSpace: 'nowrap' }}><span className="badge info">{sale.payment_method}</span></td>
                                 <td style={{ whiteSpace: 'nowrap' }}>
                                   <span className={`badge ${sale.payment_status === 'PAID' ? 'success' :
-                                      sale.payment_status === 'PARTIAL' ? 'warning' : 'danger'
+                                    sale.payment_status === 'PARTIAL' ? 'warning' : 'danger'
                                     }`}>
                                     {sale.payment_status}
                                   </span>
@@ -3195,7 +3278,7 @@ function App() {
 
       {/* --- MODAL DIALOGS --- */}
 
-      {/* A. CHECKOUT SUCCESS & THERMAL RECEIPT SIMULATOR */}
+      {/* A. CHECKOUT SUCCESS & DOT MATRIX INVOICE SIMULATOR */}
       {activeModal === 'checkout-success' && currentSaleInvoice && (() => {
         const cashier = db.find('users', u => u.id === currentSaleInvoice.cashier_id);
         const customer = db.find('customers', c => c.id === currentSaleInvoice.customer_id);
@@ -3203,108 +3286,202 @@ function App() {
 
         return (
           <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '400px' }}>
+            <div className="modal-content receipt-modal-content" style={{ maxWidth: '660px', width: '95%' }}>
               <header className="modal-header">
-                <h2 className="modal-title">Simulasi Struk Belanja</h2>
+                <h2 className="modal-title">Faktur Penjualan</h2>
                 <button type="button" className="modal-close" onClick={() => setActiveModal(null)}><X size={20} /></button>
               </header>
 
-              <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '16px', borderRadius: '12px', overflow: 'hidden' }}>
+              <div className="receipt-paper-wrapper" style={{ backgroundColor: '#e2e8f0', padding: '16px', borderRadius: '12px', overflowX: 'auto' }}>
 
-                {/* Simulated Thermal Paper */}
-                <div className="receipt-paper" id="thermal-receipt">
-                  <div className="receipt-text-center">
-                    <span className="receipt-title">OLIVIANA</span><br />
-                    <span>Jl. Semeru No. 81, Sukodono<br />Lumajang</span><br />
-                    <span>HP: 0812-XXXX-XXXX</span>
+                {/* Simulated Dot Matrix Continuous Form Paper */}
+                <div className="receipt-paper" id="sale-receipt-paper" style={{ color: '#000000' }}>
+                  {/* Header Store */}
+                  <div style={{ textTransform: 'uppercase', textAlign: 'center', marginBottom: '10px', borderBottom: '2px double #000000', paddingBottom: '6px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', letterSpacing: '1px' }}>TOKO SERAGAM OLIVIANA</div>
+                    <div style={{ fontSize: '11px', color: '#000000' }}>Jl. Semeru No. 81, Sukodono - Lumajang | HP/WA: 0812-3456-7890</div>
                   </div>
 
-                  <div className="receipt-divider"></div>
-
-                  <div className="receipt-flex">
-                    <span>Invoice:</span>
-                    <span>{currentSaleInvoice.invoice_number}</span>
-                  </div>
-                  <div className="receipt-flex">
-                    <span>Tanggal:</span>
-                    <span>{new Date(currentSaleInvoice.created_at).toLocaleDateString('id-ID')}</span>
-                  </div>
-                  <div className="receipt-flex">
-                    <span>Kasir:</span>
-                    <span>{cashier ? cashier.name : 'Kasir'}</span>
-                  </div>
-                  {customer && (
-                    <div className="receipt-flex">
-                      <span>Pelanggan:</span>
-                      <span>{customer.name}</span>
+                  {/* Title & Metadata with Aligned Colons */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '11px', marginBottom: '8px', color: '#000000' }}>
+                    {/* Kiri */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '2px' }}>FAKTUR PENJUALAN / NOTA</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '80px 10px 1fr', alignItems: 'center' }}>
+                        <div>No. Invoice</div><div>:</div><div><code>{currentSaleInvoice.invoice_number}</code></div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '80px 10px 1fr', alignItems: 'center' }}>
+                        <div>Tanggal</div><div>:</div><div>{new Date(currentSaleInvoice.created_at).toLocaleDateString('id-ID')} {new Date(currentSaleInvoice.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</div>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Kanan */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <div style={{ height: '17px' }}></div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '70px 10px 1fr', alignItems: 'center' }}>
+                        <div>Kasir</div><div>:</div><div><strong>{cashier ? cashier.name : 'Kasir'}</strong></div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '70px 10px 1fr', alignItems: 'center' }}>
+                        <div>Pelanggan</div><div>:</div><div><strong>{customer ? customer.name : 'Umum (Walk-in)'}</strong></div>
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="receipt-divider"></div>
 
-                  {/* Items */}
-                  {saleItems.map((item, idx) => {
-                    const variant = allVariants.find(v => v.id === item.variant_id);
-                    const prod = variant ? allProducts.find(p => p.id === variant.product_id) : null;
-                    const displayName = prod ? `${prod.name} (${variant.size})` : 'Barang';
+                  {/* Item Table Dot Matrix */}
+                  <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', marginBottom: '8px', color: '#000000' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px dashed #000000', borderTop: '1px dashed #000000', textAlign: 'left' }}>
+                        <th style={{ padding: '6px 2px', width: '28px' }}>NO</th>
+                        <th style={{ padding: '6px 2px', width: '95px' }}>SKU</th>
+                        <th style={{ padding: '6px 2px' }}>NAMA BARANG / VARIAN</th>
+                        <th style={{ padding: '6px 2px', textAlign: 'center', width: '50px' }}>QTY</th>
+                        <th style={{ padding: '6px 2px', textAlign: 'right', width: '90px' }}>HARGA</th>
+                        <th style={{ padding: '6px 2px', textAlign: 'right', width: '95px' }}>SUBTOTAL</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {saleItems.map((item, idx) => {
+                        const variant = allVariants.find(v => v.id === item.variant_id);
+                        const prod = variant ? allProducts.find(p => p.id === variant.product_id) : null;
+                        const displayName = prod ? `${prod.name} (Ukuran ${variant.size}${variant.color && variant.color !== 'Standard' ? `, ${variant.color}` : ''})` : 'Barang';
 
-                    return (
-                      <div key={idx} style={{ marginBottom: '6px' }}>
-                        <div>{displayName}</div>
-                        <div className="receipt-flex" style={{ paddingLeft: '8px', color: '#555' }}>
-                          <span>{item.quantity} x {Number(item.price_per_unit).toLocaleString('id-ID')}</span>
-                          <span>{Number(item.subtotal).toLocaleString('id-ID')}</span>
+                        return (
+                          <tr key={idx} style={{ borderBottom: '1px dotted #000000' }}>
+                            <td style={{ padding: '5px 2px', verticalAlign: 'top' }}>{idx + 1}</td>
+                            <td style={{ padding: '5px 2px', verticalAlign: 'top' }}><code>{variant ? variant.sku : '-'}</code></td>
+                            <td style={{ padding: '5px 2px', verticalAlign: 'top' }}><strong>{displayName}</strong></td>
+                            <td style={{ padding: '5px 2px', textAlign: 'center', verticalAlign: 'top' }}>{item.quantity} Pcs</td>
+                            <td style={{ padding: '5px 2px', textAlign: 'right', verticalAlign: 'top' }}>{Number(item.price_per_unit).toLocaleString('id-ID')}</td>
+                            <td style={{ padding: '5px 2px', textAlign: 'right', verticalAlign: 'top', fontWeight: 'bold' }}>{Number(item.subtotal).toLocaleString('id-ID')}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  <div className="receipt-divider"></div>
+
+                  {/* Ringkasan Belanja & Tanda Tangan */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', fontSize: '11px', alignItems: 'start', color: '#000000' }}>
+                    {/* Kolom Kiri: Tanda Tangan */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '4px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', textAlign: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div>Tanda Terima,</div>
+                          <div style={{ height: '44px' }}></div>
+                          <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000000', paddingBottom: '1px', display: 'inline-block', width: '110px' }}>
+                            {customer ? customer.name : '...................'}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div>Hormat Kami,</div>
+                          <div style={{ height: '44px' }}></div>
+                          <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000000', paddingBottom: '1px', display: 'inline-block', width: '110px' }}>
+                            {cashier ? cashier.name : 'Kasir Toko'}
+                          </div>
                         </div>
                       </div>
-                    );
-                  })}
-
-                  <div className="receipt-divider"></div>
-
-                  <div className="receipt-flex" style={{ fontWeight: 'bold' }}>
-                    <span>TOTAL:</span>
-                    <span>Rp {Number(currentSaleInvoice.total_amount).toLocaleString('id-ID')}</span>
-                  </div>
-                  <div className="receipt-flex">
-                    <span>Metode:</span>
-                    <span>{currentSaleInvoice.payment_method} ({currentSaleInvoice.payment_status})</span>
-                  </div>
-                  <div className="receipt-flex">
-                    <span>Bayar:</span>
-                    <span>Rp {Number(currentSaleInvoice.paid_amount).toLocaleString('id-ID')}</span>
-                  </div>
-                  {currentSaleInvoice.change_amount > 0 && (
-                    <div className="receipt-flex">
-                      <span>Kembalian:</span>
-                      <span>Rp {Number(currentSaleInvoice.change_amount).toLocaleString('id-ID')}</span>
+                      <div style={{ fontSize: '10px', color: '#000000' }}>
+                        * Terima kasih telah berbelanja di Toko Oliviana.<br />
+                        * Barang yang sudah dibeli tidak dapat ditukar/dikembalikan.
+                      </div>
                     </div>
-                  )}
-                  {customer && customer.total_debt > 0 && (
-                    <div className="receipt-flex" style={{ color: 'red' }}>
-                      <span>Sisa Utang Pelanggan:</span>
-                      <span>Rp {Number(customer.total_debt).toLocaleString('id-ID')}</span>
+
+                    {/* Kolom Kanan: Rincian Total dengan Titik Dua Sejajar */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '90px 10px 1fr', rowGap: '4px', backgroundColor: '#ffffff', padding: '8px 10px', borderRadius: '4px', border: '1px solid #000000', color: '#000000', alignItems: 'center' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '12px' }}>TOTAL</div>
+                      <div style={{ fontWeight: 'bold', fontSize: '12px' }}>:</div>
+                      <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '13px' }}>Rp {Number(currentSaleInvoice.total_amount).toLocaleString('id-ID')}</div>
+
+                      <div>Metode Bayar</div><div>:</div><div style={{ textAlign: 'right' }}><strong>{currentSaleInvoice.payment_method}</strong> ({currentSaleInvoice.payment_status})</div>
+                      <div>Nominal Bayar</div><div>:</div><div style={{ textAlign: 'right' }}>Rp {Number(currentSaleInvoice.paid_amount).toLocaleString('id-ID')}</div>
+
+                      {currentSaleInvoice.change_amount > 0 && (
+                        <>
+                          <div>Kembalian</div><div>:</div><div style={{ textAlign: 'right' }}>Rp {Number(currentSaleInvoice.change_amount).toLocaleString('id-ID')}</div>
+                        </>
+                      )}
+
+                      {customer && customer.total_debt > 0 && (
+                        <>
+                          <div style={{ fontWeight: 'bold' }}>Sisa Utang</div>
+                          <div style={{ fontWeight: 'bold' }}>:</div>
+                          <div style={{ textAlign: 'right', fontWeight: 'bold' }}>Rp {Number(customer.total_debt).toLocaleString('id-ID')}</div>
+                        </>
+                      )}
                     </div>
-                  )}
-
-                  <div className="receipt-divider"></div>
-
-                  <div className="receipt-text-center" style={{ fontSize: '10px', marginTop: '12px' }}>
-                    Terima kasih telah berbelanja di Oliviana.<br />
-                    Barang yang sudah dibeli tidak dapat ditukar/dikembalikan.
                   </div>
+
                 </div>
 
               </div>
 
-              <div className="modal-footer" style={{ justifyContent: 'center' }}>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={triggerPrintSim}>
-                  <Printer size={14} /> Print Struk (Browser)
+              <div className="modal-footer receipt-modal-footer" style={{ justifyContent: 'center' }}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => printReceipt('sale-receipt-paper')}>
+                  <Printer size={14} /> Print Nota
                 </button>
                 <button type="button" className="btn btn-success btn-sm" onClick={() => {
-                  alert('WhatsApp Terkirim! (Simulasi API)');
-                  setActiveModal(null);
+                  const rawPhone = customer?.phone_number || '';
+                  const formattedPhone = rawPhone.replace(/^0/, '62').replace(/[^0-9]/g, '');
+                  const itemsText = saleItems.map((item, idx) => {
+                    const variant = allVariants.find(v => v.id === item.variant_id);
+                    const prod = variant ? allProducts.find(p => p.id === variant.product_id) : null;
+                    const sizeStr = variant ? ` (${variant.size}${variant.color && variant.color !== 'Standard' ? `, ${variant.color}` : ''})` : '';
+                    return `${idx + 1}. ${prod ? prod.name : 'Barang'}${sizeStr} x ${item.quantity} Pcs = Rp ${Number(item.subtotal).toLocaleString('id-ID')}`;
+                  }).join('\n');
+
+                  const textMessage = `*TOKO SERAGAM OLIVIANA*
+Jl. Semeru No. 81, Sukodono - Lumajang
+
+*FAKTUR PENJUALAN / NOTA*
+----------------------------------------
+No. Invoice : ${currentSaleInvoice.invoice_number}
+Tanggal     : ${new Date(currentSaleInvoice.created_at).toLocaleDateString('id-ID')} ${new Date(currentSaleInvoice.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+Kasir       : ${cashier ? cashier.name : 'Kasir'}
+Pelanggan   : ${customer ? customer.name : 'Umum (Walk-in)'}
+
+*RINCIAN BARANG:*
+${itemsText}
+----------------------------------------
+*TOTAL BELANJA : Rp ${Number(currentSaleInvoice.total_amount).toLocaleString('id-ID')}*
+Metode Bayar  : ${currentSaleInvoice.payment_method} (${currentSaleInvoice.payment_status})
+Nominal Bayar : Rp ${Number(currentSaleInvoice.paid_amount).toLocaleString('id-ID')}
+${currentSaleInvoice.change_amount > 0 ? `Kembalian     : Rp ${Number(currentSaleInvoice.change_amount).toLocaleString('id-ID')}\n` : ''}${customer && customer.total_debt > 0 ? `Sisa Utang    : Rp ${Number(customer.total_debt).toLocaleString('id-ID')}\n` : ''}
+*Terima kasih telah berbelanja di Toko Oliviana!*`;
+
+                  const waUrl = formattedPhone
+                    ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(textMessage)}`
+                    : `https://wa.me/?text=${encodeURIComponent(textMessage)}`;
+
+                  showToast('Mengunduh Nota PDF Dot Matrix & Membuka WhatsApp...', 'info');
+
+                  const element = document.getElementById('sale-receipt-paper');
+                  if (element && window.html2pdf) {
+                    const opt = {
+                      margin: 5,
+                      filename: `Nota_Penjualan_${currentSaleInvoice.invoice_number}.pdf`,
+                      image: { type: 'jpeg', quality: 0.98 },
+                      html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        scrollY: 0,
+                        scrollX: 0
+                      },
+                      jsPDF: { unit: 'mm', format: 'a5', orientation: 'landscape' }
+                    };
+                    window.html2pdf().set(opt).from(element).save().then(() => {
+                      window.open(waUrl, '_blank');
+                    }).catch(() => {
+                      window.open(waUrl, '_blank');
+                    });
+                  } else {
+                    window.open(waUrl, '_blank');
+                  }
                 }}>
-                  Kirim WhatsApp
+                  <Send size={14} /> Kirim WhatsApp
                 </button>
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => setActiveModal(null)}>
                   Tutup
@@ -3315,7 +3492,7 @@ function App() {
         );
       })()}
 
-      {/* A3. DEBT PAYMENT RECEIPT MODAL */}
+      {/* A3. DEBT PAYMENT RECEIPT MODAL (DOT MATRIX FORMAT WITH ALIGNED COLONS & SIGNATURES) */}
       {activeModal === 'debt-receipt' && selectedDebtPayment && (() => {
         const cashier = db.find('users', u => u.id === selectedDebtPayment.cashier_id);
         const customer = db.find('customers', c => c.id === selectedDebtPayment.customer_id);
@@ -3323,77 +3500,162 @@ function App() {
 
         return (
           <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '400px' }}>
+            <div className="modal-content receipt-modal-content" style={{ maxWidth: '660px', width: '95%' }}>
               <header className="modal-header">
-                <h2 className="modal-title">Struk Pembayaran Cicilan / Utang</h2>
+                <h2 className="modal-title">Nota Bukti Pembayaran Utang / Cicilan</h2>
                 <button type="button" className="modal-close" onClick={() => setActiveModal(null)}><X size={20} /></button>
               </header>
 
-              <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '16px', borderRadius: '12px', overflow: 'hidden' }}>
-                <div className="receipt-paper" id="thermal-receipt">
-                  <div className="receipt-text-center">
-                    <span className="receipt-title">OLIVIANA</span><br />
-                    <span>Jl. Semeru No. 81, Sukodono<br />Lumajang</span><br />
-                    <span>HP: 0812-XXXX-XXXX</span>
+              <div className="receipt-paper-wrapper" style={{ backgroundColor: '#e2e8f0', padding: '16px', borderRadius: '12px', overflowX: 'auto' }}>
+                <div className="receipt-paper" id="debt-receipt-paper" style={{ color: '#000000' }}>
+                  <div style={{ textTransform: 'uppercase', textAlign: 'center', marginBottom: '8px', borderBottom: '2px double #000000', paddingBottom: '6px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', letterSpacing: '1px' }}>TOKO SERAGAM OLIVIANA</div>
+                    <div style={{ fontSize: '11px', color: '#000000' }}>Jl. Semeru No. 81, Sukodono - Lumajang | HP/WA: 0812-3456-7890</div>
                   </div>
 
-                  <div className="receipt-divider"></div>
-
-                  <div className="receipt-text-center" style={{ fontWeight: 'bold', fontSize: '11px', marginBottom: '8px' }}>
-                    BUKTI PEMBAYARAN KASBON / UTANG
+                  <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '13px', marginBottom: '8px', letterSpacing: '0.5px' }}>
+                    *** BUKTI PEMBAYARAN KASBON / UTANG ***
                   </div>
 
-                  <div className="receipt-flex">
-                    <span>No Bukti:</span>
-                    <span>{selectedDebtPayment.id}</span>
-                  </div>
-                  <div className="receipt-flex">
-                    <span>Tanggal:</span>
-                    <span>{new Date(selectedDebtPayment.created_at).toLocaleDateString('id-ID')} {new Date(selectedDebtPayment.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                  <div className="receipt-flex">
-                    <span>Kasir Penerima:</span>
-                    <span>{cashier ? cashier.name : 'Kasir'}</span>
-                  </div>
-                  {customer && (
-                    <div className="receipt-flex">
-                      <span>Pelanggan:</span>
-                      <span>{customer.name}</span>
+                  {/* Header Meta Info Kiri & Kanan */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '11px', marginBottom: '8px', color: '#000000' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '70px 10px 1fr', alignItems: 'center' }}>
+                        <div>No. Bukti</div><div>:</div><div><code>{selectedDebtPayment.id}</code></div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '70px 10px 1fr', alignItems: 'center' }}>
+                        <div>Tanggal</div><div>:</div><div>{new Date(selectedDebtPayment.created_at).toLocaleDateString('id-ID')} {new Date(selectedDebtPayment.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</div>
+                      </div>
                     </div>
-                  )}
 
-                  <div className="receipt-divider"></div>
-
-                  <div className="receipt-flex" style={{ fontSize: '13px', fontWeight: 'bold' }}>
-                    <span>NOMINAL DIBAYAR:</span>
-                    <span style={{ color: '#008000' }}>Rp {Number(selectedDebtPayment.amount_paid).toLocaleString('id-ID')}</span>
-                  </div>
-                  <div className="receipt-flex">
-                    <span>Metode Pembayaran:</span>
-                    <span>{selectedDebtPayment.payment_method}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '95px 10px 1fr', alignItems: 'center' }}>
+                        <div>Kasir Penerima</div><div>:</div><div><strong>{cashier ? cashier.name : 'Kasir'}</strong></div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '95px 10px 1fr', alignItems: 'center' }}>
+                        <div>Pelanggan</div><div>:</div><div><strong>{customer ? customer.name : 'Pelanggan'}</strong></div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="receipt-divider"></div>
 
-                  <div className="receipt-flex" style={{ fontWeight: 'bold' }}>
-                    <span>SISA UTANG SEKARANG:</span>
-                    <span style={{ color: remainingDebt > 0 ? '#d9534f' : '#28a745' }}>
-                      {remainingDebt > 0 ? `Rp ${Number(remainingDebt).toLocaleString('id-ID')}` : 'LUNAS (Rp 0) 🎉'}
-                    </span>
-                  </div>
+                  <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', marginBottom: '8px', color: '#000000' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px dashed #000000', borderTop: '1px dashed #000000', textAlign: 'left' }}>
+                        <th style={{ padding: '6px 4px' }}>KETERANGAN PEMBAYARAN CICILAN / KASBON</th>
+                        <th style={{ padding: '6px 4px', textAlign: 'right', width: '140px' }}>NOMINAL DIBAYAR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={{ padding: '8px 4px' }}>
+                          Pembayaran Utang Toko Oliviana a.n. <strong>{customer ? customer.name : 'Pelanggan'}</strong> via <strong>{selectedDebtPayment.payment_method}</strong>
+                        </td>
+                        <td style={{ padding: '8px 4px', textAlign: 'right', fontWeight: 'bold', fontSize: '13px' }}>
+                          Rp {Number(selectedDebtPayment.amount_paid).toLocaleString('id-ID')}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
 
                   <div className="receipt-divider"></div>
 
-                  <div className="receipt-text-center" style={{ fontSize: '10px', marginTop: '12px' }}>
-                    Terima kasih atas pembayaran Anda.<br />
-                    Simpan struk ini sebagai bukti pembayaran yang sah.
+                  {/* Bottom Footer & Aligned Summary */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', fontSize: '11px', alignItems: 'start', color: '#000000' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '4px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', textAlign: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div>Penyetor,</div>
+                          <div style={{ height: '44px' }}></div>
+                          <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000000', paddingBottom: '1px', display: 'inline-block', width: '110px' }}>
+                            {customer ? customer.name : '...................'}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div>Kasir Penerima,</div>
+                          <div style={{ height: '44px' }}></div>
+                          <div style={{ fontWeight: 'bold', borderBottom: '1px solid #000000', paddingBottom: '1px', display: 'inline-block', width: '110px' }}>
+                            {cashier ? cashier.name : 'Kasir Toko'}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '10px', color: '#000000' }}>
+                        * Terima kasih atas pembayaran Anda.<br />
+                        * Simpan struk faktur ini sebagai bukti pembayaran yang sah.
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '95px 10px 1fr', rowGap: '4px', backgroundColor: '#ffffff', padding: '10px 12px', borderRadius: '4px', border: '1px solid #000000', color: '#000000', alignItems: 'center' }}>
+                      <div>Nominal Bayar</div><div>:</div><div style={{ textAlign: 'right', fontWeight: 'bold' }}>Rp {Number(selectedDebtPayment.amount_paid).toLocaleString('id-ID')}</div>
+                      <div>Metode Bayar</div><div>:</div><div style={{ textAlign: 'right' }}><strong>{selectedDebtPayment.payment_method}</strong></div>
+
+                      <div style={{ gridColumn: '1 / -1', borderTop: '1px dashed #000000', margin: '2px 0' }}></div>
+
+                      <div style={{ fontWeight: 'bold', fontSize: '12px' }}>SISA UTANG</div>
+                      <div style={{ fontWeight: 'bold', fontSize: '12px' }}>:</div>
+                      <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '12px' }}>
+                        {remainingDebt > 0 ? `Rp ${Number(remainingDebt).toLocaleString('id-ID')}` : 'LUNAS (Rp 0)'}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="modal-footer" style={{ justifyContent: 'center' }}>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={triggerPrintSim}>
-                  <Printer size={14} /> Print Struk (Browser)
+              <div className="modal-footer receipt-modal-footer" style={{ justifyContent: 'center' }}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => printReceipt('debt-receipt-paper')}>
+                  <Printer size={14} /> Print Nota
+                </button>
+                <button type="button" className="btn btn-success btn-sm" onClick={() => {
+                  const rawPhone = customer?.phone_number || '';
+                  const formattedPhone = rawPhone.replace(/^0/, '62').replace(/[^0-9]/g, '');
+                  const textMessage = `*TOKO SERAGAM OLIVIANA*
+Jl. Semeru No. 81, Sukodono - Lumajang
+
+*** BUKTI PEMBAYARAN KASBON / UTANG ***
+----------------------------------------
+No. Bukti      : ${selectedDebtPayment.id}
+Tanggal        : ${new Date(selectedDebtPayment.created_at).toLocaleDateString('id-ID')} ${new Date(selectedDebtPayment.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+Kasir Penerima : ${cashier ? cashier.name : 'Kasir'}
+Pelanggan      : ${customer ? customer.name : 'Pelanggan'}
+
+*NOMINAL DIBAYAR : Rp ${Number(selectedDebtPayment.amount_paid).toLocaleString('id-ID')}*
+Metode Bayar   : ${selectedDebtPayment.payment_method}
+*SISA UTANG     : ${remainingDebt > 0 ? `Rp ${Number(remainingDebt).toLocaleString('id-ID')}` : 'LUNAS (Rp 0)'}*
+----------------------------------------
+*Terima kasih atas pembayaran Anda!*`;
+
+                  const waUrl = formattedPhone
+                    ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(textMessage)}`
+                    : `https://wa.me/?text=${encodeURIComponent(textMessage)}`;
+
+                  showToast('Mengunduh Nota PDF Dot Matrix & Membuka WhatsApp...', 'info');
+
+                  const element = document.getElementById('debt-receipt-paper');
+                  if (element && window.html2pdf) {
+                    const opt = {
+                      margin: 5,
+                      filename: `Nota_Kasbon_${selectedDebtPayment.id}.pdf`,
+                      image: { type: 'jpeg', quality: 0.98 },
+                      html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        scrollY: 0,
+                        scrollX: 0
+                      },
+                      jsPDF: { unit: 'mm', format: 'a5', orientation: 'landscape' }
+                    };
+                    window.html2pdf().set(opt).from(element).save().then(() => {
+                      window.open(waUrl, '_blank');
+                    }).catch(() => {
+                      window.open(waUrl, '_blank');
+                    });
+                  } else {
+                    window.open(waUrl, '_blank');
+                  }
+                }}>
+                  <Send size={14} /> Kirim WhatsApp
                 </button>
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => setActiveModal(null)}>
                   Tutup
@@ -3585,15 +3847,15 @@ function App() {
                 <div className="form-group">
                   <label htmlFor="pos-modal-qty" className="form-label" style={{ fontWeight: 'bold' }}>3. Jumlah Pembelian (Pcs)</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="btn btn-secondary"
                       style={{ width: '40px', height: '40px', fontSize: '18px', padding: 0, fontWeight: 'bold' }}
                       onClick={() => setPosModalQty(Math.max(1, posModalQty - 1))}
                     >
                       -
                     </button>
-                    <input 
+                    <input
                       id="pos-modal-qty"
                       type="number"
                       min="1"
@@ -3604,8 +3866,8 @@ function App() {
                       onChange={(e) => setPosModalQty(Math.max(1, Number(e.target.value)))}
                       required
                     />
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="btn btn-secondary"
                       style={{ width: '40px', height: '40px', fontSize: '18px', padding: 0, fontWeight: 'bold' }}
                       onClick={() => {
@@ -3645,9 +3907,9 @@ function App() {
 
                 <div className="modal-footer">
                   <button type="button" className="btn btn-secondary" onClick={() => setActiveModal(null)}>Batal</button>
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary" 
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
                     disabled={!currentVariant || currentVariant.stock_quantity <= 0}
                   >
                     + Tambah ke Keranjang
@@ -4137,23 +4399,23 @@ function App() {
             }}>
               {confirmConfig.confirmVariant === 'danger' ? <Trash2 size={24} /> : <AlertTriangle size={24} />}
             </div>
-            
+
             <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>{confirmConfig.title}</h3>
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.5' }}>
               {confirmConfig.message}
             </p>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
+              <button
+                type="button"
+                className="btn btn-secondary"
                 style={{ flex: 1 }}
                 onClick={() => setConfirmConfig(null)}
               >
                 {confirmConfig.cancelText}
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className={`btn btn-${confirmConfig.confirmVariant}`}
                 style={{ flex: 1 }}
                 onClick={confirmConfig.onConfirm}
