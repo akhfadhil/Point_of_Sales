@@ -7829,15 +7829,34 @@ const INITIAL_DATA = {
     }
 ],
   customers: [
-    { id: 'cst-1', name: 'Pak Rahmad (Guru SD 1)', phone_number: '081234567890', total_debt: 0, created_at: '2026-07-24T09:00:00Z' },
-    { id: 'cst-2', name: 'Bu Siti Khotimah', phone_number: '089876543210', total_debt: 0, created_at: '2026-07-24T10:00:00Z' }
+    { id: 'cst-1', name: 'Pak Rahmad (Guru SD 1)', phone_number: '081234567890', total_debt: 350000, created_at: '2026-07-24T09:00:00Z' },
+    { id: 'cst-2', name: 'Bu Siti Khotimah', phone_number: '089876543210', total_debt: 120000, created_at: '2026-07-24T10:00:00Z' },
+    { id: 'cst-3', name: 'Bpk. H. Ahmad Fauzi', phone_number: '081399887766', total_debt: 450000, created_at: '2026-07-20T08:00:00Z' },
+    { id: 'cst-4', name: 'Ibu Endang Setyowati', phone_number: '085711223344', total_debt: 275000, created_at: '2026-07-21T09:30:00Z' },
+    { id: 'cst-5', name: 'Pak Bambang Kurniawan', phone_number: '081288776655', total_debt: 600000, created_at: '2026-07-22T11:15:00Z' },
+    { id: 'cst-6', name: 'Bu Hj. Nurul Hidayah', phone_number: '082133445566', total_debt: 180000, created_at: '2026-07-23T14:20:00Z' },
+    { id: 'cst-7', name: 'Pak Slamet Riyadi', phone_number: '087812345678', total_debt: 520000, created_at: '2026-07-24T07:45:00Z' },
+    { id: 'cst-8', name: 'Ibu Ratna Dewi', phone_number: '081987654321', total_debt: 0, created_at: '2026-07-15T10:00:00Z' },
+    { id: 'cst-9', name: 'Pak Eko Prasetyo', phone_number: '085699887711', total_debt: 0, created_at: '2026-07-16T11:30:00Z' },
+    { id: 'cst-10', name: 'Bu Yuni Astuti', phone_number: '082244668800', total_debt: 0, created_at: '2026-07-17T13:45:00Z' },
+    { id: 'cst-11', name: 'Pak Sugeng Widodo', phone_number: '081377889900', total_debt: 0, created_at: '2026-07-18T15:20:00Z' },
+    { id: 'cst-12', name: 'Ibu Maya Sari', phone_number: '087711335577', total_debt: 0, created_at: '2026-07-19T16:10:00Z' }
   ],
   sales: [],
   sale_items: [],
-  debt_payments: []
+  debt_payments: [
+    { id: 'dp-1', customer_id: 'cst-1', amount_paid: 150000, payment_method: 'CASH', cashier_id: 'u-1', created_at: '2026-07-24T10:00:00Z' },
+    { id: 'dp-2', customer_id: 'cst-3', amount_paid: 200000, payment_method: 'TRANSFER', cashier_id: 'u-1', created_at: '2026-07-24T11:30:00Z' },
+    { id: 'dp-3', customer_id: 'cst-5', amount_paid: 300000, payment_method: 'CASH', cashier_id: 'u-2', created_at: '2026-07-24T13:15:00Z' },
+    { id: 'dp-4', customer_id: 'cst-7', amount_paid: 250000, payment_method: 'QRIS', cashier_id: 'u-1', created_at: '2026-07-24T14:45:00Z' },
+    { id: 'dp-5', customer_id: 'cst-2', amount_paid: 80000, payment_method: 'CASH', cashier_id: 'u-2', created_at: '2026-07-24T15:20:00Z' },
+    { id: 'dp-6', customer_id: 'cst-4', amount_paid: 100000, payment_method: 'TRANSFER', cashier_id: 'u-1', created_at: '2026-07-24T16:00:00Z' },
+    { id: 'dp-7', customer_id: 'cst-6', amount_paid: 120000, payment_method: 'CASH', cashier_id: 'u-2', created_at: '2026-07-24T16:45:00Z' },
+    { id: 'dp-8', customer_id: 'cst-8', amount_paid: 500000, payment_method: 'CASH', cashier_id: 'u-1', created_at: '2026-07-24T17:30:00Z' }
+  ]
 };
 
-const CURRENT_DB_VERSION = 'v9_no_cost_price';
+const CURRENT_DB_VERSION = 'v10_dummy_debt_pagination';
 
 // Selalu pastikan LocalStorage diperbarui dengan data Excel terbaru jika versi berubah
 if (localStorage.getItem('oliviana_db_version') !== CURRENT_DB_VERSION) {

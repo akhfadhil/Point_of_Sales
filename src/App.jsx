@@ -156,6 +156,10 @@ function App() {
   const [expandedProductIds, setExpandedProductIds] = useState([]);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
   const [stockSearchQuery, setStockSearchQuery] = useState('');
+  const [debtSearchQuery, setDebtSearchQuery] = useState('');
+  const [debtActivePage, setDebtActivePage] = useState(1);
+  const [debtSettledPage, setDebtSettledPage] = useState(1);
+  const [debtHistoryPage, setDebtHistoryPage] = useState(1);
   const [selectedDbTable, setSelectedDbTable] = useState('users');
   const [mobilePosActiveView, setMobilePosActiveView] = useState('products'); // 'products' | 'cart'
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -1923,19 +1927,77 @@ function App() {
         {/* 4. OWNER: MANAGE DEBT / KASBON */}
         {activeTab === 'debt' && currentUser.role === 'OWNER' && (
           <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Header Title & Search Bar */}
+            <div className="card" style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Manajemen Utang & Kasbon Pelanggan</h2>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>Kelola saldo piutang aktif, penerimaan cicilan, dan daftar riwayat lunas.</p>
+                </div>
+
+                {/* Search Bar Pelanggan */}
+                <div style={{ position: 'relative', minWidth: '260px', flex: 1, maxWidth: '400px' }}>
+                  <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Cari nama / HP pelanggan..."
+                    value={debtSearchQuery}
+                    onChange={(e) => {
+                      setDebtSearchQuery(e.target.value);
+                      setDebtActivePage(1);
+                      setDebtSettledPage(1);
+                      setDebtHistoryPage(1);
+                    }}
+                    style={{ paddingLeft: '36px', paddingRight: '32px', fontSize: '13px' }}
+                  />
+                  {debtSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setDebtSearchQuery('')}
+                      style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {(() => {
-              const activeDebtCustomers = allCustomers.filter(c => c.total_debt > 0);
-              const settledCustomers = allCustomers.filter(c => c.total_debt === 0);
+              // Filter Customers by search query
+              const filteredCustomers = allCustomers.filter(c => {
+                if (!debtSearchQuery.trim()) return true;
+                const q = debtSearchQuery.toLowerCase().trim();
+                return c.name.toLowerCase().includes(q) || c.phone_number.toLowerCase().includes(q);
+              });
+
+              const activeDebtCustomers = filteredCustomers.filter(c => c.total_debt > 0);
+              const settledCustomers = filteredCustomers.filter(c => c.total_debt === 0);
+
+              // Pagination params for Active Debt
+              const activeLimit = 5;
+              const activeTotalPages = Math.ceil(activeDebtCustomers.length / activeLimit) || 1;
+              const currentActivePage = Math.min(debtActivePage, activeTotalPages);
+              const paginatedActiveDebt = activeDebtCustomers.slice((currentActivePage - 1) * activeLimit, currentActivePage * activeLimit);
+
+              // Pagination params for Settled Debt
+              const settledLimit = 5;
+              const settledTotalPages = Math.ceil(settledCustomers.length / settledLimit) || 1;
+              const currentSettledPage = Math.min(debtSettledPage, settledTotalPages);
+              const paginatedSettled = settledCustomers.slice((currentSettledPage - 1) * settledLimit, currentSettledPage * settledLimit);
 
               return (
                 <>
                   {/* List Customers with outstanding debt */}
                   <div className="card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                       <h2 className="card-title" style={{ margin: 0 }}>Daftar Piutang & Kasbon Aktif</h2>
-                      <span className="badge warning">{activeDebtCustomers.length} Pelanggan Belum Lunas</span>
+                      <span className="badge warning">{activeDebtCustomers.length} Piutang Aktif</span>
                     </div>
-                    <div className="table-wrapper">
+
+                    {/* Desktop View Table */}
+                    <div className="table-wrapper desktop-only">
                       <table className="table">
                         <thead>
                           <tr>
@@ -1947,7 +2009,7 @@ function App() {
                           </tr>
                         </thead>
                         <tbody>
-                          {activeDebtCustomers.map(cust => (
+                          {paginatedActiveDebt.map(cust => (
                             <tr key={cust.id}>
                               <td><strong>{cust.name}</strong></td>
                               <td>{cust.phone_number}</td>
@@ -1980,22 +2042,108 @@ function App() {
                           {activeDebtCustomers.length === 0 && (
                             <tr>
                               <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                                Tidak ada piutang/kasbon aktif. Semua pelanggan dalam kondisi lunas! 🎉
+                                {debtSearchQuery ? `Tidak ada piutang aktif atas nama "${debtSearchQuery}".` : 'Tidak ada piutang/kasbon aktif. Semua pelanggan dalam kondisi lunas! 🎉'}
                               </td>
                             </tr>
                           )}
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Mobile View Card Grid */}
+                    <div className="mobile-only">
+                      {paginatedActiveDebt.map(cust => (
+                        <div
+                          key={cust.id}
+                          style={{
+                            padding: '14px',
+                            borderRadius: '10px',
+                            border: '1px solid var(--card-border)',
+                            backgroundColor: 'var(--card-bg)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '10px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                            <div>
+                              <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>{cust.name}</h3>
+                              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>📱 {cust.phone_number}</span>
+                            </div>
+                            <span className="badge warning" style={{ fontSize: '10px' }}>Piutang Aktif</span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-tertiary)', padding: '10px 12px', borderRadius: '8px' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Sisa Utang Aktif:</span>
+                            <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--danger)' }}>
+                              {formatRupiah(cust.total_debt)}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
+                            <span>Tgl Terdaftar: {new Date(cust.created_at).toLocaleDateString('id-ID')}</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="btn btn-success"
+                            style={{ width: '100%', padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '2px' }}
+                            onClick={() => {
+                              setSelectedCustomer(cust);
+                              setDebtRepayAmount('');
+                              setDebtRepayMethod('CASH');
+                              setActiveModal('repay-debt');
+                            }}
+                          >
+                            <CreditCard size={16} /> Catat Pembayaran Cicilan
+                          </button>
+                        </div>
+                      ))}
+
+                      {activeDebtCustomers.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                          {debtSearchQuery ? `Tidak ada piutang aktif atas nama "${debtSearchQuery}".` : 'Tidak ada piutang/kasbon aktif. Semua pelanggan dalam kondisi lunas! 🎉'}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Pagination Active Debt */}
+                    {activeTotalPages > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--card-border)', flexWrap: 'wrap', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          Halaman {currentActivePage} dari {activeTotalPages} ({activeDebtCustomers.length} Data)
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={currentActivePage === 1}
+                            onClick={() => setDebtActivePage(prev => Math.max(1, prev - 1))}
+                          >
+                            ‹ Sebelumnya
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={currentActivePage === activeTotalPages}
+                            onClick={() => setDebtActivePage(prev => Math.min(activeTotalPages, prev + 1))}
+                          >
+                            Selanjutnya ›
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* List Settled Customers */}
                   <div className="card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <h2 className="card-title" style={{ margin: 0 }}>Daftar Pelanggan Lunas (Bebas Utang)</h2>
-                      <span className="badge success">{settledCustomers.length} Pelanggan Lunas</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                      <h2 className="card-title" style={{ margin: 0 }}>Daftar Pelanggan Bebas Utang</h2>
+                      <span className="badge success">{settledCustomers.length} Bebas Utang</span>
                     </div>
-                    <div className="table-wrapper">
+
+                    {/* Desktop View Table */}
+                    <div className="table-wrapper desktop-only">
                       <table className="table">
                         <thead>
                           <tr>
@@ -2006,12 +2154,12 @@ function App() {
                           </tr>
                         </thead>
                         <tbody>
-                          {settledCustomers.map(cust => (
+                          {paginatedSettled.map(cust => (
                             <tr key={cust.id}>
                               <td><strong>{cust.name}</strong></td>
                               <td>{cust.phone_number}</td>
                               <td>
-                                <span className="badge success">LUNAS (Rp 0)</span>
+                                <span className="badge success">Bebas Utang (Rp 0)</span>
                               </td>
                               <td>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
                             </tr>
@@ -2024,45 +2172,185 @@ function App() {
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Mobile View Card Grid */}
+                    <div className="mobile-only">
+                      {paginatedSettled.map(cust => (
+                        <div
+                          key={cust.id}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid var(--card-border)',
+                            backgroundColor: 'var(--card-bg)',
+                            display: 'flex',
+                            justify: 'space-between',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <div>
+                            <h4 style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{cust.name}</h4>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>📱 {cust.phone_number}</span>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <span className="badge success" style={{ fontSize: '10px' }}>Bebas Utang</span>
+                          </div>
+                        </div>
+                      ))}
+
+                      {settledCustomers.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                          Belum ada pelanggan lunas.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Pagination Settled Debt */}
+                    {settledTotalPages > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--card-border)', flexWrap: 'wrap', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          Halaman {currentSettledPage} dari {settledTotalPages} ({settledCustomers.length} Data)
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={currentSettledPage === 1}
+                            onClick={() => setDebtSettledPage(prev => Math.max(1, prev - 1))}
+                          >
+                            ‹ Sebelumnya
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={currentSettledPage === settledTotalPages}
+                            onClick={() => setDebtSettledPage(prev => Math.min(settledTotalPages, prev + 1))}
+                          >
+                            Selanjutnya ›
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               );
             })()}
 
             {/* Debt Payments History */}
-            <div className="card">
-              <h2 className="card-title">Riwayat Pembayaran Cicilan</h2>
-              <div className="table-wrapper">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Tanggal</th>
-                      <th>Nama Pelanggan</th>
-                      <th>Jumlah Bayar</th>
-                      <th>Metode</th>
-                      <th>Kasir Penerima</th>
-                      <th style={{ textAlign: 'right' }}>Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allDebtPayments.slice().reverse().map(payment => {
+            {(() => {
+              // Filter Debt Payments by search query
+              const filteredDebtPayments = allDebtPayments.slice().reverse().filter(payment => {
+                if (!debtSearchQuery.trim()) return true;
+                const q = debtSearchQuery.toLowerCase().trim();
+                const cust = allCustomers.find(c => c.id === payment.customer_id);
+                const custName = cust ? cust.name.toLowerCase() : '';
+                const custPhone = cust ? cust.phone_number.toLowerCase() : '';
+                return custName.includes(q) || custPhone.includes(q);
+              });
+
+              const historyLimit = 5;
+              const historyTotalPages = Math.ceil(filteredDebtPayments.length / historyLimit) || 1;
+              const currentHistoryPage = Math.min(debtHistoryPage, historyTotalPages);
+              const paginatedHistory = filteredDebtPayments.slice((currentHistoryPage - 1) * historyLimit, currentHistoryPage * historyLimit);
+
+              return (
+                <div className="card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                    <h2 className="card-title" style={{ margin: 0 }}>Riwayat Pembayaran Cicilan</h2>
+                    <span className="badge info">{filteredDebtPayments.length} Transaksi Cicilan</span>
+                  </div>
+
+                  {/* Desktop View Table */}
+                  <div className="table-wrapper desktop-only">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Tanggal</th>
+                          <th>Nama Pelanggan</th>
+                          <th>Jumlah Bayar</th>
+                          <th>Metode</th>
+                          <th>Kasir Penerima</th>
+                          <th style={{ textAlign: 'right' }}>Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedHistory.map(payment => {
+                          const cust = allCustomers.find(c => c.id === payment.customer_id);
+                          const cashier = db.find('users', u => u.id === payment.cashier_id);
+                          return (
+                            <tr key={payment.id}>
+                              <td>{new Date(payment.created_at).toLocaleString('id-ID')}</td>
+                              <td><strong>{cust ? cust.name : 'Unknown'}</strong></td>
+                              <td style={{ color: 'var(--success)', fontWeight: 'bold' }}>
+                                {formatRupiah(payment.amount_paid)}
+                              </td>
+                              <td>
+                                <span className="badge info">{payment.payment_method}</span>
+                              </td>
+                              <td>{cashier ? cashier.name : 'Kasir'}</td>
+                              <td style={{ textAlign: 'right' }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => {
+                                    setSelectedDebtPayment(payment);
+                                    setActiveModal('debt-receipt');
+                                  }}
+                                >
+                                  <Printer size={12} /> Struk
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {filteredDebtPayments.length === 0 && (
+                          <tr>
+                            <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada riwayat cicilan.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile View Card Grid */}
+                  <div className="mobile-only">
+                    {paginatedHistory.map(payment => {
                       const cust = allCustomers.find(c => c.id === payment.customer_id);
                       const cashier = db.find('users', u => u.id === payment.cashier_id);
                       return (
-                        <tr key={payment.id}>
-                          <td>{new Date(payment.created_at).toLocaleString('id-ID')}</td>
-                          <td><strong>{cust ? cust.name : 'Unknown'}</strong></td>
-                          <td style={{ color: 'var(--success)', fontWeight: 'bold' }}>
-                            {formatRupiah(payment.amount_paid)}
-                          </td>
-                          <td>
-                            <span className="badge info">{payment.payment_method}</span>
-                          </td>
-                          <td>{cashier ? cashier.name : 'Kasir'}</td>
-                          <td style={{ textAlign: 'right' }}>
+                        <div
+                          key={payment.id}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid var(--card-border)',
+                            backgroundColor: 'var(--card-bg)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <strong style={{ fontSize: '14px' }}>{cust ? cust.name : 'Unknown'}</strong>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                {new Date(payment.created_at).toLocaleString('id-ID')}
+                              </div>
+                            </div>
+                            <span style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--success)' }}>
+                              + {formatRupiah(payment.amount_paid)}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px dashed var(--card-border)', fontSize: '12px' }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>
+                              Via: <span className="badge info" style={{ fontSize: '10px' }}>{payment.payment_method}</span> | Kasir: {cashier ? cashier.name : 'Kasir'}
+                            </span>
+
                             <button
                               type="button"
                               className="btn btn-secondary btn-sm"
+                              style={{ fontSize: '11px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
                               onClick={() => {
                                 setSelectedDebtPayment(payment);
                                 setActiveModal('debt-receipt');
@@ -2070,19 +2358,47 @@ function App() {
                             >
                               <Printer size={12} /> Struk
                             </button>
-                          </td>
-                        </tr>
+                          </div>
+                        </div>
                       );
                     })}
-                    {allDebtPayments.length === 0 && (
-                      <tr>
-                        <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada riwayat cicilan.</td>
-                      </tr>
+
+                    {filteredDebtPayments.length === 0 && (
+                      <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                        Belum ada riwayat cicilan.
+                      </div>
                     )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  </div>
+
+                  {/* Pagination Debt History */}
+                  {historyTotalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--card-border)', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        Halaman {currentHistoryPage} dari {historyTotalPages} ({filteredDebtPayments.length} Data)
+                      </span>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          disabled={currentHistoryPage === 1}
+                          onClick={() => setDebtHistoryPage(prev => Math.max(1, prev - 1))}
+                        >
+                          ‹ Sebelumnya
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          disabled={currentHistoryPage === historyTotalPages}
+                          onClick={() => setDebtHistoryPage(prev => Math.min(historyTotalPages, prev + 1))}
+                        >
+                          Selanjutnya ›
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
           </section>
         )}
