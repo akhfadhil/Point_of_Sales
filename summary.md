@@ -1,64 +1,76 @@
 # 🛍️ Oliviana Point of Sales (POS) & Manajemen Stok Seragam
 
-Aplikasi **Point of Sales (POS) & System Manajemen Stok Seragam** modern, cepat, dan *offline-ready* yang dirancang khusus untuk toko seragam sekolah (**Oliviana**). Aplikasi ini mengintegrasikan seluruh proses bisnis toko dari kasir penjualan harian, skema harga bertingkat, pencatatan utang pelanggan, hingga pengelolaan ratusan varian seragam sekolah (Ukuran & Warna) dari pabrik konveksi.
+Aplikasi **Point of Sales (POS) & Sistem Manajemen Stok Seragam** modern, cepat, dan *offline-ready* yang dirancang khusus untuk toko seragam sekolah (**Oliviana**). Aplikasi ini mengintegrasikan seluruh proses bisnis toko dari kasir penjualan harian, skema harga bertingkat, pencatatan utang pelanggan, hingga pengelolaan ratusan varian seragam sekolah (Ukuran & Warna) dari pabrik konveksi.
 
 ---
 
-## 🌟 Fitur Utama Aplikasi
+## 🌟 Fitur Utama & Peningkatan Aplikasi (All Menus Complete)
 
-### 1. 🛒 Kasir POS (Point of Sales) Real-Time
-* **Pemilihan Produk 2-Langkah Mudah:** Pilih Produk Utama ➡️ Pilih tombol **Ukuran** & **Warna** varian baju secara instan.
+### 1. 🛒 Kasir POS (Point of Sales) Real-Time & iPad Split-Screen
+* **📱 HP & Mobile View:**
+  * Toggle navigasi instan **`[ Katalog Produk ]` ↔️ `[ Keranjang ]`**.
+  * Modal Pemilihan Varian mengadopsi **Dropdown Select (`<select>`)** khusus HP sehingga ringkas, rapi, dan tidak ada puluhan tombol bertumpuk.
+* **📟 iPad & Tablet POS Register (Split-Screen 100% Full Width):**
+  * Tampilan 2-Panel Profesional Berdampingan: **Katalog Produk (Kiri)** + **Keranjang Belanja Real-Time (Kanan)**.
+  * 100% Menempel Penuh Layar iPad, Tanpa Area Kosong, dan **Nol Scroll Samping**.
+* **Kartu Produk Uniform:** Teks daftar ukuran diringkas maksimal 4 ukuran + total sisa ukuran *(misal: 14 Ukuran (2, 3, 4, 5, +10 lainnya))*, membuat seluruh kartu produk di katalog tampil dengan tinggi yang seragam dan rapi.
 * **Skema Harga Bertingkat Otomatis:**
   * 👤 **Umum:** Base Pricelist + Rp 15.000
   * 👨‍🏫 **Guru:** Base Pricelist + Rp 5.000
   * 🏢 **Grosir:** Base Pricelist (Rp 0)
-* **Dukungan Metode Pembayaran:**
-  * **TUNAI (Cash):** Kalkulasi kembalian otomatis & pengurangan stok real-time.
-  * **UTANG / CICILAN:** Pencatatan utang otomatis ke saldo pelanggan.
-* **Struk Belanja & WhatsApp:**
-  * Cetak struk belanja thermal/browser.
-  * Simulasi pengiriman struk belanja langsung ke WhatsApp pelanggan.
+* **Dukungan Metode Pembayaran:** TUNAI (Cash), QRIS, Transfer, dan UTANG / CICILAN.
+* **Struk Belanja Thermal & WhatsApp:** Cetak struk belanja thermal/browser + simulasi pengiriman WhatsApp.
 
 ---
 
-### 2. 📦 Manajemen Stok & Produk (Inventory Management)
-* **Pemisahan Varian Terstruktur (Ukuran & Warna):**
-  * Setiap produk seragam menyimpan varian ukuran *(misal: 2, 3, 4, S, M, L, XL)* dan warna *(misal: Merah, Putih, Pramuka, Cokelat)* secara terpisah.
-* **⚡ Multi-Filter Presisi (Nol Scroll):**
-  * Filter serentak berdasarkan **Produk**, **Ukuran**, **Warna**, dan **SKU / Kata Kunci**.
-  * Hasil pencarian otomatis melakukan *auto-expand* dan menyaring hingga **persis 1 varian** tanpa perlu scrolling di HP maupun Laptop.
-* **🏭 Restock Terpusat ("+ Terima Barang Pabrik"):**
-  * Tombol restock terpusat di toolbar atas.
-  * Memungkinkan penerimaan pasokan barang dari pabrik konveksi dengan pencatatan riwayat *Stock Movement* otomatis.
+### 2. 🔍 Cek Stok Barang (Shared Stock Checker)
+* **⚡ Multi-Filter Presisi (Persis Manajemen Stok):**
+  * Filter serentak berdasarkan **Pilih Produk**, **Pilih Ukuran**, **Pilih Warna**, dan **Kata Kunci / SKU**.
+  * Tombol **Reset Filter** 1-klik untuk mengembalikan kondisi filter ke awal.
+* **📄 Pagination Varian Stok (10 Varian/Halaman):** Navigasi ringkas `‹ Sebelumnya` dan `Selanjutnya ›`.
 * **📱 Layout Adaptif (Desktop vs Mobile):**
-  * **Laptop / PC:** Tampilan tabel lebar lengkap & bersih.
-  * **Smartphone / HP:** Tampilan *Mobile Variant Cards* vertikal tanpa scroll menyamping.
+  * **Laptop / PC:** Tampilan tabel lebar lengkap dengan harga modal (Owner), harga jual, dan status stok.
+  * **HP & Tablet:** Tampilan *Mobile Stock Cards Grid* yang ringkas tanpa scroll samping.
 
 ---
 
-### 3. 💳 Manajemen Pelanggan & Utang (Customer & Debt Management)
+### 3. 📦 Manajemen Stok & Produk (Inventory Management)
+* **Pemisahan Varian Terstruktur (Ukuran & Warna):** Setiap produk seragam menyimpan varian ukuran *(misal: 2, 3, 4, S, M, L, XL)* dan warna *(misal: Merah, Putih, Pramuka, Cokelat)*.
+* **Multi-Filter Presisi:** Auto-expand dan menyaring varian hingga persis 1 varian tanpa scrolling.
+* **🏭 Restock Terpusat ("+ Terima Barang Pabrik"):** Penerimaan pasokan barang konveksi dengan pencatatan riwayat *Stock Movement* otomatis.
+
+---
+
+### 4. 📄 Riwayat Transaksi Penjualan (Sales History)
+* **🔍 Search Bar Instan:** Pencarian cepat berdasarkan nomor invoice, nama kasir, atau nama pelanggan.
+* **📄 Pagination (5 Invoice/Halaman):** Tampilan rapi terbagi per 5 transaksi dengan navigasi halaman.
+* **📱 Mobile Card View:** Menampilkan rincian invoice, metode pembayaran, total belanja, dan tombol cetak ulang struk dalam bentuk kartu vertikal yang rapi di HP.
+* **Data Dummy Realistis:** Dilengkapi 12 sampel transaksi penjualan dummy (`sl-1` s/d `sl-12`) untuk pengujian pencarian dan pagination.
+
+---
+
+### 5. 💳 Buku Kasbon & Utang (Customer & Debt Management)
 * **Pencatatan Piutang Real-Time:** Pencatatan saldo utang pelanggan otomatis saat transaksi kasir non-tunai.
 * **🔍 Search Bar Pelanggan:** Pencarian cepat nama / nomor HP pelanggan secara instan.
-* **📄 Pagination Ringkas (5 Data/Halaman):** Pembatasan tampilan 5 data per halaman diiringi tombol navigasi `‹ Sebelumnya` dan `Selanjutnya ›`.
-* **🎨 Tampilan Mobile Cards (Nol Scroll Samping):**
-  * **Piutang Aktif:** Tampil sebagai kartu vertikal dengan nominal utang merah tebal & tombol lebar *Catat Pembayaran Cicilan*.
-  * **Pelanggan Lunas:** Kartu status Bebas Utang (Rp 0).
-  * **Riwayat Cicilan:** Kartu histori pembayaran cicilan + cetak ulang struk cicilan.
+* **📄 Pagination Ringkas (5 Data/Halaman):** Pembatasan 5 data per halaman untuk Piutang Aktif, Pelanggan Lunas, dan Riwayat Pembayaran.
+* **🎨 Tampilan Mobile Cards (Nol Scroll Samping):** Kartu vertikal piutang aktif dengan nominal utang merah tebal & tombol *Catat Pembayaran Cicilan*.
 
 ---
 
-### 4. 📊 Ringkasan Keuangan & Dashboard Owner
-* Ringkasan Omset Penjualan Harian & Bulanan.
-* Total Piutang Utang Aktif Pelanggan.
-* Ekspor data & database inspector terpadu.
+### 6. 📊 Ringkasan Keuangan & Inspektor Database
+* **Ringkasan Omset & Laba:** Performa penjualan harian, bulanan, dan total piutang toko.
+* **🗄️ Inspektor Database Lokal (Dev Helper):**
+  * Relokasi tombol inspektor ke bentuk **Icon Button (`<Database />`)** di footer sidebar & mobile header.
+  * Dropdown selector tabel otomatis responsif 100% full-width di HP (`flexWrap: wrap`) untuk mencegah overflow offside.
 
 ---
 
-### 🛡️ Arsitektur Teknologi
+### 🛡️ Arsitektur Teknologi & Responsive System
 * **Core:** React.js, Vite, Vanilla CSS design system.
-* **Persistence:** Custom LocalStorage Database Engine (`src/db.js`) dengan auto-seeding data dari Excel konveksi.
-* **Safety:** Protected React ErrorBoundary untuk mencegah *blank screen*.
+* **Responsive Breakpoint (1024px):** Dukungan penuh layar iPad / Tablet (768px - 1024px) dan HP (< 768px).
+* **Header & Drawer Mobile:** Header mobile 100% full-width edge-to-edge + drawer menu sidebar sleek width `min(320px, 85vw)`.
+* **Persistence:** Custom LocalStorage Database Engine (`src/db.js`) v11 dengan data dummy awal.
 
 ---
 
-*Project status: **Stock Management, POS Core, & Debt Management DONE*** 🚀
+*Status Project: **ALL MENUS COMPLETE & FULLY RESPONSIVE (POS, Inventory, Debt, Sales History, Stock Checker, Financial Summary, DB Inspector DONE)*** 🚀

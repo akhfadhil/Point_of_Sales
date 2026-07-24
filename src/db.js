@@ -7842,7 +7842,164 @@ const INITIAL_DATA = {
     { id: 'cst-11', name: 'Pak Sugeng Widodo', phone_number: '081377889900', total_debt: 0, created_at: '2026-07-18T15:20:00Z' },
     { id: 'cst-12', name: 'Ibu Maya Sari', phone_number: '087711335577', total_debt: 0, created_at: '2026-07-19T16:10:00Z' }
   ],
-  sales: [],
+  sales: [
+    {
+      id: 'sl-1',
+      invoice_number: 'INV-20260724-001',
+      cashier_id: 'u-1',
+      customer_id: 'cst-1',
+      customer_type: 'GURU',
+      total_amount: 350000,
+      payment_method: 'DEBT',
+      payment_status: 'PARTIAL',
+      paid_amount: 150000,
+      change_amount: 0,
+      created_at: '2026-07-24T08:30:00Z'
+    },
+    {
+      id: 'sl-2',
+      invoice_number: 'INV-20260724-002',
+      cashier_id: 'u-2',
+      customer_id: 'cst-2',
+      customer_type: 'UMUM',
+      total_amount: 200000,
+      payment_method: 'CASH',
+      payment_status: 'PAID',
+      paid_amount: 200000,
+      change_amount: 0,
+      created_at: '2026-07-24T09:15:00Z'
+    },
+    {
+      id: 'sl-3',
+      invoice_number: 'INV-20260724-003',
+      cashier_id: 'u-1',
+      customer_id: 'cst-3',
+      customer_type: 'GROSIR',
+      total_amount: 650000,
+      payment_method: 'TRANSFER',
+      payment_status: 'PAID',
+      paid_amount: 650000,
+      change_amount: 0,
+      created_at: '2026-07-24T10:00:00Z'
+    },
+    {
+      id: 'sl-4',
+      invoice_number: 'INV-20260724-004',
+      cashier_id: 'u-2',
+      customer_id: '',
+      customer_type: 'UMUM',
+      total_amount: 145000,
+      payment_method: 'QRIS',
+      payment_status: 'PAID',
+      paid_amount: 145000,
+      change_amount: 0,
+      created_at: '2026-07-24T10:45:00Z'
+    },
+    {
+      id: 'sl-5',
+      invoice_number: 'INV-20260724-005',
+      cashier_id: 'u-1',
+      customer_id: 'cst-4',
+      customer_type: 'UMUM',
+      total_amount: 375000,
+      payment_method: 'DEBT',
+      payment_status: 'PARTIAL',
+      paid_amount: 100000,
+      change_amount: 0,
+      created_at: '2026-07-24T11:20:00Z'
+    },
+    {
+      id: 'sl-6',
+      invoice_number: 'INV-20260724-006',
+      cashier_id: 'u-2',
+      customer_id: 'cst-5',
+      customer_type: 'GURU',
+      total_amount: 900000,
+      payment_method: 'DEBT',
+      payment_status: 'PARTIAL',
+      paid_amount: 300000,
+      change_amount: 0,
+      created_at: '2026-07-24T12:00:00Z'
+    },
+    {
+      id: 'sl-7',
+      invoice_number: 'INV-20260724-007',
+      cashier_id: 'u-1',
+      customer_id: '',
+      customer_type: 'UMUM',
+      total_amount: 85000,
+      payment_method: 'CASH',
+      payment_status: 'PAID',
+      paid_amount: 100000,
+      change_amount: 15000,
+      created_at: '2026-07-24T13:10:00Z'
+    },
+    {
+      id: 'sl-8',
+      invoice_number: 'INV-20260724-008',
+      cashier_id: 'u-2',
+      customer_id: 'cst-8',
+      customer_type: 'GROSIR',
+      total_amount: 500000,
+      payment_method: 'CASH',
+      payment_status: 'PAID',
+      paid_amount: 500000,
+      change_amount: 0,
+      created_at: '2026-07-24T14:30:00Z'
+    },
+    {
+      id: 'sl-9',
+      invoice_number: 'INV-20260724-009',
+      cashier_id: 'u-1',
+      customer_id: 'cst-7',
+      customer_type: 'UMUM',
+      total_amount: 770000,
+      payment_method: 'DEBT',
+      payment_status: 'PARTIAL',
+      paid_amount: 250000,
+      change_amount: 0,
+      created_at: '2026-07-24T15:15:00Z'
+    },
+    {
+      id: 'sl-10',
+      invoice_number: 'INV-20260724-010',
+      cashier_id: 'u-2',
+      customer_id: 'cst-9',
+      customer_type: 'GURU',
+      total_amount: 230000,
+      payment_method: 'TRANSFER',
+      payment_status: 'PAID',
+      paid_amount: 230000,
+      change_amount: 0,
+      created_at: '2026-07-24T16:00:00Z'
+    },
+    {
+      id: 'sl-11',
+      invoice_number: 'INV-20260724-011',
+      cashier_id: 'u-1',
+      customer_id: '',
+      customer_type: 'UMUM',
+      total_amount: 120000,
+      payment_method: 'QRIS',
+      payment_status: 'PAID',
+      paid_amount: 120000,
+      change_amount: 0,
+      created_at: '2026-07-24T16:45:00Z'
+    },
+    {
+      id: 'sl-12',
+      invoice_number: 'INV-20260724-012',
+      cashier_id: 'u-2',
+      customer_id: 'cst-10',
+      customer_type: 'GROSIR',
+      total_amount: 410000,
+      payment_method: 'CASH',
+      payment_status: 'PAID',
+      paid_amount: 450000,
+      change_amount: 40000,
+      created_at: '2026-07-24T17:10:00Z'
+    }
+  ],
   sale_items: [],
   debt_payments: [
     { id: 'dp-1', customer_id: 'cst-1', amount_paid: 150000, payment_method: 'CASH', cashier_id: 'u-1', created_at: '2026-07-24T10:00:00Z' },
@@ -7856,7 +8013,7 @@ const INITIAL_DATA = {
   ]
 };
 
-const CURRENT_DB_VERSION = 'v10_dummy_debt_pagination';
+const CURRENT_DB_VERSION = 'v11_dummy_sales_history';
 
 // Selalu pastikan LocalStorage diperbarui dengan data Excel terbaru jika versi berubah
 if (localStorage.getItem('oliviana_db_version') !== CURRENT_DB_VERSION) {

@@ -1007,6 +1007,8 @@ h1, h2, h3, h4, h5, h6 {
 /* Segmented Control (Payment Tab, etc) */
 .segmented-control {
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   background: var(--bg-tertiary);
   padding: 4px;
   border-radius: var(--border-radius-md);
@@ -1015,6 +1017,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .segmented-option {
   flex: 1;
+  min-width: fit-content;
+  white-space: nowrap;
   padding: 8px 12px;
   border-radius: var(--border-radius-sm);
   border: none;
@@ -1304,7 +1308,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .app-container {
     flex-direction: column;
   }
@@ -1313,7 +1317,9 @@ h1, h2, h3, h4, h5, h6 {
     display: flex !important;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 14px 20px;
+    width: 100%;
+    box-sizing: border-box;
     background-color: var(--bg-secondary);
     border-bottom: 1px solid var(--card-border);
     position: sticky;
@@ -1326,13 +1332,16 @@ h1, h2, h3, h4, h5, h6 {
     top: 0;
     left: 0;
     bottom: 0;
-    width: 280px !important;
+    width: min(320px, 85vw) !important;
+    max-width: 340px !important;
     height: 100vh !important;
     z-index: 1000 !important;
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: var(--card-shadow-hover);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
     display: flex !important;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
   .sidebar.mobile-open {
@@ -1353,6 +1362,7 @@ h1, h2, h3, h4, h5, h6 {
   .main-content {
     margin-left: 0 !important;
     padding: 16px 16px 88px 16px !important;
+    overflow-x: hidden;
   }
 
   .bottom-nav {
@@ -1369,41 +1379,9 @@ h1, h2, h3, h4, h5, h6 {
     z-index: 900;
   }
 
+  /* iPad / Tablet POS Register Split-Screen */
   .pos-mobile-toggle {
-    display: flex !important;
-    margin-bottom: 16px;
-  }
-
-  .pos-layout {
-    flex-direction: column;
-    height: auto;
-    overflow: visible;
-  }
-  
-  /* Tampilkan/Sembunyikan panel POS sesuai pilihan toggle mobile */
-  .pos-layout.show-products .pos-cart-panel {
     display: none !important;
-  }
-  .pos-layout.show-cart .pos-products-panel {
-    display: none !important;
-  }
-
-  .pos-cart-panel {
-    width: 100% !important;
-    position: relative !important;
-    top: 0 !important;
-    max-height: none !important;
-    min-width: 0 !important;
-  }
-
-  .cart-items-list {
-    max-height: none !important;
-    min-height: 160px !important;
-  }
-
-  .cart-item {
-    flex-wrap: wrap;
-    gap: 8px;
   }
 
   /* scrollable tabel di HP */
@@ -1429,16 +1407,89 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Responsive Desktop vs Mobile Views */
-.desktop-only {
-  display: block;
+/* Tablet / iPad POS Register Split-Screen (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .pos-mobile-toggle {
+    display: none !important;
+  }
+  .pos-layout {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    align-items: flex-start !important;
+  }
+  .pos-products-panel {
+    display: flex !important;
+    flex: 1.4 !important;
+    min-width: 0 !important;
+    width: auto !important;
+  }
+  .pos-cart-panel {
+    display: flex !important;
+    flex: 1 !important;
+    min-width: 290px !important;
+    max-width: 380px !important;
+    position: sticky !important;
+    top: 16px !important;
+    width: auto !important;
+  }
 }
 
-.mobile-only {
-  display: none;
-}
-
+/* Smartphone POS Single Panel Toggle (<= 768px) */
 @media (max-width: 768px) {
+  .pos-mobile-toggle {
+    display: flex !important;
+    margin-bottom: 16px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .pos-layout {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .pos-products-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  .pos-layout.show-products .pos-cart-panel {
+    display: none !important;
+  }
+  .pos-layout.show-cart .pos-products-panel {
+    display: none !important;
+  }
+
+  .pos-cart-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative !important;
+    top: 0 !important;
+    max-height: none !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Responsive Desktop vs Mobile Views */
+@media (min-width: 1025px) {
+  .desktop-only {
+    display: block !important;
+  }
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1024px) {
   .desktop-only {
     display: none !important;
   }

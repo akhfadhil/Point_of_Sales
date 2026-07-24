@@ -156,13 +156,28 @@ function App() {
   const [expandedProductIds, setExpandedProductIds] = useState([]);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
   const [stockSearchQuery, setStockSearchQuery] = useState('');
+  const [stockProductFilter, setStockProductFilter] = useState('');
+  const [stockSizeFilter, setStockSizeFilter] = useState('');
+  const [stockColorFilter, setStockColorFilter] = useState('');
+  const [stockPage, setStockPage] = useState(1);
   const [debtSearchQuery, setDebtSearchQuery] = useState('');
   const [debtActivePage, setDebtActivePage] = useState(1);
   const [debtSettledPage, setDebtSettledPage] = useState(1);
   const [debtHistoryPage, setDebtHistoryPage] = useState(1);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [historyPage, setHistoryPage] = useState(1);
   const [selectedDbTable, setSelectedDbTable] = useState('users');
   const [mobilePosActiveView, setMobilePosActiveView] = useState('products'); // 'products' | 'cart'
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Modals state
   const [activeModal, setActiveModal] = useState(null); // 'checkout-success' | 'factory-inbound' | 'repay-debt' | 'add-product' | 'add-variant'
@@ -712,14 +727,6 @@ function App() {
                   <History size={18} />
                   Riwayat Transaksi
                 </button>
-                <button
-                  type="button"
-                  className={`sidebar-item ${activeTab === 'db-viewer' ? 'active' : ''}`}
-                  onClick={() => { setActiveTab('db-viewer'); setIsMobileMenuOpen(false); }}
-                >
-                  <Database size={18} />
-                  Inspektor Database
-                </button>
               </>
             )}
 
@@ -729,7 +736,7 @@ function App() {
               onClick={() => { setActiveTab('pos'); setIsMobileMenuOpen(false); }}
             >
               <ShoppingCart size={18} />
-              Kasir POS
+              Kasir
             </button>
 
             <button
@@ -765,6 +772,18 @@ function App() {
               {darkMode ? <Sun size={16} /> : <Moon size={16} />}
             </button>
 
+            {currentUser.role === 'OWNER' && (
+              <button
+                type="button"
+                className={`btn btn-sm btn-icon ${activeTab === 'db-viewer' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ flex: 1 }}
+                onClick={() => { setActiveTab('db-viewer'); setIsMobileMenuOpen(false); }}
+                title="Inspektor Database"
+              >
+                <Database size={16} />
+              </button>
+            )}
+
             <button
               type="button"
               className="btn btn-danger btn-sm btn-icon"
@@ -787,33 +806,46 @@ function App() {
         </div>
       </aside>
 
+      {/* MOBILE TOP HEADER BAR */}
+      <div className="mobile-header" style={{ display: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm btn-icon"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            title="Menu Navigasi"
+          >
+            <Menu size={20} />
+          </button>
+          <span style={{ fontWeight: 'bold', fontSize: '18px', background: 'linear-gradient(135deg, var(--primary), var(--info))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            OLIVIANA
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm btn-icon"
+            onClick={() => setDarkMode(!darkMode)}
+            title="Ganti Tema"
+          >
+            {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+
+          {currentUser.role === 'OWNER' && (
+            <button
+              type="button"
+              className={`btn btn-sm btn-icon ${activeTab === 'db-viewer' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setActiveTab('db-viewer')}
+              title="Inspektor Database"
+            >
+              <Database size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* MAIN CONTAINER */}
       <main className="main-content">
-        {/* MOBILE TOP HEADER BAR */}
-        <div className="mobile-header" style={{ display: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm btn-icon"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              title="Menu Navigasi"
-            >
-              <Menu size={20} />
-            </button>
-            <span style={{ fontWeight: 'bold', fontSize: '18px', background: 'linear-gradient(135deg, var(--primary), var(--info))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              OLIVIANA
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm btn-icon"
-              onClick={() => setDarkMode(!darkMode)}
-            >
-              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-          </div>
-        </div>
 
         {/* HEADER BAR */}
         <header className="header-bar">
@@ -844,7 +876,7 @@ function App() {
             )}
             {activeTab === 'pos' && (
               <>
-                <h1>Kasir Point of Sale (POS)</h1>
+                <h1>Kasir</h1>
                 <p>Pencatatan penjualan cepat tanpa barcode scanner.</p>
               </>
             )}
@@ -917,19 +949,19 @@ function App() {
             </div>
 
             {/* Dashboard Content Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '24px', marginTop: '24px' }}>
 
               {/* Recent Transactions */}
               <div className="card">
-                <h2 className="card-title">Penjualan Terbaru</h2>
+                <h2 className="card-title" style={{ fontSize: '18px', fontWeight: 'bold' }}>Penjualan Terbaru</h2>
                 <div className="table-wrapper">
                   <table className="table">
                     <thead>
                       <tr>
-                        <th>Invoice</th>
-                        <th>Pelanggan</th>
-                        <th>Total</th>
-                        <th>Metode</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>Invoice</th>
+                        <th style={{ minWidth: '140px' }}>Pelanggan</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>Total</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>Metode</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -937,10 +969,10 @@ function App() {
                         const cust = allCustomers.find(c => c.id === sale.customer_id);
                         return (
                           <tr key={sale.id}>
-                            <td><strong>{sale.invoice_number}</strong></td>
+                            <td style={{ whiteSpace: 'nowrap' }}><strong>{sale.invoice_number}</strong></td>
                             <td>{cust ? cust.name : 'Umum (Walk-in)'}</td>
-                            <td>{formatRupiah(sale.total_amount)}</td>
-                            <td>
+                            <td style={{ whiteSpace: 'nowrap' }}><strong>{formatRupiah(sale.total_amount)}</strong></td>
+                            <td style={{ whiteSpace: 'nowrap' }}>
                               <span className={`badge ${sale.payment_method === 'CASH' ? 'success' :
                                   sale.payment_method === 'DEBT' ? 'danger' : 'info'
                                 }`}>
@@ -962,14 +994,14 @@ function App() {
 
               {/* Stock Movements Log */}
               <div className="card">
-                <h2 className="card-title">Log Mutasi Stok (Pabrik & Penjualan)</h2>
+                <h2 className="card-title" style={{ fontSize: '18px', fontWeight: 'bold' }}>Log Mutasi Stok (Pabrik & Penjualan)</h2>
                 <div className="table-wrapper">
                   <table className="table">
                     <thead>
                       <tr>
-                        <th>Tanggal</th>
-                        <th>Barang</th>
-                        <th>Mutasi</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>Tanggal</th>
+                        <th style={{ minWidth: '140px' }}>Barang</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>Mutasi</th>
                         <th>Keterangan</th>
                       </tr>
                     </thead>
@@ -979,11 +1011,11 @@ function App() {
                         const prod = variant ? allProducts.find(p => p.id === variant.product_id) : null;
                         return (
                           <tr key={mov.id}>
-                            <td>{new Date(mov.created_at).toLocaleDateString('id-ID')}</td>
+                            <td style={{ whiteSpace: 'nowrap' }}>{new Date(mov.created_at).toLocaleDateString('id-ID')}</td>
                             <td>
-                              {prod ? prod.name : 'Unknown'} ({variant ? variant.size : '-'})
+                              <strong>{prod ? prod.name : 'Unknown'}</strong> ({variant ? variant.size : '-'})
                             </td>
-                            <td>
+                            <td style={{ whiteSpace: 'nowrap' }}>
                               <span style={{
                                 fontWeight: 'bold',
                                 color: mov.quantity > 0 ? 'var(--success)' : 'var(--danger)'
@@ -1020,7 +1052,7 @@ function App() {
                 className={`segmented-option ${mobilePosActiveView === 'products' ? 'active' : ''}`}
                 onClick={() => setMobilePosActiveView('products')}
               >
-                Katalog Produk ({filteredPOSProducts.length})
+                Katalog Produk ({allProducts.length})
               </button>
               <button
                 type="button"
@@ -1079,7 +1111,7 @@ function App() {
                 <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: 'var(--text-secondary)' }}>
                   Pilih Jenis Produk Seragam:
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(160px, 1fr))' : 'repeat(auto-fill, minmax(190px, 1fr))', gap: '14px', marginBottom: '20px' }}>
                   {(() => {
                     const displayedProds = allProducts.filter(prod => {
                       if (selectedCategoryFilter && prod.category_id !== selectedCategoryFilter) return false;
@@ -1110,6 +1142,14 @@ function App() {
                           const priceRangeStr = prices.length === 0 
                             ? '-' 
                             : (minPrice === maxPrice ? formatRupiah(minPrice) : `${formatRupiah(minPrice)} - ${formatRupiah(maxPrice)}`);
+
+                          const uniqueSizes = sortSizes(Array.from(new Set(prodVariants.map(v => v.size))));
+                          const sizeDisplayStr = uniqueSizes.length === 0
+                            ? 'Belum ada varian'
+                            : (uniqueSizes.length <= 4 
+                                ? `${uniqueSizes.length} Ukuran (${uniqueSizes.join(', ')})`
+                                : `${uniqueSizes.length} Ukuran (${uniqueSizes.slice(0, 4).join(', ')}, +${uniqueSizes.length - 4} lainnya)`
+                              );
 
                           return (
                             <div
@@ -1151,7 +1191,7 @@ function App() {
                                   {prod.name}
                                 </h4>
                                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 12px 0' }}>
-                                  {prodVariants.length > 0 ? `${prodVariants.length} Ukuran (${prodVariants.map(v => v.size).join(', ')})` : 'Belum ada varian'}
+                                  {sizeDisplayStr}
                                 </p>
                               </div>
 
@@ -1996,117 +2036,120 @@ function App() {
                       <span className="badge warning">{activeDebtCustomers.length} Piutang Aktif</span>
                     </div>
 
-                    {/* Desktop View Table */}
-                    <div className="table-wrapper desktop-only">
-                      <table className="table">
-                        <thead>
-                          <tr>
-                            <th style={{ minWidth: '180px' }}>Nama Pelanggan</th>
-                            <th style={{ whiteSpace: 'nowrap' }}>Nomor HP</th>
-                            <th style={{ whiteSpace: 'nowrap' }}>Total Utang Aktif</th>
-                            <th style={{ whiteSpace: 'nowrap' }}>Tanggal Terdaftar</th>
-                            <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Tindakan</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {paginatedActiveDebt.map(cust => (
-                            <tr key={cust.id}>
-                              <td><strong>{cust.name}</strong></td>
-                              <td style={{ whiteSpace: 'nowrap' }}>{cust.phone_number}</td>
-                              <td style={{ whiteSpace: 'nowrap' }}>
-                                <span style={{
-                                  fontWeight: 'bold',
-                                  color: 'var(--danger)',
-                                  fontSize: '15px'
-                                }}>
-                                  {formatRupiah(cust.total_debt)}
-                                </span>
-                              </td>
-                              <td style={{ whiteSpace: 'nowrap' }}>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
-                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                <button
-                                  type="button"
-                                  className="btn btn-success btn-sm"
-                                  style={{ whiteSpace: 'nowrap' }}
-                                  onClick={() => {
-                                    setSelectedCustomer(cust);
-                                    setDebtRepayAmount('');
-                                    setDebtRepayMethod('CASH');
-                                    setActiveModal('repay-debt');
-                                  }}
-                                >
-                                  <CreditCard size={14} /> Catat Pembayaran Cicilan
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                          {activeDebtCustomers.length === 0 && (
-                            <tr>
-                              <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
-                                {debtSearchQuery ? `Tidak ada piutang aktif atas nama "${debtSearchQuery}".` : 'Tidak ada piutang/kasbon aktif. Semua pelanggan dalam kondisi lunas! 🎉'}
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Mobile View Card Grid */}
-                    <div className="mobile-only">
-                      {paginatedActiveDebt.map(cust => (
-                        <div
-                          key={cust.id}
-                          style={{
-                            padding: '14px',
-                            borderRadius: '10px',
-                            border: '1px solid var(--card-border)',
-                            backgroundColor: 'var(--card-bg)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '10px'
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                            <div>
-                              <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>{cust.name}</h3>
-                              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>📱 {cust.phone_number}</span>
-                            </div>
-                            <span className="badge warning" style={{ fontSize: '10px' }}>Piutang Aktif</span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-tertiary)', padding: '10px 12px', borderRadius: '8px' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Sisa Utang Aktif:</span>
-                            <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--danger)' }}>
-                              {formatRupiah(cust.total_debt)}
-                            </span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
-                            <span>Tgl Terdaftar: {new Date(cust.created_at).toLocaleDateString('id-ID')}</span>
-                          </div>
-
-                          <button
-                            type="button"
-                            className="btn btn-success"
-                            style={{ width: '100%', padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '2px' }}
-                            onClick={() => {
-                              setSelectedCustomer(cust);
-                              setDebtRepayAmount('');
-                              setDebtRepayMethod('CASH');
-                              setActiveModal('repay-debt');
+                    {/* Desktop vs Mobile View via React Conditional Rendering */}
+                    {isMobile ? (
+                      /* Mobile View Card Grid */
+                      <div className="mobile-only">
+                        {paginatedActiveDebt.map(cust => (
+                          <div
+                            key={cust.id}
+                            style={{
+                              padding: '14px',
+                              borderRadius: '10px',
+                              border: '1px solid var(--card-border)',
+                              backgroundColor: 'var(--card-bg)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '10px'
                             }}
                           >
-                            <CreditCard size={16} /> Catat Pembayaran Cicilan
-                          </button>
-                        </div>
-                      ))}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                              <div>
+                                <h3 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>{cust.name}</h3>
+                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>📱 {cust.phone_number}</span>
+                              </div>
+                              <span className="badge warning" style={{ fontSize: '10px' }}>Piutang Aktif</span>
+                            </div>
 
-                      {activeDebtCustomers.length === 0 && (
-                        <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                          {debtSearchQuery ? `Tidak ada piutang aktif atas nama "${debtSearchQuery}".` : 'Tidak ada piutang/kasbon aktif. Semua pelanggan dalam kondisi lunas! 🎉'}
-                        </div>
-                      )}
-                    </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-tertiary)', padding: '10px 12px', borderRadius: '8px' }}>
+                              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Sisa Utang Aktif:</span>
+                              <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--danger)' }}>
+                                {formatRupiah(cust.total_debt)}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
+                              <span>Tgl Terdaftar: {new Date(cust.created_at).toLocaleDateString('id-ID')}</span>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="btn btn-success"
+                              style={{ width: '100%', padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '2px' }}
+                              onClick={() => {
+                                setSelectedCustomer(cust);
+                                setDebtRepayAmount('');
+                                setDebtRepayMethod('CASH');
+                                setActiveModal('repay-debt');
+                              }}
+                            >
+                              <CreditCard size={16} /> Catat Pembayaran Cicilan
+                            </button>
+                          </div>
+                        ))}
+
+                        {activeDebtCustomers.length === 0 && (
+                          <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                            {debtSearchQuery ? `Tidak ada piutang aktif atas nama "${debtSearchQuery}".` : 'Tidak ada piutang/kasbon aktif. Semua pelanggan dalam kondisi lunas! 🎉'}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Desktop View Table */
+                      <div className="table-wrapper desktop-only">
+                        <table className="table">
+                          <thead>
+                            <tr>
+                              <th style={{ minWidth: '180px' }}>Nama Pelanggan</th>
+                              <th style={{ whiteSpace: 'nowrap' }}>Nomor HP</th>
+                              <th style={{ whiteSpace: 'nowrap' }}>Total Utang Aktif</th>
+                              <th style={{ whiteSpace: 'nowrap' }}>Tanggal Terdaftar</th>
+                              <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Tindakan</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {paginatedActiveDebt.map(cust => (
+                              <tr key={cust.id}>
+                                <td><strong>{cust.name}</strong></td>
+                                <td style={{ whiteSpace: 'nowrap' }}>{cust.phone_number}</td>
+                                <td style={{ whiteSpace: 'nowrap' }}>
+                                  <span style={{
+                                    fontWeight: 'bold',
+                                    color: 'var(--danger)',
+                                    fontSize: '15px'
+                                  }}>
+                                    {formatRupiah(cust.total_debt)}
+                                  </span>
+                                </td>
+                                <td style={{ whiteSpace: 'nowrap' }}>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
+                                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-success btn-sm"
+                                    style={{ whiteSpace: 'nowrap' }}
+                                    onClick={() => {
+                                      setSelectedCustomer(cust);
+                                      setDebtRepayAmount('');
+                                      setDebtRepayMethod('CASH');
+                                      setActiveModal('repay-debt');
+                                    }}
+                                  >
+                                    <CreditCard size={14} /> Catat Pembayaran Cicilan
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            {activeDebtCustomers.length === 0 && (
+                              <tr>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                                  {debtSearchQuery ? `Tidak ada piutang aktif atas nama "${debtSearchQuery}".` : 'Tidak ada piutang/kasbon aktif. Semua pelanggan dalam kondisi lunas! 🎉'}
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
 
                     {/* Pagination Active Debt */}
                     {activeTotalPages > 1 && (
@@ -2143,68 +2186,71 @@ function App() {
                       <span className="badge success">{settledCustomers.length} Bebas Utang</span>
                     </div>
 
-                    {/* Desktop View Table */}
-                    <div className="table-wrapper desktop-only">
-                      <table className="table">
-                        <thead>
-                          <tr>
-                            <th style={{ minWidth: '180px' }}>Nama Pelanggan</th>
-                            <th style={{ whiteSpace: 'nowrap' }}>Nomor HP</th>
-                            <th style={{ whiteSpace: 'nowrap' }}>Status Utang</th>
-                            <th style={{ whiteSpace: 'nowrap' }}>Tanggal Terdaftar</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {paginatedSettled.map(cust => (
-                            <tr key={cust.id}>
-                              <td><strong>{cust.name}</strong></td>
-                              <td style={{ whiteSpace: 'nowrap' }}>{cust.phone_number}</td>
-                              <td style={{ whiteSpace: 'nowrap' }}>
-                                <span className="badge success">Bebas Utang (Rp 0)</span>
-                              </td>
-                              <td style={{ whiteSpace: 'nowrap' }}>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
-                            </tr>
-                          ))}
-                          {settledCustomers.length === 0 && (
+                    {/* Desktop vs Mobile View via React Conditional Rendering */}
+                    {isMobile ? (
+                      /* Mobile View Card Grid */
+                      <div className="mobile-only">
+                        {paginatedSettled.map(cust => (
+                          <div
+                            key={cust.id}
+                            style={{
+                              padding: '12px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid var(--card-border)',
+                              backgroundColor: 'var(--card-bg)',
+                              display: 'flex',
+                              justify: 'space-between',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <div>
+                              <h4 style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{cust.name}</h4>
+                              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>📱 {cust.phone_number}</span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <span className="badge success" style={{ fontSize: '10px' }}>Bebas Utang</span>
+                            </div>
+                          </div>
+                        ))}
+
+                        {settledCustomers.length === 0 && (
+                          <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                            Belum ada pelanggan lunas.
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Desktop View Table */
+                      <div className="table-wrapper desktop-only">
+                        <table className="table">
+                          <thead>
                             <tr>
-                              <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada pelanggan lunas.</td>
+                              <th style={{ minWidth: '180px' }}>Nama Pelanggan</th>
+                              <th style={{ whiteSpace: 'nowrap' }}>Nomor HP</th>
+                              <th style={{ whiteSpace: 'nowrap' }}>Status Utang</th>
+                              <th style={{ whiteSpace: 'nowrap' }}>Tanggal Terdaftar</th>
                             </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Mobile View Card Grid */}
-                    <div className="mobile-only">
-                      {paginatedSettled.map(cust => (
-                        <div
-                          key={cust.id}
-                          style={{
-                            padding: '12px 14px',
-                            borderRadius: '8px',
-                            border: '1px solid var(--card-border)',
-                            backgroundColor: 'var(--card-bg)',
-                            display: 'flex',
-                            justify: 'space-between',
-                            alignItems: 'center'
-                          }}
-                        >
-                          <div>
-                            <h4 style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{cust.name}</h4>
-                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>📱 {cust.phone_number}</span>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <span className="badge success" style={{ fontSize: '10px' }}>Bebas Utang</span>
-                          </div>
-                        </div>
-                      ))}
-
-                      {settledCustomers.length === 0 && (
-                        <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                          Belum ada pelanggan lunas.
-                        </div>
-                      )}
-                    </div>
+                          </thead>
+                          <tbody>
+                            {paginatedSettled.map(cust => (
+                              <tr key={cust.id}>
+                                <td><strong>{cust.name}</strong></td>
+                                <td style={{ whiteSpace: 'nowrap' }}>{cust.phone_number}</td>
+                                <td style={{ whiteSpace: 'nowrap' }}>
+                                  <span className="badge success">Bebas Utang (Rp 0)</span>
+                                </td>
+                                <td style={{ whiteSpace: 'nowrap' }}>{new Date(cust.created_at).toLocaleDateString('id-ID')}</td>
+                              </tr>
+                            ))}
+                            {settledCustomers.length === 0 && (
+                              <tr>
+                                <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada pelanggan lunas.</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
 
                     {/* Pagination Settled Debt */}
                     {settledTotalPages > 1 && (
@@ -2261,116 +2307,119 @@ function App() {
                     <span className="badge info">{filteredDebtPayments.length} Transaksi Cicilan</span>
                   </div>
 
-                  {/* Desktop View Table */}
-                  <div className="table-wrapper desktop-only">
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          <th style={{ whiteSpace: 'nowrap' }}>Tanggal</th>
-                          <th style={{ minWidth: '180px' }}>Nama Pelanggan</th>
-                          <th style={{ whiteSpace: 'nowrap' }}>Jumlah Bayar</th>
-                          <th style={{ whiteSpace: 'nowrap' }}>Metode</th>
-                          <th style={{ whiteSpace: 'nowrap' }}>Kasir Penerima</th>
-                          <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginatedHistory.map(payment => {
-                          const cust = allCustomers.find(c => c.id === payment.customer_id);
-                          const cashier = db.find('users', u => u.id === payment.cashier_id);
-                          return (
-                            <tr key={payment.id}>
-                              <td style={{ whiteSpace: 'nowrap' }}>{new Date(payment.created_at).toLocaleString('id-ID')}</td>
-                              <td><strong>{cust ? cust.name : 'Unknown'}</strong></td>
-                              <td style={{ color: 'var(--success)', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                                {formatRupiah(payment.amount_paid)}
-                              </td>
-                              <td style={{ whiteSpace: 'nowrap' }}>
-                                <span className="badge info">{payment.payment_method}</span>
-                              </td>
-                              <td style={{ whiteSpace: 'nowrap' }}>{cashier ? cashier.name : 'Kasir'}</td>
-                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary btn-sm"
-                                  style={{ whiteSpace: 'nowrap' }}
-                                  onClick={() => {
-                                    setSelectedDebtPayment(payment);
-                                    setActiveModal('debt-receipt');
-                                  }}
-                                >
-                                  <Printer size={12} /> Struk
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {filteredDebtPayments.length === 0 && (
-                          <tr>
-                            <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada riwayat cicilan.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Mobile View Card Grid */}
-                  <div className="mobile-only">
-                    {paginatedHistory.map(payment => {
-                      const cust = allCustomers.find(c => c.id === payment.customer_id);
-                      const cashier = db.find('users', u => u.id === payment.cashier_id);
-                      return (
-                        <div
-                          key={payment.id}
-                          style={{
-                            padding: '12px 14px',
-                            borderRadius: '8px',
-                            border: '1px solid var(--card-border)',
-                            backgroundColor: 'var(--card-bg)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '8px'
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                              <strong style={{ fontSize: '14px' }}>{cust ? cust.name : 'Unknown'}</strong>
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                {new Date(payment.created_at).toLocaleString('id-ID')}
+                  {/* Desktop vs Mobile View via React Conditional Rendering */}
+                  {isMobile ? (
+                    /* Mobile View Card Grid */
+                    <div className="mobile-only">
+                      {paginatedHistory.map(payment => {
+                        const cust = allCustomers.find(c => c.id === payment.customer_id);
+                        const cashier = db.find('users', u => u.id === payment.cashier_id);
+                        return (
+                          <div
+                            key={payment.id}
+                            style={{
+                              padding: '12px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid var(--card-border)',
+                              backgroundColor: 'var(--card-bg)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '8px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <strong style={{ fontSize: '14px' }}>{cust ? cust.name : 'Unknown'}</strong>
+                                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                  {new Date(payment.created_at).toLocaleString('id-ID')}
+                                </div>
                               </div>
+                              <span style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--success)' }}>
+                                + {formatRupiah(payment.amount_paid)}
+                              </span>
                             </div>
-                            <span style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--success)' }}>
-                              + {formatRupiah(payment.amount_paid)}
-                            </span>
-                          </div>
 
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px dashed var(--card-border)', fontSize: '12px' }}>
-                            <span style={{ color: 'var(--text-secondary)' }}>
-                              Via: <span className="badge info" style={{ fontSize: '10px' }}>{payment.payment_method}</span> | Kasir: {cashier ? cashier.name : 'Kasir'}
-                            </span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px dashed var(--card-border)', fontSize: '12px' }}>
+                              <span style={{ color: 'var(--text-secondary)' }}>
+                                Via: <span className="badge info" style={{ fontSize: '10px' }}>{payment.payment_method}</span> | Kasir: {cashier ? cashier.name : 'Kasir'}
+                              </span>
 
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm"
-                              style={{ fontSize: '11px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                              onClick={() => {
-                                setSelectedDebtPayment(payment);
-                                setActiveModal('debt-receipt');
-                              }}
-                            >
-                              <Printer size={12} /> Struk
-                            </button>
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                style={{ fontSize: '11px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                onClick={() => {
+                                  setSelectedDebtPayment(payment);
+                                  setActiveModal('debt-receipt');
+                                }}
+                              >
+                                <Printer size={12} /> Struk
+                              </button>
+                            </div>
                           </div>
+                        );
+                      })}
+
+                      {filteredDebtPayments.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                          Belum ada riwayat cicilan.
                         </div>
-                      );
-                    })}
-
-                    {filteredDebtPayments.length === 0 && (
-                      <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                        Belum ada riwayat cicilan.
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Desktop View Table */
+                    <div className="table-wrapper desktop-only">
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th style={{ whiteSpace: 'nowrap' }}>Tanggal</th>
+                            <th style={{ minWidth: '180px' }}>Nama Pelanggan</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Jumlah Bayar</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Metode</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Kasir Penerima</th>
+                            <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedHistory.map(payment => {
+                            const cust = allCustomers.find(c => c.id === payment.customer_id);
+                            const cashier = db.find('users', u => u.id === payment.cashier_id);
+                            return (
+                              <tr key={payment.id}>
+                                <td style={{ whiteSpace: 'nowrap' }}>{new Date(payment.created_at).toLocaleString('id-ID')}</td>
+                                <td><strong>{cust ? cust.name : 'Unknown'}</strong></td>
+                                <td style={{ color: 'var(--success)', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                                  {formatRupiah(payment.amount_paid)}
+                                </td>
+                                <td style={{ whiteSpace: 'nowrap' }}>
+                                  <span className="badge info">{payment.payment_method}</span>
+                                </td>
+                                <td style={{ whiteSpace: 'nowrap' }}>{cashier ? cashier.name : 'Kasir'}</td>
+                                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ whiteSpace: 'nowrap' }}
+                                    onClick={() => {
+                                      setSelectedDebtPayment(payment);
+                                      setActiveModal('debt-receipt');
+                                    }}
+                                  >
+                                    <Printer size={12} /> Struk
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          {filteredDebtPayments.length === 0 && (
+                            <tr>
+                              <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Belum ada riwayat cicilan.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
 
                   {/* Pagination Debt History */}
                   {historyTotalPages > 1 && (
@@ -2407,147 +2456,516 @@ function App() {
 
         {/* 5. OWNER: SALES HISTORY */}
         {activeTab === 'history' && currentUser.role === 'OWNER' && (
-          <section className="card">
-            <h2 className="card-title">Semua Laporan Invoice Penjualan</h2>
-            <div className="table-wrapper">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Nomor Invoice</th>
-                    <th>Waktu/Tanggal</th>
-                    <th>Nama Kasir</th>
-                    <th>Pelanggan</th>
-                    <th>Total Transaksi</th>
-                    <th>Metode Pembayaran</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allSales.slice().reverse().map(sale => {
-                    const cashier = db.find('users', u => u.id === sale.cashier_id);
-                    const cust = allCustomers.find(c => c.id === sale.customer_id);
+          <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Header Title & Search Bar */}
+            <div className="card" style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Laporan Invoice Penjualan</h2>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>Riwayat lengkap transaksi nota penjualan toko Oliviana.</p>
+                </div>
 
-                    return (
-                      <tr key={sale.id}>
-                        <td><strong>{sale.invoice_number}</strong></td>
-                        <td>{new Date(sale.created_at).toLocaleString('id-ID')}</td>
-                        <td>{cashier ? cashier.name : 'Unknown'}</td>
-                        <td>{cust ? cust.name : 'Umum (Walk-in)'}</td>
-                        <td><strong>{formatRupiah(sale.total_amount)}</strong></td>
-                        <td><span className="badge info">{sale.payment_method}</span></td>
-                        <td>
-                          <span className={`badge ${sale.payment_status === 'PAID' ? 'success' :
-                              sale.payment_status === 'PARTIAL' ? 'warning' : 'danger'
-                            }`}>
-                            {sale.payment_status}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => {
-                              setCurrentSaleInvoice(sale);
-                              setActiveModal('checkout-success');
+                {/* Search Bar Invoice */}
+                <div style={{ position: 'relative', minWidth: '260px', flex: 1, maxWidth: '400px' }}>
+                  <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Cari no. invoice, kasir, pelanggan..."
+                    value={historySearchQuery}
+                    onChange={(e) => {
+                      setHistorySearchQuery(e.target.value);
+                      setHistoryPage(1);
+                    }}
+                    style={{ paddingLeft: '36px', paddingRight: '32px', fontSize: '13px' }}
+                  />
+                  {historySearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setHistorySearchQuery('')}
+                      style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {(() => {
+              // Filter Sales History
+              const filteredSales = allSales.slice().reverse().filter(sale => {
+                if (!historySearchQuery.trim()) return true;
+                const q = historySearchQuery.toLowerCase().trim();
+                const cashier = db.find('users', u => u.id === sale.cashier_id);
+                const cust = allCustomers.find(c => c.id === sale.customer_id);
+                const invNum = sale.invoice_number.toLowerCase();
+                const cashierName = cashier ? cashier.name.toLowerCase() : '';
+                const custName = cust ? cust.name.toLowerCase() : 'umum walk-in';
+                return invNum.includes(q) || cashierName.includes(q) || custName.includes(q);
+              });
+
+              // Pagination params
+              const historyLimit = 5;
+              const totalHistoryPages = Math.ceil(filteredSales.length / historyLimit) || 1;
+              const currentHPage = Math.min(historyPage, totalHistoryPages);
+              const paginatedSales = filteredSales.slice((currentHPage - 1) * historyLimit, currentHPage * historyLimit);
+
+              return (
+                <div className="card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                    <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, color: 'var(--text-primary)' }}>Riwayat Transaksi</h2>
+                    <span className="badge info">{filteredSales.length} Total Invoice</span>
+                  </div>
+
+                  {/* Desktop vs Mobile/Tablet View via React Conditional Rendering */}
+                  {isMobile ? (
+                    /* Tablet & Mobile View Cards Grid */
+                    <div className="mobile-only">
+                      {paginatedSales.map(sale => {
+                        const cashier = db.find('users', u => u.id === sale.cashier_id);
+                        const cust = allCustomers.find(c => c.id === sale.customer_id);
+
+                        return (
+                          <div
+                            key={sale.id}
+                            style={{
+                              padding: '14px',
+                              borderRadius: '10px',
+                              border: '1px solid var(--card-border)',
+                              backgroundColor: 'var(--card-bg)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '10px'
                             }}
                           >
-                            <Printer size={12} /> Struk
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {allSales.length === 0 && (
-                    <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', padding: '16px' }}>Belum ada riwayat penjualan.</td>
-                    </tr>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                              <div>
+                                <strong style={{ fontSize: '15px', color: 'var(--primary)' }}>{sale.invoice_number}</strong>
+                                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                  🗓️ {new Date(sale.created_at).toLocaleString('id-ID')}
+                                </div>
+                              </div>
+                              <span className={`badge ${sale.payment_status === 'PAID' ? 'success' : sale.payment_status === 'PARTIAL' ? 'warning' : 'danger'}`}>
+                                {sale.payment_status === 'PAID' ? 'LUNAS' : sale.payment_status === 'PARTIAL' ? 'SEBAGIAN' : 'BELUM LUNAS'}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-tertiary)', padding: '10px 12px', borderRadius: '8px', fontSize: '13px' }}>
+                              <span>Total Transaksi:</span>
+                              <strong style={{ fontSize: '16px', color: 'var(--success)' }}>
+                                {formatRupiah(sale.total_amount)}
+                              </strong>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                              <span>👤 Pelanggan: <strong>{cust ? cust.name : 'Umum (Walk-in)'}</strong></span>
+                              <span>Via: <span className="badge info" style={{ fontSize: '10px' }}>{sale.payment_method}</span></span>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
+                              <span>👨‍💼 Kasir: {cashier ? cashier.name : 'Unknown'}</span>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              style={{ width: '100%', padding: '8px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '2px' }}
+                              onClick={() => {
+                                setCurrentSaleInvoice(sale);
+                                setActiveModal('checkout-success');
+                              }}
+                            >
+                              <Printer size={14} /> Cetak Struk
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {filteredSales.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                          {historySearchQuery ? `Tidak ada invoice cocok dengan "${historySearchQuery}".` : 'Belum ada riwayat penjualan.'}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Desktop View Table */
+                    <div className="table-wrapper desktop-only">
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th style={{ whiteSpace: 'nowrap' }}>Nomor Invoice</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Waktu/Tanggal</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Nama Kasir</th>
+                            <th style={{ minWidth: '160px' }}>Pelanggan</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Total Transaksi</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Metode</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Status</th>
+                            <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginatedSales.map(sale => {
+                            const cashier = db.find('users', u => u.id === sale.cashier_id);
+                            const cust = allCustomers.find(c => c.id === sale.customer_id);
+
+                            return (
+                              <tr key={sale.id}>
+                                <td style={{ whiteSpace: 'nowrap' }}><strong>{sale.invoice_number}</strong></td>
+                                <td style={{ whiteSpace: 'nowrap' }}>{new Date(sale.created_at).toLocaleString('id-ID')}</td>
+                                <td style={{ whiteSpace: 'nowrap' }}>{cashier ? cashier.name : 'Unknown'}</td>
+                                <td>{cust ? cust.name : 'Umum (Walk-in)'}</td>
+                                <td style={{ whiteSpace: 'nowrap' }}><strong>{formatRupiah(sale.total_amount)}</strong></td>
+                                <td style={{ whiteSpace: 'nowrap' }}><span className="badge info">{sale.payment_method}</span></td>
+                                <td style={{ whiteSpace: 'nowrap' }}>
+                                  <span className={`badge ${sale.payment_status === 'PAID' ? 'success' :
+                                      sale.payment_status === 'PARTIAL' ? 'warning' : 'danger'
+                                    }`}>
+                                    {sale.payment_status}
+                                  </span>
+                                </td>
+                                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ whiteSpace: 'nowrap' }}
+                                    onClick={() => {
+                                      setCurrentSaleInvoice(sale);
+                                      setActiveModal('checkout-success');
+                                    }}
+                                  >
+                                    <Printer size={12} /> Struk
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          {filteredSales.length === 0 && (
+                            <tr>
+                              <td colSpan="8" style={{ textAlign: 'center', padding: '16px' }}>
+                                {historySearchQuery ? `Tidak ada invoice cocok dengan "${historySearchQuery}".` : 'Belum ada riwayat penjualan.'}
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
-                </tbody>
-              </table>
-            </div>
+
+                  {/* Pagination Sales History */}
+                  {totalHistoryPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--card-border)', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        Halaman {currentHPage} dari {totalHistoryPages} ({filteredSales.length} Invoice)
+                      </span>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          disabled={currentHPage === 1}
+                          onClick={() => setHistoryPage(prev => Math.max(1, prev - 1))}
+                        >
+                          ‹ Sebelumnya
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          disabled={currentHPage === totalHistoryPages}
+                          onClick={() => setHistoryPage(prev => Math.min(totalHistoryPages, prev + 1))}
+                        >
+                          Selanjutnya ›
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
           </section>
         )}
 
         {/* 6. GENERAL: CHECK STOCK (SHARED) */}
-        {activeTab === 'check-stock' && (
-          <section className="card">
-            <div className="search-filter-bar" style={{ marginBottom: '20px' }}>
-              <div className="search-input-wrapper">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Cari produk seragam/atribut berdasarkan nama atau ukuran..."
-                  value={stockSearchQuery}
-                  onChange={(e) => setStockSearchQuery(e.target.value)}
-                  style={{ paddingLeft: '40px' }}
-                />
-                <Search size={18} style={{ position: 'absolute', left: '14px', top: '12px', color: 'var(--text-muted)' }} />
-              </div>
-            </div>
+        {activeTab === 'check-stock' && (() => {
+          const stockProductsList = allProducts.slice().sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || ''), 'id', { sensitivity: 'base' }));
+          const stockSizesList = sortSizes(Array.from(new Set(allVariants.map(v => v.size))));
+          const stockColorsList = Array.from(new Set(allVariants.map(v => v.color))).sort((a, b) => String(a || '').localeCompare(String(b || ''), 'id', { sensitivity: 'base' }));
 
-            <div className="table-wrapper">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>SKU</th>
-                    <th>Nama Produk</th>
-                    <th>Ukuran</th>
-                    <th>Warna</th>
-                    {currentUser.role === 'OWNER' && <th>Harga Modal</th>}
-                    <th>Harga Jual</th>
-                    <th>Jumlah Stok</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allVariants
-                    .filter(v => {
-                      const p = allProducts.find(prod => prod.id === v.product_id);
-                      if (!p) return false;
-                      const searchStr = `${p.name} ${v.sku} ${v.size} ${v.color}`.toLowerCase();
-                      return searchStr.includes(stockSearchQuery.toLowerCase());
-                    })
-                    .sort((a, b) => a.sku.localeCompare(b.sku))
-                    .map(variant => {
+          const isAnyStockFilterActive = Boolean(stockProductFilter || stockSizeFilter || stockColorFilter || stockSearchQuery.trim());
+
+          // Filter variants
+          const filteredVariants = allVariants.filter(v => {
+            const product = allProducts.find(p => p.id === v.product_id);
+            if (!product) return false;
+
+            if (stockProductFilter && v.product_id !== stockProductFilter) return false;
+            if (stockSizeFilter && v.size !== stockSizeFilter) return false;
+            if (stockColorFilter && v.color !== stockColorFilter) return false;
+
+            if (stockSearchQuery.trim()) {
+              const q = stockSearchQuery.toLowerCase().trim();
+              const category = allCategories.find(c => c.id === product.category_id);
+              const catName = category ? category.name.toLowerCase() : '';
+              const searchStr = `${product.name} ${catName} ${v.sku} ${v.size} ${v.color}`.toLowerCase();
+              if (!searchStr.includes(q)) return false;
+            }
+
+            return true;
+          }).sort(compareVariants);
+
+          // Pagination params
+          const stockLimit = 10;
+          const totalStockPages = Math.ceil(filteredVariants.length / stockLimit) || 1;
+          const currentStockPage = Math.min(stockPage, totalStockPages);
+          const paginatedVariants = filteredVariants.slice((currentStockPage - 1) * stockLimit, currentStockPage * stockLimit);
+
+          return (
+            <section style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Multi-Filter Bar (Persis Manajemen Stok) */}
+              <div className="card" style={{ padding: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', alignItems: 'end' }}>
+                  {/* 1. Filter Produk */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="stock-filter-prod" className="form-label" style={{ fontSize: '12px', fontWeight: 'bold' }}>Pilih Produk</label>
+                    <select
+                      id="stock-filter-prod"
+                      className="form-control"
+                      style={{ fontSize: '13px', padding: '8px 12px' }}
+                      value={stockProductFilter}
+                      onChange={(e) => { setStockProductFilter(e.target.value); setStockPage(1); }}
+                    >
+                      <option value="">-- Semua Produk --</option>
+                      {stockProductsList.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 2. Filter Ukuran */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="stock-filter-size" className="form-label" style={{ fontSize: '12px', fontWeight: 'bold' }}>Pilih Ukuran</label>
+                    <select
+                      id="stock-filter-size"
+                      className="form-control"
+                      style={{ fontSize: '13px', padding: '8px 12px' }}
+                      value={stockSizeFilter}
+                      onChange={(e) => { setStockSizeFilter(e.target.value); setStockPage(1); }}
+                    >
+                      <option value="">-- Semua Ukuran --</option>
+                      {stockSizesList.map(sz => (
+                        <option key={sz} value={sz}>Ukuran {sz}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 3. Filter Warna */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="stock-filter-color" className="form-label" style={{ fontSize: '12px', fontWeight: 'bold' }}>Pilih Warna</label>
+                    <select
+                      id="stock-filter-color"
+                      className="form-control"
+                      style={{ fontSize: '13px', padding: '8px 12px' }}
+                      value={stockColorFilter}
+                      onChange={(e) => { setStockColorFilter(e.target.value); setStockPage(1); }}
+                    >
+                      <option value="">-- Semua Warna --</option>
+                      {stockColorsList.map(col => (
+                        <option key={col} value={col}>{col}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 4. Keyword / SKU Search */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="stock-filter-search" className="form-label" style={{ fontSize: '12px', fontWeight: 'bold' }}>Kata Kunci / SKU</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        id="stock-filter-search"
+                        type="text"
+                        className="form-control"
+                        style={{ fontSize: '13px', padding: '8px 12px' }}
+                        placeholder="Cari SKU / nama..."
+                        value={stockSearchQuery}
+                        onChange={(e) => { setStockSearchQuery(e.target.value); setStockPage(1); }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Reset Filter Button */}
+                  {isAnyStockFilterActive && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '12px', padding: '8px 14px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                      onClick={() => {
+                        setStockProductFilter('');
+                        setStockSizeFilter('');
+                        setStockColorFilter('');
+                        setStockSearchQuery('');
+                        setStockPage(1);
+                      }}
+                    >
+                      <X size={14} /> Reset Filter
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Table / Cards Grid */}
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0, color: 'var(--text-primary)' }}>Hasil Cek Stok Barang</h2>
+                  <span className="badge info">{filteredVariants.length} Varian Ditemukan</span>
+                </div>
+
+                {isMobile ? (
+                  /* Mobile & Tablet Card Grid View */
+                  <div className="mobile-only">
+                    {paginatedVariants.map(variant => {
                       const product = allProducts.find(p => p.id === variant.product_id);
+                      const category = product ? allCategories.find(c => c.id === product.category_id) : null;
                       const isLow = variant.stock_quantity < 5;
 
                       return (
-                        <tr key={variant.id}>
-                          <td><code>{variant.sku}</code></td>
-                          <td><strong>{product ? product.name : 'Unknown'}</strong></td>
-                          <td><span className="product-item-size">{variant.size}</span></td>
-                          <td>{variant.color}</td>
-                          {currentUser.role === 'OWNER' && <td>{formatRupiah(variant.cost_price)}</td>}
-                          <td><strong>{formatRupiah(variant.selling_price)}</strong></td>
-                          <td><strong>{variant.stock_quantity} Pcs</strong></td>
-                          <td>
-                            {variant.stock_quantity === 0 ? (
-                              <span className="badge danger">Kosong</span>
-                            ) : isLow ? (
-                              <span className="badge warning">Kritis (&lt; 5)</span>
-                            ) : (
-                              <span className="badge success">Tersedia</span>
-                            )}
-                          </td>
-                        </tr>
+                        <div
+                          key={variant.id}
+                          style={{
+                            padding: '14px',
+                            borderRadius: '10px',
+                            border: '1px solid var(--card-border)',
+                            backgroundColor: 'var(--card-bg)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <code style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 'bold' }}>{variant.sku}</code>
+                            <span className="badge info" style={{ fontSize: '10px' }}>{category ? category.name : 'Umum'}</span>
+                          </div>
+
+                          <h4 style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>{product ? product.name : 'Unknown'}</h4>
+
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span className="product-item-size" style={{ fontSize: '12px' }}>Ukuran {variant.size}</span>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Warna: {variant.color}</span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-tertiary)', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', marginTop: '4px' }}>
+                            <div>
+                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Harga Jual: </span>
+                              <strong style={{ color: 'var(--primary)' }}>{formatRupiah(variant.selling_price)}</strong>
+                              {currentUser.role === 'OWNER' && (
+                                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Modal: {formatRupiah(variant.cost_price)}</div>
+                              )}
+                            </div>
+                            <span className={`badge ${variant.stock_quantity === 0 ? 'danger' : isLow ? 'warning' : 'success'}`}>
+                              Stok: {variant.stock_quantity} Pcs
+                            </span>
+                          </div>
+                        </div>
                       );
                     })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
+
+                    {filteredVariants.length === 0 && (
+                      <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                        Tidak ada varian stok yang cocok dengan filter.
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Desktop Table View */
+                  <div className="table-wrapper desktop-only">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th style={{ whiteSpace: 'nowrap' }}>SKU</th>
+                          <th style={{ minWidth: '180px' }}>Nama Produk</th>
+                          <th style={{ whiteSpace: 'nowrap' }}>Ukuran</th>
+                          <th style={{ whiteSpace: 'nowrap' }}>Warna</th>
+                          {currentUser.role === 'OWNER' && <th style={{ whiteSpace: 'nowrap' }}>Harga Modal</th>}
+                          <th style={{ whiteSpace: 'nowrap' }}>Harga Jual</th>
+                          <th style={{ whiteSpace: 'nowrap' }}>Jumlah Stok</th>
+                          <th style={{ whiteSpace: 'nowrap' }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedVariants.map(variant => {
+                          const product = allProducts.find(p => p.id === variant.product_id);
+                          const isLow = variant.stock_quantity < 5;
+
+                          return (
+                            <tr key={variant.id}>
+                              <td style={{ whiteSpace: 'nowrap' }}><code>{variant.sku}</code></td>
+                              <td><strong>{product ? product.name : 'Unknown'}</strong></td>
+                              <td style={{ whiteSpace: 'nowrap' }}><span className="product-item-size">{variant.size}</span></td>
+                              <td style={{ whiteSpace: 'nowrap' }}>{variant.color}</td>
+                              {currentUser.role === 'OWNER' && <td style={{ whiteSpace: 'nowrap' }}>{formatRupiah(variant.cost_price)}</td>}
+                              <td style={{ whiteSpace: 'nowrap' }}><strong>{formatRupiah(variant.selling_price)}</strong></td>
+                              <td style={{ whiteSpace: 'nowrap' }}><strong>{variant.stock_quantity} Pcs</strong></td>
+                              <td style={{ whiteSpace: 'nowrap' }}>
+                                {variant.stock_quantity === 0 ? (
+                                  <span className="badge danger">Kosong</span>
+                                ) : isLow ? (
+                                  <span className="badge warning">Kritis (&lt; 5)</span>
+                                ) : (
+                                  <span className="badge success">Tersedia</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {filteredVariants.length === 0 && (
+                          <tr>
+                            <td colSpan={currentUser.role === 'OWNER' ? "8" : "7"} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                              Tidak ada varian stok yang cocok dengan filter.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Pagination Cek Stok */}
+                {totalStockPages > 1 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--card-border)', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Halaman {currentStockPage} dari {totalStockPages} ({filteredVariants.length} Varian)
+                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        disabled={currentStockPage === 1}
+                        onClick={() => setStockPage(prev => Math.max(1, prev - 1))}
+                      >
+                        ‹ Sebelumnya
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        disabled={currentStockPage === totalStockPages}
+                        onClick={() => setStockPage(prev => Math.min(totalStockPages, prev + 1))}
+                      >
+                        Selanjutnya ›
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* 7. GENERAL: DATABASE VIEWER (DEVELOPMENT HELPER) */}
         {activeTab === 'db-viewer' && (
           <section className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 className="card-title">Inspektor Database Lokal</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+              <h2 className="card-title" style={{ margin: 0 }}>Inspektor Database Lokal</h2>
               <select
                 className="form-control"
-                style={{ width: '250px' }}
+                style={{ width: isMobile ? '100%' : '250px', maxWidth: '100%' }}
                 value={selectedDbTable}
                 onChange={(e) => setSelectedDbTable(e.target.value)}
               >
@@ -3036,34 +3454,59 @@ function App() {
                 <div className="form-group" style={{ marginBottom: '16px' }}>
                   <label className="form-label" style={{ fontWeight: 'bold' }}>1. Pilih Ukuran</label>
                   {uniqueSizes.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {uniqueSizes.map(sz => {
-                        const isSelected = currentSize === sz;
-                        const hasStock = prodVariants.some(v => v.size === sz && v.stock_quantity > 0);
+                    isMobile ? (
+                      /* Mobile Dropdown Select for Sizes */
+                      <select
+                        className="form-control"
+                        value={currentSize}
+                        onChange={(e) => {
+                          const sz = e.target.value;
+                          setPosModalSize(sz);
+                          const colors = Array.from(new Set(prodVariants.filter(v => v.size === sz).map(v => v.color)));
+                          if (colors.length > 0) setPosModalColor(colors[0]);
+                        }}
+                        style={{ fontSize: '14px', padding: '10px 14px', fontWeight: 'bold' }}
+                      >
+                        {uniqueSizes.map(sz => {
+                          const hasStock = prodVariants.some(v => v.size === sz && v.stock_quantity > 0);
+                          return (
+                            <option key={sz} value={sz}>
+                              Ukuran {sz} {hasStock ? '' : '(Stok Habis)'}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    ) : (
+                      /* Desktop & iPad Button Chips for Sizes */
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {uniqueSizes.map(sz => {
+                          const isSelected = currentSize === sz;
+                          const hasStock = prodVariants.some(v => v.size === sz && v.stock_quantity > 0);
 
-                        return (
-                          <button
-                            type="button"
-                            key={sz}
-                            onClick={() => {
-                              setPosModalSize(sz);
-                              const colors = Array.from(new Set(prodVariants.filter(v => v.size === sz).map(v => v.color)));
-                              if (colors.length > 0) setPosModalColor(colors[0]);
-                            }}
-                            className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
-                            style={{
-                              padding: '8px 16px',
-                              fontSize: '14px',
-                              fontWeight: 'bold',
-                              borderRadius: '8px',
-                              opacity: hasStock ? 1 : 0.5
-                            }}
-                          >
-                            Ukuran {sz}
-                          </button>
-                        );
-                      })}
-                    </div>
+                          return (
+                            <button
+                              type="button"
+                              key={sz}
+                              onClick={() => {
+                                setPosModalSize(sz);
+                                const colors = Array.from(new Set(prodVariants.filter(v => v.size === sz).map(v => v.color)));
+                                if (colors.length > 0) setPosModalColor(colors[0]);
+                              }}
+                              className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                              style={{
+                                padding: '8px 16px',
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                borderRadius: '8px',
+                                opacity: hasStock ? 1 : 0.5
+                              }}
+                            >
+                              Ukuran {sz}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )
                   ) : (
                     <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Belum ada ukuran tersedia.</div>
                   )}
@@ -3073,33 +3516,54 @@ function App() {
                 <div className="form-group" style={{ marginBottom: '16px' }}>
                   <label className="form-label" style={{ fontWeight: 'bold' }}>2. Pilih Warna</label>
                   {uniqueColorsForSize.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {uniqueColorsForSize.map(col => {
-                        const isSelected = currentColor === col;
-                        const matchingVariant = prodVariants.find(v => v.size === currentSize && v.color === col);
-                        const isOut = !matchingVariant || matchingVariant.stock_quantity <= 0;
+                    isMobile ? (
+                      /* Mobile Dropdown Select for Colors */
+                      <select
+                        className="form-control"
+                        value={currentColor}
+                        onChange={(e) => setPosModalColor(e.target.value)}
+                        style={{ fontSize: '14px', padding: '10px 14px' }}
+                      >
+                        {uniqueColorsForSize.map(col => {
+                          const matchingVariant = prodVariants.find(v => v.size === currentSize && v.color === col);
+                          const isOut = !matchingVariant || matchingVariant.stock_quantity <= 0;
+                          return (
+                            <option key={col} value={col} disabled={isOut}>
+                              {col} {matchingVariant ? `(Stok: ${matchingVariant.stock_quantity} Pcs)` : ''} {isOut ? '- Stok Habis' : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    ) : (
+                      /* Desktop & iPad Button Chips for Colors */
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {uniqueColorsForSize.map(col => {
+                          const isSelected = currentColor === col;
+                          const matchingVariant = prodVariants.find(v => v.size === currentSize && v.color === col);
+                          const isOut = !matchingVariant || matchingVariant.stock_quantity <= 0;
 
-                        return (
-                          <button
-                            type="button"
-                            key={col}
-                            onClick={() => !isOut && setPosModalColor(col)}
-                            disabled={isOut}
-                            className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
-                            style={{
-                              padding: '6px 14px',
-                              fontSize: '13px',
-                              borderRadius: '20px',
-                              border: isSelected ? '2px solid var(--primary)' : '1px solid var(--card-border)',
-                              opacity: isOut ? 0.4 : 1,
-                              cursor: isOut ? 'not-allowed' : 'pointer'
-                            }}
-                          >
-                            {col} {matchingVariant ? `(${matchingVariant.stock_quantity} Pcs)` : ''}
-                          </button>
-                        );
-                      })}
-                    </div>
+                          return (
+                            <button
+                              type="button"
+                              key={col}
+                              onClick={() => !isOut && setPosModalColor(col)}
+                              disabled={isOut}
+                              className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                              style={{
+                                padding: '6px 14px',
+                                fontSize: '13px',
+                                borderRadius: '20px',
+                                border: isSelected ? '2px solid var(--primary)' : '1px solid var(--card-border)',
+                                opacity: isOut ? 0.4 : 1,
+                                cursor: isOut ? 'not-allowed' : 'pointer'
+                              }}
+                            >
+                              {col} {matchingVariant ? `(${matchingVariant.stock_quantity} Pcs)` : ''}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )
                   ) : (
                     <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Silakan pilih ukuran terlebih dahulu.</div>
                   )}
