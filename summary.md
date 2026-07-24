@@ -36,10 +36,14 @@ Aplikasi **Point of Sales (POS) & System Manajemen Stok Seragam** modern, cepat,
 
 ---
 
-### 3. 👥 Manajemen Pelanggan & Utang (Customer & Debt)
-* Pencatatan saldo utang pelanggan secara real-time.
-* Modal pembayaran cicilan utang dengan riwayat transaksi lengkap.
-* Cetak struk pembayaran cicilan utang.
+### 3. 💳 Manajemen Pelanggan & Utang (Customer & Debt Management)
+* **Pencatatan Piutang Real-Time:** Pencatatan saldo utang pelanggan otomatis saat transaksi kasir non-tunai.
+* **🔍 Search Bar Pelanggan:** Pencarian cepat nama / nomor HP pelanggan secara instan.
+* **📄 Pagination Ringkas (5 Data/Halaman):** Pembatasan tampilan 5 data per halaman diiringi tombol navigasi `‹ Sebelumnya` dan `Selanjutnya ›`.
+* **🎨 Tampilan Mobile Cards (Nol Scroll Samping):**
+  * **Piutang Aktif:** Tampil sebagai kartu vertikal dengan nominal utang merah tebal & tombol lebar *Catat Pembayaran Cicilan*.
+  * **Pelanggan Lunas:** Kartu status Bebas Utang (Rp 0).
+  * **Riwayat Cicilan:** Kartu histori pembayaran cicilan + cetak ulang struk cicilan.
 
 ---
 
@@ -57,4 +61,4 @@ Aplikasi **Point of Sales (POS) & System Manajemen Stok Seragam** modern, cepat,
 
 ---
 
-*Project status: **Stok Management & POS Core DONE*** 🚀
+*Project status: **Stock Management, POS Core, & Debt Management DONE*** 🚀
