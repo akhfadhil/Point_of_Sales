@@ -1489,7 +1489,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Responsive Desktop vs Mobile Views */
-@media (min-width: 1025px) {
+.mobile-only {
+  display: none;
+}
+.desktop-only {
+  display: block;
+}
+
+@media (min-width: 769px) {
   .desktop-only {
     display: block !important;
   }
@@ -1498,7 +1505,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .desktop-only {
     display: none !important;
   }

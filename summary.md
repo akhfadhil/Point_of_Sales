@@ -29,7 +29,7 @@ Aplikasi **Point of Sales (POS) & Sistem Manajemen Stok Seragam** modern, cepat,
   * Tombol **Reset Filter** 1-klik untuk mengembalikan kondisi filter ke awal.
 * **📄 Pagination Varian Stok (10 Varian/Halaman):** Navigasi ringkas `‹ Sebelumnya` dan `Selanjutnya ›`.
 * **📱 Layout Adaptif (Desktop vs Mobile):**
-  * **Laptop / PC:** Tampilan tabel lebar lengkap dengan harga modal (Owner), harga jual, dan status stok.
+  * **Laptop / PC:** Tampilan tabel lebar lengkap dengan harga jual dan status stok (penghapusan harga modal pada cek stok publik).
   * **HP & Tablet:** Tampilan *Mobile Stock Cards Grid* yang ringkas tanpa scroll samping.
 
 ---
@@ -43,22 +43,26 @@ Aplikasi **Point of Sales (POS) & Sistem Manajemen Stok Seragam** modern, cepat,
 
 ### 4. 📄 Riwayat Transaksi Penjualan (Sales History)
 * **🔍 Search Bar Instan:** Pencarian cepat berdasarkan nomor invoice, nama kasir, atau nama pelanggan.
+* **📅 Filter Tanggal Responsif:** Tombol preset cepat (*Semua*, *Hari Ini*, *7 Hari Terakhir*, *Bulan Ini*) dan *Custom Date Picker* (Mulai s/d Selesai).
 * **📄 Pagination (5 Invoice/Halaman):** Tampilan rapi terbagi per 5 transaksi dengan navigasi halaman.
 * **📱 Mobile Card View:** Menampilkan rincian invoice, metode pembayaran, total belanja, dan tombol cetak ulang struk dalam bentuk kartu vertikal yang rapi di HP.
-* **Data Dummy Realistis:** Dilengkapi 12 sampel transaksi penjualan dummy (`sl-1` s/d `sl-12`) untuk pengujian pencarian dan pagination.
 
 ---
 
 ### 5. 💳 Buku Kasbon & Utang (Customer & Debt Management)
 * **Pencatatan Piutang Real-Time:** Pencatatan saldo utang pelanggan otomatis saat transaksi kasir non-tunai.
 * **🔍 Search Bar Pelanggan:** Pencarian cepat nama / nomor HP pelanggan secara instan.
+* **📐 Urutan Tampilan Optimal:**
+  1. *Daftar Piutang & Kasbon Aktif* (teratas untuk pencatatan cepat)
+  2. *Riwayat Pembayaran Cicilan* (dengan Filter Tanggal & badge total terkumpul)
+  3. *Daftar Pelanggan Bebas Utang* (lunas)
 * **📄 Pagination Ringkas (5 Data/Halaman):** Pembatasan 5 data per halaman untuk Piutang Aktif, Pelanggan Lunas, dan Riwayat Pembayaran.
-* **🎨 Tampilan Mobile Cards (Nol Scroll Samping):** Kartu vertikal piutang aktif dengan nominal utang merah tebal & tombol *Catat Pembayaran Cicilan*.
 
 ---
 
 ### 6. 📊 Ringkasan Keuangan & Inspektor Database
-* **Ringkasan Omset & Laba:** Performa penjualan harian, bulanan, dan total piutang toko.
+* **Ringkasan Omset & Laba:** Performa penjualan harian, bulanan, dan total piutang toko dengan filter tanggal periode laporan.
+* **📄 Paginasi Independen:** Tabel *Penjualan Terbaru* dan *Log Mutasi Stok* memuat seluruh data transaksi dengan kontrol paginasi instan (5 baris/halaman).
 * **🗄️ Inspektor Database Lokal (Dev Helper):**
   * Relokasi tombol inspektor ke bentuk **Icon Button (`<Database />`)** di footer sidebar & mobile header.
   * Dropdown selector tabel otomatis responsif 100% full-width di HP (`flexWrap: wrap`) untuk mencegah overflow offside.
@@ -70,17 +74,22 @@ Aplikasi **Point of Sales (POS) & Sistem Manajemen Stok Seragam** modern, cepat,
   * Desain beralih dari struk thermal sempit ke **Faktur Toko Continuous Form Klasik Monokrom (`#000000`)** dengan font `Courier New` / `Consolas`.
   * **Header Berdampingan:** Identitas Toko (TOKO SERAGAM OLIVIANA), No. Invoice/Bukti, Tanggal & Jam, Kasir, dan Pelanggan.
   * **Tabel Barang Bergaris Klasik:** Kolom `NO` | `SKU` | `NAMA BARANG / VARIAN` | `QTY` | `HARGA` | `SUBTOTAL` dengan border putus-putus (*dashed/dotted*).
-  * **Titik Dua (`:`) Presisi:** Posisi titik dua pada metadata & ringkasan total 100% lurus presisi menggunakan CSS Sub-Grid.
-  * **Area Tanda Tangan Simetris:** Kolom *Tanda Terima (Pelanggan)* & *Hormat Kami (Kasir Toko)* berdampingan rapi dengan nama terang bernoda garis bawah (*Underline*).
 * **🖨️ Multi-Device Single-Page Print System (Iframe Isolation):**
   * Menggunakan modul cetak **Isolated Print Iframe** yang terkunci khusus pada ukuran **A5 Landscape (`210mm x 148mm`)**.
-  * Hasil cetakan di **Laptop, iPad, maupun HP Android/iPhone 100% SAMA PERSIS, Pas 1 Halaman A5 (Zero Page-Break)**, tanpa kepotong 2 halaman dan bebas dari elemen luar browser.
-* **📲 WhatsApp Direct Link & Auto-Download PDF:**
-  * **Kirim WhatsApp:** Otomatis mengubah nomor HP pelanggan ke format internasional (`628xxx`) dan membuka chat WhatsApp (`wa.me`) lengkap dengan draf rincian nota.
-  * **Auto PDF Generation:** Secara bersamaan men-generate dan mengunduh file PDF Nota Dot Matrix (`Nota_Penjualan_xxx.pdf` / `Nota_Kasbon_xxx.pdf`) secara otomatis.
-* **📱 Responsive Mobile Display (HP View):**
-  * Tampilan modal nota di layar HP (< 640px) dioptimalkan dengan skala font & padding yang pas serta tombol aksi full-width yang mudah di-tap jari.
+  * Hasil cetakan di **Laptop, iPad, maupun HP Android/iPhone 100% SAMA PERSIS, Pas 1 Halaman A5 (Zero Page-Break)**.
 
 ---
 
-*Status Project: **ALL MENUS COMPLETE, DOT MATRIX INVOICE & MULTI-DEVICE PRINTING READY (POS, Inventory, Debt, Sales History, Stock Checker, Financial Summary, DB Inspector, Dot Matrix Receipt DONE)*** 🚀
+### 8. 🏗️ Refactoring Codebase Total & Clean Architecture (Fase 1 - 6)
+* **Penyusutan Kode `App.jsx`:** Dari **~3.367 baris** menjadi **~980 baris** (berkurang **~69%**).
+* **Struktur Modular Modern:**
+  * **View Components (`src/components/views/`):** `LoginView`, `DbInspectorView`, `StockCheckerView`, `SalesHistoryView`, `DebtView`, `InventoryView`, `DashboardView`, `PosView`.
+  * **Modal Components (`src/components/modals/`):** `CheckoutSuccessModal`, `DebtReceiptModal`, `FactoryInboundModal`, `AddProductVariantModal`, `RepayDebtModal`.
+  * **Layout Components (`src/components/layout/`):** `Sidebar`, `HeaderBar`, `BottomNav`.
+  * **Custom Hooks (`src/hooks/`):** `useAuth` (sesi login & LocalStorage), `useCart` (keranjang & checkout POS), `useResponsive` (listener breakpoint responsive HP/Desktop).
+  * **Utilities (`src/utils/`):** `formatters.js`, `sizeSorting.js`, `printHelper.js`.
+* **Audit & Dead Code Removal:** Menghapus 25+ unused icon imports & variabel mati. Hasil build terverifikasi 0 error regression (`npm run build` PASS).
+
+---
+
+*Status Project: **ALL MENUS & REFACTORING 100% COMPLETE (POS, Inventory, Debt, Sales History, Stock Checker, Financial Summary, DB Inspector, Dot Matrix Receipt, Clean Architecture & Date Filters DONE)*** 🚀
