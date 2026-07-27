@@ -76,6 +76,8 @@ export default function InventoryView({
   setRefreshKey,
   isMobile
 }) {
+  const [variantViewMode, setVariantViewMode] = useState('matrix'); // 'matrix' | 'list'
+
   if (!isOpen) return null;
 
   // List options for filter selects
@@ -370,138 +372,248 @@ export default function InventoryView({
               {/* Dropdown Body: Variants */}
               {isExpanded && (
                 <div style={{ padding: '16px' }}>
-                  {product.description && (
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                      {product.description}
-                    </p>
-                  )}
+                  {/* Mode Switcher & Description Bar */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                    {product.description ? (
+                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                        {product.description}
+                      </p>
+                    ) : <div />}
 
-                  {/* Desktop vs Mobile View */}
-                  {isMobile ? (
-                    /* Mobile View Card Grid */
-                    <div className="mobile-only">
-                      {variants.map(variant => (
-                        <div
-                          key={variant.id}
-                          style={{
-                            padding: '12px 14px',
-                            borderRadius: '8px',
-                            border: '1px solid var(--card-border)',
-                            backgroundColor: 'var(--card-bg)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '8px'
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                            <code style={{ fontSize: '12px', fontWeight: 'bold' }}>{variant.sku}</code>
-                            <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`} style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
-                              Stok: {variant.stock_quantity} Pcs
-                            </span>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
-                            <div>
-                              <span style={{ fontWeight: 'bold' }}>Ukuran: {variant.size}</span>
-                              <span style={{ color: 'var(--text-muted)', margin: '0 6px' }}>•</span>
-                              <span>Warna: {variant.color}</span>
-                            </div>
-                            <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
-                              {formatRupiah(variant.selling_price)}
-                            </span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '6px', borderTop: '1px dashed var(--card-border)' }}>
-                            <button
-                              type="button"
-                              className="btn btn-danger btn-sm"
-                              style={{ fontSize: '11px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                              onClick={() => {
-                                askConfirmation({
-                                  title: `Hapus Varian SKU ${variant.sku}`,
-                                  message: `Apakah Anda yakin ingin menghapus varian ukuran ${variant.size} (${variant.color}) ini?`,
-                                  confirmText: 'Hapus Varian',
-                                  confirmVariant: 'danger',
-                                  onConfirm: () => {
-                                    db.delete('product_variants', variant.id);
-                                    setRefreshKey(prev => prev + 1);
-                                    showToast(`Varian SKU ${variant.sku} berhasil dihapus.`, 'info');
-                                  }
-                                });
-                              }}
-                            >
-                              <Trash2 size={12} /> Hapus Varian
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-
-                      {variants.length === 0 && (
-                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px', fontSize: '13px' }}>
-                          Belum ada varian ukuran/warna untuk produk ini.
-                        </div>
-                      )}
+                    <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--bg-tertiary)', padding: '3px', borderRadius: '8px' }}>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${variantViewMode === 'matrix' ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px' }}
+                        onClick={() => setVariantViewMode('matrix')}
+                      >
+                        📊 Matriks Stok 2D
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${variantViewMode === 'list' ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px' }}
+                        onClick={() => setVariantViewMode('list')}
+                      >
+                        📑 Daftar Detail ({variants.length})
+                      </button>
                     </div>
-                  ) : (
-                    /* Desktop View Table */
-                    <div className="table-wrapper desktop-only">
-                      <table className="table">
+                  </div>
+
+                  {variantViewMode === 'matrix' ? (
+                    /* 2D Stock & Price Matrix View (Colors x Sizes Grid) */
+                    <div className="table-wrapper" style={{ overflowX: 'auto' }}>
+                      <table className="table" style={{ fontSize: '13px', textAlign: 'center' }}>
                         <thead>
                           <tr>
-                            <th>SKU</th>
-                            <th>Ukuran</th>
-                            <th>Warna</th>
-                            <th>Harga Jual (Toko)</th>
-                            <th>Sisa Stok</th>
-                            <th style={{ textAlign: 'right' }}>Aksi</th>
+                            <th style={{ textAlign: 'left', minWidth: '110px', backgroundColor: 'var(--bg-tertiary)' }}>Warna \ Ukuran</th>
+                            {uniqueSizes.map(size => (
+                              <th key={size} style={{ textAlign: 'center', minWidth: '65px', whiteSpace: 'nowrap' }}>
+                                Uk. {size}
+                              </th>
+                            ))}
+                            <th style={{ textAlign: 'center', minWidth: '100px', backgroundColor: 'var(--bg-tertiary)' }}>Total Stok</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {variants.map(variant => (
-                            <tr key={variant.id}>
-                              <td><code style={{ fontSize: '13px' }}>{variant.sku}</code></td>
-                              <td><strong>{variant.size}</strong></td>
-                              <td>{variant.color}</td>
-                              <td>{formatRupiah(variant.selling_price)}</td>
-                              <td>
-                                <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`}>
-                                  {variant.stock_quantity} Pcs
-                                </span>
-                              </td>
-                              <td style={{ textAlign: 'right' }}>
-                                <button
-                                  type="button"
-                                  className="btn btn-danger btn-sm btn-icon"
-                                  title="Hapus Varian"
-                                  onClick={() => {
-                                    askConfirmation({
-                                      title: `Hapus Varian SKU ${variant.sku}`,
-                                      message: `Apakah Anda yakin ingin menghapus varian ukuran ${variant.size} (${variant.color}) ini?`,
-                                      confirmText: 'Hapus Varian',
-                                      confirmVariant: 'danger',
-                                      onConfirm: () => {
-                                        db.delete('product_variants', variant.id);
-                                        setRefreshKey(prev => prev + 1);
-                                        showToast(`Varian SKU ${variant.sku} berhasil dihapus.`, 'info');
-                                      }
-                                    });
-                                  }}
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                          {variants.length === 0 && (
+                          {uniqueColors.map(color => {
+                            const colorVariants = variants.filter(v => v.color === color);
+                            const colorTotalStock = colorVariants.reduce((sum, v) => sum + v.stock_quantity, 0);
+
+                            return (
+                              <tr key={color}>
+                                <td style={{ textAlign: 'left', fontWeight: 'bold', backgroundColor: 'var(--bg-tertiary)' }}>
+                                  {color || 'Standard'}
+                                </td>
+                                {uniqueSizes.map(size => {
+                                  const v = colorVariants.find(item => item.size === size);
+                                  if (!v) {
+                                    return (
+                                      <td key={size} style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+                                        -
+                                      </td>
+                                    );
+                                  }
+                                  const isOut = v.stock_quantity <= 0;
+                                  const isLow = v.stock_quantity > 0 && v.stock_quantity < 5;
+
+                                  return (
+                                    <td key={size} style={{ padding: '6px 4px' }}>
+                                      <div
+                                        style={{
+                                          display: 'inline-flex',
+                                          flexDirection: 'column',
+                                          alignItems: 'center',
+                                          gap: '2px',
+                                          padding: '4px 8px',
+                                          borderRadius: '6px',
+                                          backgroundColor: isOut
+                                            ? 'rgba(220, 53, 69, 0.08)'
+                                            : isLow
+                                              ? 'rgba(255, 193, 7, 0.12)'
+                                              : 'rgba(40, 167, 69, 0.08)',
+                                          border: `1px solid ${isOut ? 'var(--danger)' : isLow ? 'var(--warning)' : 'var(--success)'}`
+                                        }}
+                                        title={`SKU: ${v.sku} | Harga: ${formatRupiah(v.selling_price)}`}
+                                      >
+                                        <span style={{
+                                          fontWeight: 'bold',
+                                          fontSize: '12px',
+                                          color: isOut ? 'var(--danger)' : isLow ? '#b45309' : 'var(--success)'
+                                        }}>
+                                          {isOut ? '0' : v.stock_quantity}
+                                        </span>
+                                        <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Pcs</span>
+                                      </div>
+                                    </td>
+                                  );
+                                })}
+                                <td style={{ fontWeight: 'bold', backgroundColor: 'var(--bg-tertiary)' }}>
+                                  <span className={`badge ${colorTotalStock > 0 ? 'success' : 'danger'}`} style={{ fontSize: '11px' }}>
+                                    {colorTotalStock} Pcs
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          {uniqueColors.length === 0 && (
                             <tr>
-                              <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px' }}>
-                                Belum ada varian ukuran/warna untuk produk ini.
+                              <td colSpan={uniqueSizes.length + 2} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px' }}>
+                                Belum ada data varian ukuran/warna.
                               </td>
                             </tr>
                           )}
                         </tbody>
                       </table>
                     </div>
+                  ) : (
+                    /* Traditional Detailed List View (Mobile Cards or Desktop Table) */
+                    isMobile ? (
+                      /* Mobile View Card Grid */
+                      <div className="mobile-only">
+                        {variants.map(variant => (
+                          <div
+                            key={variant.id}
+                            style={{
+                              padding: '12px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid var(--card-border)',
+                              backgroundColor: 'var(--card-bg)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '8px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                              <code style={{ fontSize: '12px', fontWeight: 'bold' }}>{variant.sku}</code>
+                              <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`} style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
+                                Stok: {variant.stock_quantity} Pcs
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
+                              <div>
+                                <span style={{ fontWeight: 'bold' }}>Ukuran: {variant.size}</span>
+                                <span style={{ color: 'var(--text-muted)', margin: '0 6px' }}>•</span>
+                                <span>Warna: {variant.color}</span>
+                              </div>
+                              <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
+                                {formatRupiah(variant.selling_price)}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '6px', borderTop: '1px dashed var(--card-border)' }}>
+                              <button
+                                type="button"
+                                className="btn btn-danger btn-sm"
+                                style={{ fontSize: '11px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                onClick={() => {
+                                  askConfirmation({
+                                    title: `Hapus Varian SKU ${variant.sku}`,
+                                    message: `Apakah Anda yakin ingin menghapus varian ukuran ${variant.size} (${variant.color}) ini?`,
+                                    confirmText: 'Hapus Varian',
+                                    confirmVariant: 'danger',
+                                    onConfirm: () => {
+                                      db.delete('product_variants', variant.id);
+                                      setRefreshKey(prev => prev + 1);
+                                      showToast(`Varian SKU ${variant.sku} berhasil dihapus.`, 'info');
+                                    }
+                                  });
+                                }}
+                              >
+                                <Trash2 size={12} /> Hapus Varian
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {variants.length === 0 && (
+                          <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px', fontSize: '13px' }}>
+                            Belum ada varian ukuran/warna untuk produk ini.
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Desktop View Table */
+                      <div className="table-wrapper desktop-only">
+                        <table className="table">
+                          <thead>
+                            <tr>
+                              <th>SKU</th>
+                              <th>Ukuran</th>
+                              <th>Warna</th>
+                              <th>Harga Jual (Toko)</th>
+                              <th>Sisa Stok</th>
+                              <th style={{ textAlign: 'right' }}>Aksi</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {variants.map(variant => (
+                              <tr key={variant.id}>
+                                <td><code style={{ fontSize: '13px' }}>{variant.sku}</code></td>
+                                <td><strong>{variant.size}</strong></td>
+                                <td>{variant.color}</td>
+                                <td>{formatRupiah(variant.selling_price)}</td>
+                                <td>
+                                  <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`}>
+                                    {variant.stock_quantity} Pcs
+                                  </span>
+                                </td>
+                                <td style={{ textAlign: 'right' }}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-danger btn-sm btn-icon"
+                                    title="Hapus Varian"
+                                    onClick={() => {
+                                      askConfirmation({
+                                        title: `Hapus Varian SKU ${variant.sku}`,
+                                        message: `Apakah Anda yakin ingin menghapus varian ukuran ${variant.size} (${variant.color}) ini?`,
+                                        confirmText: 'Hapus Varian',
+                                        confirmVariant: 'danger',
+                                        onConfirm: () => {
+                                          db.delete('product_variants', variant.id);
+                                          setRefreshKey(prev => prev + 1);
+                                          showToast(`Varian SKU ${variant.sku} berhasil dihapus.`, 'info');
+                                        }
+                                      });
+                                    }}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            {variants.length === 0 && (
+                              <tr>
+                                <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px' }}>
+                                  Belum ada varian ukuran/warna untuk produk ini.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )
                   )}
                 </div>
               )}
