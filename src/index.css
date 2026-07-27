@@ -827,7 +827,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .cart-summary {
   padding: 16px 20px;
-  border-top: 1px solid var(--card-border);
+  border-top: 2px solid var(--card-border);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
   background-color: var(--bg-secondary);
   display: flex;
   flex-direction: column;
@@ -844,7 +845,7 @@ h1, h2, h3, h4, h5, h6 {
 .cart-summary-row.total {
   font-size: 18px;
   font-weight: 800;
-  border-top: 1px dashed var(--card-border);
+  border-top: 2px dashed var(--card-border);
   padding-top: 12px;
   color: var(--primary);
 }
