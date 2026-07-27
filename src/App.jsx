@@ -114,6 +114,18 @@ function App() {
   const [activeModal, setActiveModal] = useState(null); // 'checkout-success' | 'factory-inbound' | 'repay-debt' | 'add-product' | 'add-variant'
   const [currentSaleInvoice, setCurrentSaleInvoice] = useState(null);
 
+  // Lock body scrolling when modal or mobile drawer is open
+  useEffect(() => {
+    if (activeModal || confirmConfig || isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [activeModal, confirmConfig, isMobileMenuOpen]);
+
   // Cart State & POS Operations via useCart Hook
   const {
     cart,

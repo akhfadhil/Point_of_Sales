@@ -858,10 +858,12 @@ h1, h2, h3, h4, h5, h6 {
   bottom: 0;
   background-color: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 2000;
+  overscroll-behavior: contain;
 }
 
 .modal-content {
@@ -873,7 +875,9 @@ h1, h2, h3, h4, h5, h6 {
   padding: 28px;
   box-shadow: var(--card-shadow);
   max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-header {
