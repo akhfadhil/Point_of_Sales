@@ -401,18 +401,29 @@ export default function InventoryView({
                   </div>
 
                   {variantViewMode === 'matrix' ? (
-                    /* 2D Stock & Price Matrix View (Colors x Sizes Grid) */
-                    <div className="table-wrapper" style={{ overflowX: 'auto' }}>
-                      <table className="table" style={{ fontSize: '13px', textAlign: 'center' }}>
+                    /* 2D Stock & Price Matrix View (Colors x Sizes Grid with Sticky Left Column) */
+                    <div className="table-wrapper" style={{ overflowX: 'auto', position: 'relative' }}>
+                      <table className="table" style={{ fontSize: '13px', textAlign: 'center', borderCollapse: 'separate', borderSpacing: 0 }}>
                         <thead>
                           <tr>
-                            <th style={{ textAlign: 'left', minWidth: '110px', backgroundColor: 'var(--bg-tertiary)' }}>Warna \ Ukuran</th>
+                            <th style={{
+                              textAlign: 'left',
+                              minWidth: '110px',
+                              position: 'sticky',
+                              left: 0,
+                              zIndex: 10,
+                              backgroundColor: 'var(--bg-tertiary)',
+                              borderRight: '2px solid var(--card-border)',
+                              borderBottom: '2px solid var(--card-border)'
+                            }}>
+                              Warna \ Ukuran
+                            </th>
                             {uniqueSizes.map(size => (
-                              <th key={size} style={{ textAlign: 'center', minWidth: '65px', whiteSpace: 'nowrap' }}>
+                              <th key={size} style={{ textAlign: 'center', minWidth: '65px', whiteSpace: 'nowrap', borderBottom: '2px solid var(--card-border)' }}>
                                 Uk. {size}
                               </th>
                             ))}
-                            <th style={{ textAlign: 'center', minWidth: '100px', backgroundColor: 'var(--bg-tertiary)' }}>Total Stok</th>
+                            <th style={{ textAlign: 'center', minWidth: '100px', backgroundColor: 'var(--bg-tertiary)', borderBottom: '2px solid var(--card-border)' }}>Total Stok</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -422,7 +433,15 @@ export default function InventoryView({
 
                             return (
                               <tr key={color}>
-                                <td style={{ textAlign: 'left', fontWeight: 'bold', backgroundColor: 'var(--bg-tertiary)' }}>
+                                <td style={{
+                                  textAlign: 'left',
+                                  fontWeight: 'bold',
+                                  position: 'sticky',
+                                  left: 0,
+                                  zIndex: 5,
+                                  backgroundColor: 'var(--card-bg)',
+                                  borderRight: '2px solid var(--card-border)'
+                                }}>
                                   {color || 'Standard'}
                                 </td>
                                 {uniqueSizes.map(size => {
