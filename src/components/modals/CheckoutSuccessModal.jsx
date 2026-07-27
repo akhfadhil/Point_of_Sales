@@ -166,9 +166,9 @@ ${invoice.change_amount > 0 ? `Kembalian     : Rp ${Number(invoice.change_amount
             <div className="receipt-divider"></div>
 
             {/* Ringkasan Belanja & Tanda Tangan */}
-            <div className="receipt-bottom-grid">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', fontSize: '11px', alignItems: 'start', color: '#000000' }}>
               {/* Kolom Kiri: Tanda Tangan */}
-              <div className="receipt-bottom-signature" style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '4px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', textAlign: 'center', gap: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div>Tanda Terima,</div>
@@ -192,7 +192,7 @@ ${invoice.change_amount > 0 ? `Kembalian     : Rp ${Number(invoice.change_amount
               </div>
 
               {/* Kolom Kanan: Rincian Total */}
-              <div className="receipt-bottom-summary" style={{
+              <div style={{
                 backgroundColor: '#ffffff',
                 padding: '8px 12px',
                 borderRadius: '4px',

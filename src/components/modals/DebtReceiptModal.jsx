@@ -139,8 +139,8 @@ Metode Bayar   : ${payment.payment_method}
             <div className="receipt-divider"></div>
 
             {/* Bottom Footer & Aligned Summary */}
-            <div className="receipt-bottom-grid">
-              <div className="receipt-bottom-signature" style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '4px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', fontSize: '11px', alignItems: 'start', color: '#000000' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '4px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', textAlign: 'center', gap: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div>Penyetor,</div>
@@ -163,7 +163,7 @@ Metode Bayar   : ${payment.payment_method}
                 </div>
               </div>
 
-              <div className="receipt-bottom-summary" style={{
+              <div style={{
                 backgroundColor: '#ffffff',
                 padding: '10px 12px',
                 borderRadius: '4px',
