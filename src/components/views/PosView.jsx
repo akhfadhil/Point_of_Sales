@@ -235,16 +235,16 @@ export default function PosView({
                         }}
                       >
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span className="badge info" style={{ fontSize: '11px' }}>{category ? category.name : 'Umum'}</span>
-                            <span className={`badge ${totalStock > 0 ? 'success' : 'danger'}`} style={{ fontSize: '11px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                            <span className="badge info" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>{category ? category.name : 'Umum'}</span>
+                            <span className={`badge ${totalStock > 0 ? 'success' : 'danger'}`} style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
                               Stok: {totalStock} Pcs
                             </span>
                           </div>
-                          <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '6px', color: 'var(--text-primary)' }}>
+                          <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '6px', color: 'var(--text-primary)', wordBreak: 'break-word' }}>
                             {prod.name}
                           </h4>
-                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 12px 0' }}>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 12px 0', wordBreak: 'break-word' }}>
                             {sizeDisplayStr}
                           </p>
                         </div>
