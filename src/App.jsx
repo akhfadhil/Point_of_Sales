@@ -23,7 +23,7 @@ import DebtView from './components/views/DebtView';
 import InventoryView from './components/views/InventoryView';
 import DashboardView from './components/views/DashboardView';
 import PosView from './components/views/PosView';
-import { Menu, Sun, Moon, Database } from 'lucide-react';
+import { Menu, Sun, Moon, Database, X } from 'lucide-react';
 
 function App() {
   // App Layout State
