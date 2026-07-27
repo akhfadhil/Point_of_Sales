@@ -1,5 +1,5 @@
 // src/components/views/InventoryView.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, X, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { formatRupiah } from '../../utils/formatters';
 import { sortSizes, compareVariants } from '../../utils/sizeSorting';
