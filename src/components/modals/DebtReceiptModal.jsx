@@ -139,7 +139,7 @@ Metode Bayar   : ${payment.payment_method}
             <div className="receipt-divider"></div>
 
             {/* Bottom Footer & Aligned Summary */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', fontSize: '11px', alignItems: 'start', color: '#000000' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', fontSize: '11px', alignItems: 'start', color: '#000000' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '4px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', textAlign: 'center', gap: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -163,16 +163,35 @@ Metode Bayar   : ${payment.payment_method}
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '95px 10px 1fr', rowGap: '4px', backgroundColor: '#ffffff', padding: '10px 12px', borderRadius: '4px', border: '1px solid #000000', color: '#000000', alignItems: 'center' }}>
-                <div>Nominal Bayar</div><div>:</div><div style={{ textAlign: 'right', fontWeight: 'bold' }}>Rp {Number(payment.amount_paid).toLocaleString('id-ID')}</div>
-                <div>Metode Bayar</div><div>:</div><div style={{ textAlign: 'right' }}><strong>{payment.payment_method}</strong></div>
+              <div style={{
+                backgroundColor: '#ffffff',
+                padding: '10px 12px',
+                borderRadius: '4px',
+                border: '1px solid #000000',
+                color: '#000000',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                minWidth: 0,
+                boxSizing: 'border-box'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', gap: '6px', flexWrap: 'wrap' }}>
+                  <span>Nominal Bayar:</span>
+                  <strong style={{ fontSize: '12px' }}>Rp {Number(payment.amount_paid).toLocaleString('id-ID')}</strong>
+                </div>
 
-                <div style={{ gridColumn: '1 / -1', borderTop: '1px dashed #000000', margin: '2px 0' }}></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', gap: '6px', flexWrap: 'wrap' }}>
+                  <span>Metode Bayar:</span>
+                  <strong>{payment.payment_method}</strong>
+                </div>
 
-                <div style={{ fontWeight: 'bold', fontSize: '12px' }}>SISA UTANG</div>
-                <div style={{ fontWeight: 'bold', fontSize: '12px' }}>:</div>
-                <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '12px' }}>
-                  {remainingDebt > 0 ? `Rp ${Number(remainingDebt).toLocaleString('id-ID')}` : 'LUNAS (Rp 0)'}
+                <div style={{ borderTop: '1px dashed #000000', margin: '2px 0' }}></div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', gap: '6px', flexWrap: 'wrap' }}>
+                  <strong style={{ fontSize: '12px' }}>SISA UTANG:</strong>
+                  <strong style={{ fontSize: '12px', color: remainingDebt > 0 ? '#dc2626' : '#16a34a' }}>
+                    {remainingDebt > 0 ? `Rp ${Number(remainingDebt).toLocaleString('id-ID')}` : 'LUNAS (Rp 0)'}
+                  </strong>
                 </div>
               </div>
             </div>

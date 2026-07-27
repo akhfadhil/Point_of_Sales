@@ -166,7 +166,7 @@ ${invoice.change_amount > 0 ? `Kembalian     : Rp ${Number(invoice.change_amount
             <div className="receipt-divider"></div>
 
             {/* Ringkasan Belanja & Tanda Tangan */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', fontSize: '11px', alignItems: 'start', color: '#000000' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', fontSize: '11px', alignItems: 'start', color: '#000000' }}>
               {/* Kolom Kiri: Tanda Tangan */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '4px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', textAlign: 'center', gap: '12px' }}>
@@ -191,27 +191,46 @@ ${invoice.change_amount > 0 ? `Kembalian     : Rp ${Number(invoice.change_amount
                 </div>
               </div>
 
-              {/* Kolom Kanan: Rincian Total dengan Titik Dua Sejajar */}
-              <div style={{ display: 'grid', gridTemplateColumns: '90px 10px 1fr', rowGap: '4px', backgroundColor: '#ffffff', padding: '8px 10px', borderRadius: '4px', border: '1px solid #000000', color: '#000000', alignItems: 'center' }}>
-                <div style={{ fontWeight: 'bold', fontSize: '12px' }}>TOTAL</div>
-                <div style={{ fontWeight: 'bold', fontSize: '12px' }}>:</div>
-                <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '13px' }}>Rp {Number(invoice.total_amount).toLocaleString('id-ID')}</div>
+              {/* Kolom Kanan: Rincian Total */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                padding: '8px 12px',
+                borderRadius: '4px',
+                border: '1px solid #000000',
+                color: '#000000',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                minWidth: 0,
+                boxSizing: 'border-box'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold', fontSize: '12px', gap: '6px', flexWrap: 'wrap' }}>
+                  <span>TOTAL:</span>
+                  <span style={{ fontSize: '13px', color: 'var(--primary)' }}>Rp {Number(invoice.total_amount).toLocaleString('id-ID')}</span>
+                </div>
 
-                <div>Metode Bayar</div><div>:</div><div style={{ textAlign: 'right' }}><strong>{invoice.payment_method}</strong> ({invoice.payment_status})</div>
-                <div>Nominal Bayar</div><div>:</div><div style={{ textAlign: 'right' }}>Rp {Number(invoice.paid_amount).toLocaleString('id-ID')}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', gap: '6px', flexWrap: 'wrap' }}>
+                  <span>Metode Bayar:</span>
+                  <span><strong>{invoice.payment_method}</strong> ({invoice.payment_status})</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', gap: '6px', flexWrap: 'wrap' }}>
+                  <span>Nominal Bayar:</span>
+                  <span>Rp {Number(invoice.paid_amount).toLocaleString('id-ID')}</span>
+                </div>
 
                 {invoice.change_amount > 0 && (
-                  <>
-                    <div>Kembalian</div><div>:</div><div style={{ textAlign: 'right' }}>Rp {Number(invoice.change_amount).toLocaleString('id-ID')}</div>
-                  </>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', gap: '6px', flexWrap: 'wrap' }}>
+                    <span>Kembalian:</span>
+                    <span>Rp {Number(invoice.change_amount).toLocaleString('id-ID')}</span>
+                  </div>
                 )}
 
                 {customer && customer.total_debt > 0 && (
-                  <>
-                    <div style={{ fontWeight: 'bold' }}>Sisa Utang</div>
-                    <div style={{ fontWeight: 'bold' }}>:</div>
-                    <div style={{ textAlign: 'right', fontWeight: 'bold' }}>Rp {Number(customer.total_debt).toLocaleString('id-ID')}</div>
-                  </>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontWeight: 'bold', gap: '6px', flexWrap: 'wrap', borderTop: '1px dashed #000000', paddingTop: '4px', marginTop: '2px' }}>
+                    <span>Sisa Utang:</span>
+                    <span style={{ color: '#dc2626' }}>Rp {Number(customer.total_debt).toLocaleString('id-ID')}</span>
+                  </div>
                 )}
               </div>
             </div>
