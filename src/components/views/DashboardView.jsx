@@ -235,44 +235,93 @@ export default function DashboardView({
               <span className="badge info">{reversedSales.length} Transaksi</span>
             </div>
 
-            <div className="table-wrapper">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th style={{ whiteSpace: 'nowrap' }}>Invoice</th>
-                    <th style={{ minWidth: '130px' }}>Pelanggan</th>
-                    <th style={{ whiteSpace: 'nowrap' }}>Total</th>
-                    <th style={{ whiteSpace: 'nowrap' }}>Metode</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedSales.map(sale => {
-                    const cust = allCustomers.find(c => c.id === sale.customer_id);
-                    return (
-                      <tr key={sale.id}>
-                        <td style={{ whiteSpace: 'nowrap' }}><strong>{sale.invoice_number}</strong></td>
-                        <td>{cust ? cust.name : 'Umum (Walk-in)'}</td>
-                        <td style={{ whiteSpace: 'nowrap' }}><strong>{formatRupiah(sale.total_amount)}</strong></td>
-                        <td style={{ whiteSpace: 'nowrap' }}>
-                          <span className={`badge ${sale.payment_method === 'CASH' ? 'success' :
-                            sale.payment_method === 'DEBT' ? 'danger' : 'info'
-                            }`}>
-                            {sale.payment_method}
-                          </span>
+            {isMobile ? (
+              /* Mobile View Cards for Penjualan Terbaru */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {paginatedSales.map(sale => {
+                  const cust = allCustomers.find(c => c.id === sale.customer_id);
+                  return (
+                    <div
+                      key={sale.id}
+                      style={{
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--card-border)',
+                        backgroundColor: 'var(--bg-tertiary)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong style={{ fontSize: '14px', color: 'var(--primary)' }}>{sale.invoice_number}</strong>
+                        <span className={`badge ${sale.payment_method === 'CASH' ? 'success' :
+                          sale.payment_method === 'DEBT' ? 'danger' : 'info'
+                          }`}>
+                          {sale.payment_method}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>
+                          Pelanggan: <strong>{cust ? cust.name : 'Umum (Walk-in)'}</strong>
+                        </span>
+                        <strong style={{ color: 'var(--success)', fontSize: '14px' }}>
+                          {formatRupiah(sale.total_amount)}
+                        </strong>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        🗓️ {new Date(sale.created_at).toLocaleString('id-ID')}
+                      </div>
+                    </div>
+                  );
+                })}
+                {reversedSales.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    Belum ada data penjualan pada periode ini.
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Desktop Table View for Penjualan Terbaru */
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th style={{ whiteSpace: 'nowrap' }}>Invoice</th>
+                      <th style={{ minWidth: '130px' }}>Pelanggan</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>Total</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>Metode</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedSales.map(sale => {
+                      const cust = allCustomers.find(c => c.id === sale.customer_id);
+                      return (
+                        <tr key={sale.id}>
+                          <td style={{ whiteSpace: 'nowrap' }}><strong>{sale.invoice_number}</strong></td>
+                          <td>{cust ? cust.name : 'Umum (Walk-in)'}</td>
+                          <td style={{ whiteSpace: 'nowrap' }}><strong>{formatRupiah(sale.total_amount)}</strong></td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
+                            <span className={`badge ${sale.payment_method === 'CASH' ? 'success' :
+                              sale.payment_method === 'DEBT' ? 'danger' : 'info'
+                              }`}>
+                              {sale.payment_method}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {reversedSales.length === 0 && (
+                      <tr>
+                        <td colSpan="4" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
+                          Belum ada data penjualan pada periode ini.
                         </td>
                       </tr>
-                    );
-                  })}
-                  {reversedSales.length === 0 && (
-                    <tr>
-                      <td colSpan="4" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
-                        Belum ada data penjualan pada periode ini.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Pagination Controls for Sales */}
@@ -315,48 +364,103 @@ export default function DashboardView({
               <span className="badge warning">{reversedMovements.length} Mutasi</span>
             </div>
 
-            <div className="table-wrapper">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th style={{ whiteSpace: 'nowrap' }}>Tanggal</th>
-                    <th style={{ minWidth: '130px' }}>Barang</th>
-                    <th style={{ whiteSpace: 'nowrap' }}>Mutasi</th>
-                    <th>Keterangan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedMovements.map(mov => {
-                    const variant = allVariants.find(v => v.id === mov.variant_id);
-                    const prod = variant ? allProducts.find(p => p.id === variant.product_id) : null;
-                    return (
-                      <tr key={mov.id}>
-                        <td style={{ whiteSpace: 'nowrap' }}>{new Date(mov.created_at).toLocaleDateString('id-ID')}</td>
-                        <td>
-                          <strong>{prod ? prod.name : 'Unknown'}</strong> ({variant ? variant.size : '-'})
-                        </td>
-                        <td style={{ whiteSpace: 'nowrap' }}>
-                          <span style={{
-                            fontWeight: 'bold',
-                            color: mov.quantity > 0 ? 'var(--success)' : 'var(--danger)'
-                          }}>
-                            {mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity}
-                          </span>
-                        </td>
-                        <td style={{ fontSize: '12px' }}>{mov.notes}</td>
-                      </tr>
-                    );
-                  })}
-                  {reversedMovements.length === 0 && (
+            {isMobile ? (
+              /* Mobile View Cards for Stock Movements */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {paginatedMovements.map(mov => {
+                  const variant = allVariants.find(v => v.id === mov.variant_id);
+                  const prod = variant ? allProducts.find(p => p.id === variant.product_id) : null;
+                  return (
+                    <div
+                      key={mov.id}
+                      style={{
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--card-border)',
+                        backgroundColor: 'var(--bg-tertiary)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong style={{ fontSize: '14px' }}>{prod ? prod.name : 'Unknown'}</strong>
+                        <span style={{
+                          fontWeight: 'bold',
+                          fontSize: '13px',
+                          color: mov.quantity > 0 ? 'var(--success)' : 'var(--danger)',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          backgroundColor: mov.quantity > 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)'
+                        }}>
+                          {mov.quantity > 0 ? `+${mov.quantity} Pcs` : `${mov.quantity} Pcs`}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        <span>Ukuran / Warna: <strong>{variant ? `${variant.size || '-'}${variant.color ? ` (${variant.color})` : ''}` : '-'}</strong></span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          🗓️ {new Date(mov.created_at).toLocaleDateString('id-ID')}
+                        </span>
+                      </div>
+                      {mov.notes && (
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', borderTop: '1px dashed var(--card-border)', paddingTop: '4px', marginTop: '2px' }}>
+                          Catatan: {mov.notes}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {reversedMovements.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    Belum ada mutasi stok pada periode ini.
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Desktop Table View for Stock Movements */
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
                     <tr>
-                      <td colSpan="4" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
-                        Belum ada mutasi stok pada periode ini.
-                      </td>
+                      <th style={{ whiteSpace: 'nowrap' }}>Tanggal</th>
+                      <th style={{ minWidth: '130px' }}>Barang</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>Mutasi</th>
+                      <th>Keterangan</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {paginatedMovements.map(mov => {
+                      const variant = allVariants.find(v => v.id === mov.variant_id);
+                      const prod = variant ? allProducts.find(p => p.id === variant.product_id) : null;
+                      return (
+                        <tr key={mov.id}>
+                          <td style={{ whiteSpace: 'nowrap' }}>{new Date(mov.created_at).toLocaleDateString('id-ID')}</td>
+                          <td>
+                            <strong>{prod ? prod.name : 'Unknown'}</strong> ({variant ? variant.size : '-'})
+                          </td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
+                            <span style={{
+                              fontWeight: 'bold',
+                              color: mov.quantity > 0 ? 'var(--success)' : 'var(--danger)'
+                            }}>
+                              {mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity}
+                            </span>
+                          </td>
+                          <td style={{ fontSize: '12px' }}>{mov.notes}</td>
+                        </tr>
+                      );
+                    })}
+                    {reversedMovements.length === 0 && (
+                      <tr>
+                        <td colSpan="4" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
+                          Belum ada mutasi stok pada periode ini.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Pagination Controls for Stock Movements */}
