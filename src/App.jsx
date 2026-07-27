@@ -1,6 +1,7 @@
 // src/App.jsx
 import React, { useState, useEffect } from 'react';
 import { db } from './db';
+import { formatRupiah } from './utils/formatters';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Toast from './components/common/Toast';
 import ConfirmModal from './components/common/ConfirmModal';
