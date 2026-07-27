@@ -49,7 +49,7 @@ export default function Sidebar({
 
       {/* SIDEBAR NAVIGATION */}
       <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowY: 'auto' }}>
           <div className="sidebar-brand">
             <span className="sidebar-logo">Oliviana POS</span>
           </div>
