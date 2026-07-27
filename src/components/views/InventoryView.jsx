@@ -294,34 +294,50 @@ export default function InventoryView({
                 onClick={() => toggleExpand(product.id)}
                 style={{
                   display: 'flex',
-                  justify: 'space-between',
-                  alignItems: 'center',
-                  padding: '16px 20px',
+                  flexDirection: isMobile ? 'column' : 'row',
+                  alignItems: isMobile ? 'stretch' : 'center',
+                  justifyContent: 'space-between',
+                  padding: isMobile ? '12px 14px' : '16px 20px',
+                  gap: '12px',
                   cursor: 'pointer',
                   backgroundColor: isExpanded ? 'var(--bg-tertiary)' : 'var(--card-bg)',
                   borderBottom: isExpanded ? '1px solid var(--card-border)' : 'none',
                   transition: 'background-color 0.15s ease'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                  <span className="badge info" style={{ fontSize: '11px' }}>{category ? category.name : 'Umum'}</span>
-                  <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>{product.name}</h2>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <span className="badge secondary" style={{ fontSize: '11px' }}>{variants.length} Varian</span>
-                    <span className="badge secondary" style={{ fontSize: '11px' }}>{uniqueSizes.length} Ukuran</span>
-                    <span className="badge secondary" style={{ fontSize: '11px' }}>{uniqueColors.length} Warna</span>
-                    <span className={`badge ${totalStock > 0 ? 'success' : 'danger'}`} style={{ fontSize: '11px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span className="badge info" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>{category ? category.name : 'Umum'}</span>
+                    <h2 style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: 'bold', margin: 0, wordBreak: 'break-word' }}>{product.name}</h2>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span className="badge secondary" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>{variants.length} Varian</span>
+                    <span className="badge secondary" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>{uniqueSizes.length} Ukuran</span>
+                    <span className="badge secondary" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>{uniqueColors.length} Warna</span>
+                    <span className={`badge ${totalStock > 0 ? 'success' : 'danger'}`} style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
                       Total Stok: {totalStock} Pcs
                     </span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onClick={(e) => e.stopPropagation()}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isMobile ? 'space-between' : 'flex-end',
+                    gap: '8px',
+                    width: isMobile ? '100%' : 'auto',
+                    paddingTop: isMobile ? '8px' : '0',
+                    borderTop: isMobile ? '1px dashed var(--card-border)' : 'none'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
                     onClick={() => toggleExpand(product.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', flex: isMobile ? 1 : 'initial', justifyContent: 'center' }}
                   >
                     {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     {isExpanded ? 'Sembunyikan Varian' : `Tampilkan Varian (${variants.length})`}
@@ -330,6 +346,7 @@ export default function InventoryView({
                   <button
                     type="button"
                     className="btn btn-danger btn-sm"
+                    style={{ fontSize: '12px' }}
                     onClick={() => {
                       askConfirmation({
                         title: `Hapus Produk "${product.name}"`,
@@ -376,9 +393,9 @@ export default function InventoryView({
                             gap: '8px'
                           }}
                         >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                             <code style={{ fontSize: '12px', fontWeight: 'bold' }}>{variant.sku}</code>
-                            <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`} style={{ fontSize: '11px' }}>
+                            <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`} style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
                               Stok: {variant.stock_quantity} Pcs
                             </span>
                           </div>
