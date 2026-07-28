@@ -24,6 +24,10 @@ import DebtView from './components/views/DebtView';
 import InventoryView from './components/views/InventoryView';
 import DashboardView from './components/views/DashboardView';
 import PosView from './components/views/PosView';
+import MasterPieceRateView from './components/views/MasterPieceRateView';
+import WorkerDailyLogView from './components/views/WorkerDailyLogView';
+import PayrollDisbursementView from './components/views/PayrollDisbursementView';
+import PayrollSlipModal from './components/modals/PayrollSlipModal';
 import { Menu, Sun, Moon, Database, X } from 'lucide-react';
 
 function App() {
@@ -113,6 +117,7 @@ function App() {
   // Modals state
   const [activeModal, setActiveModal] = useState(null); // 'checkout-success' | 'factory-inbound' | 'repay-debt' | 'add-product' | 'add-variant'
   const [currentSaleInvoice, setCurrentSaleInvoice] = useState(null);
+  const [printPayrollData, setPrintPayrollData] = useState(null);
 
   // Lock body scrolling when modal or mobile drawer is open
   useEffect(() => {
@@ -658,6 +663,35 @@ function App() {
           isMobile={isMobile}
         />
 
+        {/* 8. MASTER TARIF BORONGAN (OWNER) */}
+        <MasterPieceRateView
+          isOpen={activeTab === 'piece-rates'}
+          showToast={showToast}
+          askConfirmation={askConfirmation}
+          setRefreshKey={setRefreshKey}
+          isMobile={isMobile}
+        />
+
+        {/* 9. INPUT HASIL KERJA HARIAN (WORKER) */}
+        <WorkerDailyLogView
+          isOpen={activeTab === 'worker-daily-log'}
+          currentUser={currentUser}
+          showToast={showToast}
+          setRefreshKey={setRefreshKey}
+          isMobile={isMobile}
+        />
+
+        {/* 10. REKAP & PENCAIRAN GAJI BORONGAN (OWNER) */}
+        <PayrollDisbursementView
+          isOpen={activeTab === 'payroll'}
+          currentUser={currentUser}
+          showToast={showToast}
+          askConfirmation={askConfirmation}
+          setRefreshKey={setRefreshKey}
+          setPrintPayrollData={setPrintPayrollData}
+          isMobile={isMobile}
+        />
+
       </main>
 
       {/* --- MODAL DIALOGS --- */}
@@ -1000,6 +1034,14 @@ function App() {
         setActiveTab={setActiveTab}
         currentUser={currentUser}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
+      />
+
+      {/* PAYROLL SLIP MODAL */}
+      <PayrollSlipModal
+        isOpen={!!printPayrollData}
+        payrollData={printPayrollData}
+        showToast={showToast}
+        onClose={() => setPrintPayrollData(null)}
       />
 
       {/* GLOBAL TOAST NOTIFICATION */}

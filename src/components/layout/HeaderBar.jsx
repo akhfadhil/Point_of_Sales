@@ -53,6 +53,24 @@ export default function HeaderBar({
             <p>Cari sisa stok produk secara real-time berdasarkan ukuran & nama.</p>
           </>
         )}
+        {activeTab === 'piece-rates' && (
+          <>
+            <h1>Master Tarif Borongan</h1>
+            <p>Atur tarif borongan per jenis pakaian dan kelola data penjahit.</p>
+          </>
+        )}
+        {activeTab === 'payroll' && (
+          <>
+            <h1>Rekap & Pencairan Gaji Borongan</h1>
+            <p>Persetujuan gaji bulanan penjahit dan pencatatan pengeluaran kas otomatis.</p>
+          </>
+        )}
+        {activeTab === 'worker-daily-log' && (
+          <>
+            <h1>Input Hasil Kerja Harian</h1>
+            <p>Portal penjahit untuk melaporkan hasil pekerjaan borongan harian.</p>
+          </>
+        )}
         {activeTab === 'db-viewer' && (
           <>
             <h1>Inspektor Database</h1>
@@ -62,7 +80,7 @@ export default function HeaderBar({
       </div>
       <div className="header-actions">
         <span className="badge info" style={{ padding: '8px 12px', fontSize: '12px' }}>
-          Mode Aktif: {currentUser.role === 'OWNER' ? 'Akses Owner (Penuh)' : 'Akses Kasir'}
+          Mode Aktif: {currentUser.role === 'OWNER' ? 'Akses Owner (Penuh)' : currentUser.role === 'WORKER' ? 'Akses Penjahit (Worker)' : 'Akses Kasir'}
         </span>
       </div>
     </header>

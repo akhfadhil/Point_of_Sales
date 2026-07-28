@@ -26,6 +26,8 @@ export default function useAuth(setActiveTab, setCart) {
       if (setActiveTab) {
         if (user.role === 'OWNER') {
           setActiveTab('dashboard');
+        } else if (user.role === 'WORKER') {
+          setActiveTab('worker-daily-log');
         } else {
           setActiveTab('pos');
         }

@@ -3,7 +3,9 @@
 const INITIAL_DATA = {
   users: [
     { id: 'u-1', name: 'Bu Oliviana (Owner)', email: 'owner@oliviana.com', role: 'OWNER' },
-    { id: 'u-2', name: 'Ani (Kasir)', email: 'kasir@oliviana.com', role: 'CASHIER' }
+    { id: 'u-2', name: 'Ani (Kasir)', email: 'kasir@oliviana.com', role: 'CASHIER' },
+    { id: 'u-3', name: 'Siti (Penjahit)', email: 'siti@oliviana.com', role: 'WORKER' },
+    { id: 'u-4', name: 'Budi (Penjahit)', email: 'budi@oliviana.com', role: 'WORKER' }
   ],
   categories: [
     { id: 'c-1', name: 'Atasan' },
@@ -8010,19 +8012,69 @@ const INITIAL_DATA = {
     { id: 'dp-6', customer_id: 'cst-4', amount_paid: 100000, payment_method: 'TRANSFER', cashier_id: 'u-1', created_at: '2026-07-24T16:00:00Z' },
     { id: 'dp-7', customer_id: 'cst-6', amount_paid: 120000, payment_method: 'CASH', cashier_id: 'u-2', created_at: '2026-07-24T16:45:00Z' },
     { id: 'dp-8', customer_id: 'cst-8', amount_paid: 500000, payment_method: 'CASH', cashier_id: 'u-1', created_at: '2026-07-24T17:30:00Z' }
+  ],
+  piece_rate_items: [
+    { id: 'pri-1', product_id: 'p-1', item_name: 'Ngobras & Sambung Badan', rate_price: 3500, created_at: '2026-07-01T08:00:00Z' },
+    { id: 'pri-2', product_id: 'p-1', item_name: 'Masang Kancing & Saku', rate_price: 2500, created_at: '2026-07-01T08:00:00Z' },
+    { id: 'pri-3', product_id: 'p-8', item_name: 'Jahit Wiru & Lipat Rok', rate_price: 4000, created_at: '2026-07-01T08:00:00Z' },
+    { id: 'pri-4', product_id: 'p-8', item_name: 'Masang Resleting & Ban Pinggang', rate_price: 3000, created_at: '2026-07-01T08:00:00Z' },
+    { id: 'pri-5', product_id: 'p-13', item_name: 'Jahit Celana Levis Full Stitch', rate_price: 6000, created_at: '2026-07-01T08:00:00Z' }
+  ],
+  worker_daily_logs: [
+    { id: 'wdl-1', worker_id: 'u-3', log_date: '2026-07-25', total_daily_amount: 105000, status: 'PAID', created_at: '2026-07-25T17:00:00Z' },
+    { id: 'wdl-2', worker_id: 'u-3', log_date: '2026-07-26', total_daily_amount: 130000, status: 'PENDING', created_at: '2026-07-26T17:00:00Z' },
+    { id: 'wdl-3', worker_id: 'u-4', log_date: '2026-07-26', total_daily_amount: 120000, status: 'PENDING', created_at: '2026-07-26T17:30:00Z' }
+  ],
+  worker_daily_log_items: [
+    { id: 'wdli-1', daily_log_id: 'wdl-1', piece_rate_item_id: 'pri-1', quantity: 20, rate_per_unit: 3500, subtotal: 70000 },
+    { id: 'wdli-2', daily_log_id: 'wdl-1', piece_rate_item_id: 'pri-2', quantity: 14, rate_per_unit: 2500, subtotal: 35000 },
+    { id: 'wdli-3', daily_log_id: 'wdl-2', piece_rate_item_id: 'pri-3', quantity: 25, rate_per_unit: 4000, subtotal: 100000 },
+    { id: 'wdli-4', daily_log_id: 'wdl-2', piece_rate_item_id: 'pri-4', quantity: 10, rate_per_unit: 3000, subtotal: 30000 },
+    { id: 'wdli-5', daily_log_id: 'wdl-3', piece_rate_item_id: 'pri-5', quantity: 20, rate_per_unit: 6000, subtotal: 120000 }
+  ],
+  payroll_disbursements: [
+    {
+      id: 'pay-1',
+      payroll_number: 'PAY-202606-001',
+      worker_id: 'u-3',
+      month_year: '2026-06',
+      total_amount: 2850000,
+      approved_by: 'u-1',
+      paid_at: '2026-06-30T16:00:00Z'
+    }
+  ],
+  cash_expenses: [
+    {
+      id: 'exp-1',
+      expense_category: 'PAYROLL',
+      amount: 2850000,
+      description: 'Pencairan Gaji Borongan Juni 2026 - Siti',
+      reference_id: 'pay-1',
+      created_by: 'u-1',
+      created_at: '2026-06-30T16:00:00Z'
+    }
   ]
 };
 
-const CURRENT_DB_VERSION = 'v11_dummy_sales_history';
+const CURRENT_DB_VERSION = 'v12_piece_rate_payroll';
 
-// Selalu pastikan LocalStorage diperbarui dengan data Excel terbaru jika versi berubah
+// Selalu pastikan LocalStorage diperbarui dengan data terbaru jika versi berubah
 if (localStorage.getItem('oliviana_db_version') !== CURRENT_DB_VERSION) {
   localStorage.setItem('oliviana_db', JSON.stringify(INITIAL_DATA));
   localStorage.setItem('oliviana_db_version', CURRENT_DB_VERSION);
 }
 
 const getDB = () => {
-  return JSON.parse(localStorage.getItem('oliviana_db')) || INITIAL_DATA;
+  const data = JSON.parse(localStorage.getItem('oliviana_db')) || INITIAL_DATA;
+  if (!data.users || data.users.length < 4) {
+    data.users = INITIAL_DATA.users;
+  }
+  if (!data.piece_rate_items) data.piece_rate_items = INITIAL_DATA.piece_rate_items;
+  if (!data.worker_daily_logs) data.worker_daily_logs = INITIAL_DATA.worker_daily_logs;
+  if (!data.worker_daily_log_items) data.worker_daily_log_items = INITIAL_DATA.worker_daily_log_items;
+  if (!data.payroll_disbursements) data.payroll_disbursements = INITIAL_DATA.payroll_disbursements;
+  if (!data.cash_expenses) data.cash_expenses = INITIAL_DATA.cash_expenses;
+  return data;
 };
 
 const saveDB = (db) => {
@@ -8217,5 +8269,225 @@ export const db = {
 
     saveDB(current);
     return { customer, payment: newPayment };
+  },
+
+  // ===== MODUL PENGGAJIAN BORONGAN (PIECE-RATE PAYROLL) =====
+
+  // Ambil data Master Tarif Borongan dengan Nama Produk
+  getPieceRateItems: () => {
+    const current = getDB();
+    const products = current.products || [];
+    return (current.piece_rate_items || []).map(item => {
+      const prod = products.find(p => p.id === item.product_id);
+      return {
+        ...item,
+        product_name: prod ? prod.name : 'Umum / Lain-lain'
+      };
+    });
+  },
+
+  // Tambah Master Tarif Borongan Baru
+  addPieceRateItem: (productId, itemName, ratePrice) => {
+    const current = getDB();
+    if (!current.piece_rate_items) current.piece_rate_items = [];
+    const newItem = {
+      id: `pri-${Date.now()}`,
+      product_id: productId,
+      item_name: itemName,
+      rate_price: Number(ratePrice),
+      created_at: new Date().toISOString()
+    };
+    current.piece_rate_items.push(newItem);
+    saveDB(current);
+    return newItem;
+  },
+
+  // Update Tarif Borongan
+  updatePieceRateItem: (id, updates) => {
+    const current = getDB();
+    if (!current.piece_rate_items) return null;
+    const idx = current.piece_rate_items.findIndex(p => p.id === id);
+    if (idx === -1) return null;
+    current.piece_rate_items[idx] = {
+      ...current.piece_rate_items[idx],
+      ...updates,
+      rate_price: updates.rate_price !== undefined ? Number(updates.rate_price) : current.piece_rate_items[idx].rate_price
+    };
+    saveDB(current);
+    return current.piece_rate_items[idx];
+  },
+
+  // Hapus Tarif Borongan
+  deletePieceRateItem: (id) => {
+    const current = getDB();
+    if (!current.piece_rate_items) return false;
+    current.piece_rate_items = current.piece_rate_items.filter(p => p.id !== id);
+    saveDB(current);
+    return true;
+  },
+
+  // Tambah Laporan Harian Pekerja (Multi-item entry)
+  addWorkerDailyLog: (workerId, logDate, items) => {
+    const current = getDB();
+    if (!current.worker_daily_logs) current.worker_daily_logs = [];
+    if (!current.worker_daily_log_items) current.worker_daily_log_items = [];
+
+    let totalDailyAmount = 0;
+    const logId = `wdl-${Date.now()}`;
+
+    const formattedItems = items.map((it, idx) => {
+      const subtotal = Number(it.quantity) * Number(it.rate_per_unit);
+      totalDailyAmount += subtotal;
+      return {
+        id: `wdli-${Date.now()}-${idx}`,
+        daily_log_id: logId,
+        piece_rate_item_id: it.piece_rate_item_id,
+        quantity: Number(it.quantity),
+        rate_per_unit: Number(it.rate_per_unit),
+        subtotal
+      };
+    });
+
+    const newLogHeader = {
+      id: logId,
+      worker_id: workerId,
+      log_date: logDate || new Date().toISOString().slice(0, 10),
+      total_daily_amount: totalDailyAmount,
+      status: 'PENDING', // 'PENDING' | 'APPROVED' | 'PAID'
+      created_at: new Date().toISOString()
+    };
+
+    current.worker_daily_logs.push(newLogHeader);
+    current.worker_daily_log_items.push(...formattedItems);
+    saveDB(current);
+
+    return { ...newLogHeader, items: formattedItems };
+  },
+
+  // Ambil Data Laporan Harian Pekerja dengan Rincian Item
+  getWorkerDailyLogs: (workerId = null, monthYear = null) => {
+    const current = getDB();
+    const logs = current.worker_daily_logs || [];
+    const items = current.worker_daily_log_items || [];
+    const pieceItems = current.piece_rate_items || [];
+    const products = current.products || [];
+    const users = current.users || [];
+
+    let filteredLogs = [...logs];
+    if (workerId) {
+      filteredLogs = filteredLogs.filter(l => l.worker_id === workerId);
+    }
+    if (monthYear) {
+      filteredLogs = filteredLogs.filter(l => l.log_date.startsWith(monthYear));
+    }
+
+    // Urutkan dari tanggal terbaru
+    filteredLogs.sort((a, b) => new Date(b.log_date) - new Date(a.log_date));
+
+    return filteredLogs.map(log => {
+      const worker = users.find(u => u.id === log.worker_id);
+      const logDetails = items.filter(it => it.daily_log_id === log.id).map(it => {
+        const pieceRate = pieceItems.find(pr => pr.id === it.piece_rate_item_id);
+        const prod = pieceRate ? products.find(p => p.id === pieceRate.product_id) : null;
+        return {
+          ...it,
+          item_name: pieceRate ? pieceRate.item_name : 'Item Borongan',
+          product_name: prod ? prod.name : 'Seragam'
+        };
+      });
+
+      return {
+        ...log,
+        worker_name: worker ? worker.name : 'Worker',
+        items: logDetails
+      };
+    });
+  },
+
+  // Pencairan Gaji Bulanan (Owner Approve & Deduct Cash)
+  approveAndDisbursePayroll: (workerId, monthYear, approvedBy) => {
+    const current = getDB();
+    if (!current.payroll_disbursements) current.payroll_disbursements = [];
+    if (!current.cash_expenses) current.cash_expenses = [];
+
+    // Ambil log harian pekerja yang statusnya PENDING atau APPROVED pada bulan terpilih
+    const workerLogs = (current.worker_daily_logs || []).filter(
+      l => l.worker_id === workerId && l.log_date.startsWith(monthYear) && l.status !== 'PAID'
+    );
+
+    if (workerLogs.length === 0) {
+      return { success: false, message: 'Tidak ada log harian pending untuk di-approve pada bulan ini.' };
+    }
+
+    const totalAmount = workerLogs.reduce((sum, l) => sum + Number(l.total_daily_amount), 0);
+
+    // Update status log harian menjadi PAID
+    current.worker_daily_logs.forEach(l => {
+      if (l.worker_id === workerId && l.log_date.startsWith(monthYear) && l.status !== 'PAID') {
+        l.status = 'PAID';
+      }
+    });
+
+    const payrollId = `pay-${Date.now()}`;
+    const payrollNumber = `PAY-${monthYear.replace('-', '')}-${String(Date.now()).slice(-3)}`;
+
+    const newDisbursement = {
+      id: payrollId,
+      payroll_number: payrollNumber,
+      worker_id: workerId,
+      month_year: monthYear,
+      total_amount: totalAmount,
+      approved_by: approvedBy,
+      paid_at: new Date().toISOString()
+    };
+
+    const worker = (current.users || []).find(u => u.id === workerId);
+    const workerName = worker ? worker.name : 'Worker';
+
+    const newExpense = {
+      id: `exp-${Date.now()}`,
+      expense_category: 'PAYROLL',
+      amount: totalAmount,
+      description: `Pencairan Gaji Borongan ${monthYear} - ${workerName}`,
+      reference_id: payrollId,
+      created_by: approvedBy,
+      created_at: new Date().toISOString()
+    };
+
+    current.payroll_disbursements.push(newDisbursement);
+    current.cash_expenses.push(newExpense);
+
+    saveDB(current);
+    return { success: true, disbursement: newDisbursement, expense: newExpense };
+  },
+
+  // Ambil Riwayat Pencairan Gaji
+  getPayrollDisbursements: (monthYear = null) => {
+    const current = getDB();
+    const disbursements = current.payroll_disbursements || [];
+    const users = current.users || [];
+
+    let filtered = [...disbursements];
+    if (monthYear) {
+      filtered = filtered.filter(d => d.month_year === monthYear);
+    }
+
+    filtered.sort((a, b) => new Date(b.paid_at) - new Date(a.paid_at));
+
+    return filtered.map(d => {
+      const worker = users.find(u => u.id === d.worker_id);
+      const approver = users.find(u => u.id === d.approved_by);
+      return {
+        ...d,
+        worker_name: worker ? worker.name : 'Worker',
+        approver_name: approver ? approver.name : 'Owner'
+      };
+    });
+  },
+
+  // Ambil Pengeluaran Kas
+  getCashExpenses: () => {
+    const current = getDB();
+    return (current.cash_expenses || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
 };

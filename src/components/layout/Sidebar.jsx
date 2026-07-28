@@ -11,7 +11,9 @@ import {
   Moon,
   Database,
   LogOut,
-  RefreshCw
+  RefreshCw,
+  Scissors,
+  DollarSign
 } from 'lucide-react';
 
 /**
@@ -56,51 +58,86 @@ export default function Sidebar({
 
           <nav className="sidebar-menu">
             {currentUser.role === 'OWNER' && (
+              <>
+                <button
+                  type="button"
+                  className={`sidebar-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
+                >
+                  <TrendingUp size={18} />
+                  Ringkasan Keuangan
+                </button>
+
+                <button
+                  type="button"
+                  className={`sidebar-item ${activeTab === 'piece-rates' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('piece-rates'); setIsMobileMenuOpen(false); }}
+                >
+                  <Scissors size={18} />
+                  Master Tarif Borongan
+                </button>
+
+                <button
+                  type="button"
+                  className={`sidebar-item ${activeTab === 'payroll' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('payroll'); setIsMobileMenuOpen(false); }}
+                >
+                  <DollarSign size={18} />
+                  Rekap Gaji Borongan
+                </button>
+              </>
+            )}
+
+            {currentUser.role === 'WORKER' && (
               <button
                 type="button"
-                className={`sidebar-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
+                className={`sidebar-item ${activeTab === 'worker-daily-log' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('worker-daily-log'); setIsMobileMenuOpen(false); }}
               >
-                <TrendingUp size={18} />
-                Ringkasan Keuangan
+                <Scissors size={18} />
+                Input Hasil Kerja
               </button>
             )}
 
-            <button
-              type="button"
-              className={`sidebar-item ${activeTab === 'pos' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('pos'); setIsMobileMenuOpen(false); }}
-            >
-              <ShoppingCart size={18} />
-              Kasir
-            </button>
+            {currentUser.role !== 'WORKER' && (
+              <>
+                <button
+                  type="button"
+                  className={`sidebar-item ${activeTab === 'pos' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('pos'); setIsMobileMenuOpen(false); }}
+                >
+                  <ShoppingCart size={18} />
+                  Kasir
+                </button>
 
-            <button
-              type="button"
-              className={`sidebar-item ${activeTab === 'inventory' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }}
-            >
-              <Package size={18} />
-              Kelola Stok & Produk
-            </button>
+                <button
+                  type="button"
+                  className={`sidebar-item ${activeTab === 'inventory' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }}
+                >
+                  <Package size={18} />
+                  Kelola Stok & Produk
+                </button>
 
-            <button
-              type="button"
-              className={`sidebar-item ${activeTab === 'debt' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('debt'); setIsMobileMenuOpen(false); }}
-            >
-              <Users size={18} />
-              Utang & Kasbon
-            </button>
+                <button
+                  type="button"
+                  className={`sidebar-item ${activeTab === 'debt' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('debt'); setIsMobileMenuOpen(false); }}
+                >
+                  <Users size={18} />
+                  Utang & Kasbon
+                </button>
 
-            <button
-              type="button"
-              className={`sidebar-item ${activeTab === 'history' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('history'); setIsMobileMenuOpen(false); }}
-            >
-              <History size={18} />
-              Riwayat Transaksi
-            </button>
+                <button
+                  type="button"
+                  className={`sidebar-item ${activeTab === 'history' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('history'); setIsMobileMenuOpen(false); }}
+                >
+                  <History size={18} />
+                  Riwayat Transaksi
+                </button>
+              </>
+            )}
 
             <button
               type="button"
@@ -120,7 +157,9 @@ export default function Sidebar({
             </div>
             <div className="user-info">
               <span className="user-name">{currentUser.name}</span>
-              <span className="user-role">{currentUser.role === 'OWNER' ? 'Owner Toko' : 'Kasir'}</span>
+              <span className="user-role">
+                {currentUser.role === 'OWNER' ? 'Owner Toko' : currentUser.role === 'WORKER' ? 'Penjahit / Worker' : 'Kasir'}
+              </span>
             </div>
           </div>
 

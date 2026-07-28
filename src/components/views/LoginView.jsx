@@ -48,6 +48,16 @@ export default function LoginView({
           >
             Kasir
           </button>
+          <button
+            type="button"
+            className={`login-role-btn ${selectedRole === 'WORKER' ? 'active' : ''}`}
+            onClick={() => {
+              setSelectedRole('WORKER');
+              setEmailInput('siti@oliviana.com');
+            }}
+          >
+            Penjahit
+          </button>
         </div>
 
         <form onSubmit={onSubmit}>
@@ -85,6 +95,7 @@ export default function LoginView({
           <ul style={{ paddingLeft: '20px', marginTop: '6px', listStyleType: 'disc' }}>
             <li>Owner: <code>owner@oliviana.com</code></li>
             <li>Kasir: <code>kasir@oliviana.com</code></li>
+            <li>Penjahit: <code>siti@oliviana.com</code> / <code>budi@oliviana.com</code></li>
           </ul>
         </div>
       </main>
