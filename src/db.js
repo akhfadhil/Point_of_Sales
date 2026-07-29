@@ -8409,58 +8409,62 @@ export const db = {
     if (!isSupabaseConfigured() || !supabase) return;
     try {
       console.log('🔄 Initializing Supabase cloud database sync...');
-      const tables = [
-        'users',
-        'categories',
-        'products',
-        'product_variants',
-        'piece_rate_items',
-        'orders',
-        'order_items',
-        'work_orders',
-        'work_order_items',
-        'worker_daily_logs',
-        'worker_daily_log_items',
-        'payroll_disbursements',
-        'cash_expenses'
-      ];
 
-      // Check if products exist in Supabase. If empty, seed initial data!
-      const { count } = await supabase.from('products').select('*', { count: 'exact', head: true });
-      if (count === 0 || count === null) {
-        console.log('🌱 Supabase database is empty. Seeding initial data from INITIAL_DATA...');
-        if (INITIAL_DATA.users?.length) await supabase.from('users').upsert(INITIAL_DATA.users);
-        if (INITIAL_DATA.categories?.length) await supabase.from('categories').upsert(INITIAL_DATA.categories);
-        if (INITIAL_DATA.products?.length) await supabase.from('products').upsert(INITIAL_DATA.products);
+      // 1. Upload Master Data jika tabel products di Supabase masih kosong
+      const { data: existingProducts, error: checkErr } = await supabase.from('products').select('id').limit(1);
+      
+      if (!checkErr && (!existingProducts || existingProducts.length === 0)) {
+        console.log('🌱 Supabase database is empty. Uploading users, categories, products, variants...');
+        
+        if (INITIAL_DATA.users?.length) {
+          await supabase.from('users').upsert(INITIAL_DATA.users);
+        }
+        if (INITIAL_DATA.categories?.length) {
+          await supabase.from('categories').upsert(INITIAL_DATA.categories);
+        }
+        if (INITIAL_DATA.products?.length) {
+          await supabase.from('products').upsert(INITIAL_DATA.products);
+        }
 
         const variants = INITIAL_DATA.product_variants || [];
-        for (let i = 0; i < variants.length; i += 100) {
-          await supabase.from('product_variants').upsert(variants.slice(i, i + 100));
+        for (let i = 0; i < variants.length; i += 50) {
+          await supabase.from('product_variants').upsert(variants.slice(i, i + 50));
         }
 
         if (INITIAL_DATA.piece_rate_items?.length) {
-          await supabase.from('piece_rate_items').upsert(INITIAL_DATA.piece_rate_items);
+          const pieceItems = INITIAL_DATA.piece_rate_items.map(p => ({
+            id: p.id,
+            name: p.item_name || p.name || 'Pekerjaan',
+            rate_price: Number(p.rate_price || p.rate_per_unit || 0),
+            category: p.category || 'Baju',
+            notes: p.notes || ''
+          }));
+          await supabase.from('piece_rate_items').upsert(pieceItems);
         }
-        console.log('✅ Supabase Seeding Completed Successfully!');
-        return;
+        console.log('✅ Initial master data uploaded to Supabase successfully!');
       }
 
-      // Fetch cloud records and merge into local cache
+      // 2. Fetch existing sales/orders from Supabase to sync local cache
+      const { data: remoteOrders } = await supabase.from('orders').select('*');
+      const { data: remoteOrderItems } = await supabase.from('order_items').select('*');
+
       const current = getDB();
-      let updated = false;
-
-      for (const tbl of tables) {
-        const { data, error } = await supabase.from(tbl).select('*');
-        if (!error && data && data.length > 0) {
-          current[tbl] = data;
-          updated = true;
-        }
+      if (remoteOrders && remoteOrders.length > 0) {
+        current.orders = remoteOrders;
+        current.sales = remoteOrders.map(o => ({
+          ...o,
+          invoice_number: o.order_number || o.invoice_number || o.id
+        }));
       }
-
-      if (updated) {
-        saveDB(current);
-        console.log('⚡ Local database cache updated from Supabase Cloud!');
+      if (remoteOrderItems && remoteOrderItems.length > 0) {
+        current.order_items = remoteOrderItems;
+        current.sale_items = remoteOrderItems.map(i => ({
+          ...i,
+          sale_id: i.order_id || i.sale_id,
+          price_per_unit: i.unit_price || i.price_per_unit
+        }));
       }
+      saveDB(current);
     } catch (err) {
       console.error('❌ Supabase Init/Sync Failed:', err);
     }
@@ -8570,36 +8574,48 @@ export const db = {
   createSale: (saleData, items, userId) => {
     const current = getDB();
     const invoiceNumber = `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Date.now()).slice(-4)}`;
+    const saleId = `s-${Date.now()}`;
 
     const newSale = {
-      id: `s-${Date.now()}`,
+      id: saleId,
       invoice_number: invoiceNumber,
+      order_number: invoiceNumber,
       cashier_id: userId,
       customer_id: saleData.customer_id || null,
+      customer_name: saleData.customer_name || 'Pelanggan Umum',
+      customer_phone: saleData.customer_phone || '',
       total_amount: Number(saleData.total_amount),
-      payment_method: saleData.payment_method, // 'CASH' | 'QRIS' | 'TRANSFER' | 'DEBT'
-      payment_status: saleData.payment_status, // 'PAID' | 'UNPAID' | 'PARTIAL'
+      payment_method: saleData.payment_method || 'CASH', // 'CASH' | 'QRIS' | 'TRANSFER' | 'DEBT'
+      payment_status: saleData.payment_status || 'PAID', // 'PAID' | 'UNPAID' | 'PARTIAL'
       paid_amount: Number(saleData.paid_amount || 0),
       change_amount: Number(saleData.change_amount || 0),
+      notes: saleData.notes || '',
+      work_order_number: saleData.work_order_number || null,
       created_at: new Date().toISOString()
     };
 
     // Tambahkan item transaksi
-    items.forEach((item, idx) => {
+    const formattedItems = items.map((item, idx) => {
       const newItem = {
         id: `si-${Date.now()}-${idx}`,
-        sale_id: newSale.id,
+        sale_id: saleId,
+        order_id: saleId,
         variant_id: item.variant_id,
+        product_name: item.product_name || item.name || 'Produk',
+        variant_detail: `${item.size || ''} ${item.color || ''}`.trim(),
+        unit_price: Number(item.price_per_unit || item.unit_price || 0),
+        price_per_unit: Number(item.price_per_unit || item.unit_price || 0),
         quantity: Number(item.quantity),
-        price_per_unit: Number(item.price_per_unit),
-        subtotal: Number(item.quantity) * Number(item.price_per_unit)
+        subtotal: Number(item.quantity) * Number(item.price_per_unit || item.unit_price || 0)
       };
+
       current.sale_items.push(newItem);
 
       // Potong stok varian
       const variantIdx = current.product_variants.findIndex(v => v.id === item.variant_id);
       if (variantIdx !== -1) {
         current.product_variants[variantIdx].stock_quantity = Number(current.product_variants[variantIdx].stock_quantity) - Number(item.quantity);
+        syncSupabaseUpsert('product_variants', current.product_variants[variantIdx]);
       }
 
       // Catat pergerakan stok
@@ -8612,6 +8628,8 @@ export const db = {
         created_by: userId,
         created_at: new Date().toISOString()
       });
+
+      return newItem;
     });
 
     // Urus Piutang Pelanggan jika pembayaran cicil / kasbon
@@ -8620,16 +8638,48 @@ export const db = {
       if (customerIdx !== -1) {
         let addedDebt = 0;
         if (newSale.payment_method === 'DEBT') {
-          // Seluruh total_amount berutang minus uang muka
           addedDebt = newSale.total_amount - newSale.paid_amount;
         }
-
         current.customers[customerIdx].total_debt = Number(current.customers[customerIdx].total_debt) + Number(addedDebt);
       }
     }
 
     current.sales.push(newSale);
+    if (!current.orders) current.orders = [];
+    current.orders.push(newSale);
+    if (!current.order_items) current.order_items = [];
+    current.order_items.push(...formattedItems);
+
     saveDB(current);
+
+    // Sync ke Supabase Database Cloud
+    syncSupabaseUpsert('orders', {
+      id: newSale.id,
+      order_number: newSale.order_number,
+      cashier_id: newSale.cashier_id,
+      customer_name: newSale.customer_name,
+      customer_phone: newSale.customer_phone,
+      total_amount: newSale.total_amount,
+      payment_method: newSale.payment_method,
+      payment_status: newSale.payment_status,
+      notes: newSale.notes,
+      work_order_number: newSale.work_order_number,
+      created_at: newSale.created_at
+    });
+
+    formattedItems.forEach(it => {
+      syncSupabaseUpsert('order_items', {
+        id: it.id,
+        order_id: it.order_id,
+        variant_id: it.variant_id,
+        product_name: it.product_name,
+        variant_detail: it.variant_detail,
+        unit_price: it.unit_price,
+        quantity: it.quantity,
+        subtotal: it.subtotal
+      });
+    });
+
     return newSale;
   },
 
