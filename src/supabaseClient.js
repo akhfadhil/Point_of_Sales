@@ -30,7 +30,8 @@ export const getSupabaseConfigStatus = () => {
     hasUrl: Boolean(cleanUrl),
     hasKey: Boolean(cleanKey),
     isValidUrl: cleanUrl.startsWith('https://') && !cleanUrl.includes('your-project-id'),
-    urlPreview: cleanUrl ? `${cleanUrl.substring(0, 25)}...` : 'Belum Diatur',
+    fullUrl: cleanUrl || 'Belum Diatur',
+    urlPreview: cleanUrl ? `${cleanUrl}` : 'Belum Diatur',
     keyPreview: cleanKey ? `${cleanKey.substring(0, 10)}...` : 'Belum Diatur'
   };
 };
@@ -86,7 +87,7 @@ export const testSupabaseConnection = async () => {
   } catch (err) {
     return {
       success: false,
-      message: `❌ Gagal Terhubung ke Supabase Cloud: ${err.message || 'Network / CORS Error'}`
+      message: `❌ Gagal Terhubung ke URL (${cleanUrl}): ${err.message || 'Failed to fetch'}. Cek apakah URL di Vercel bertipe 'https://xyzxxxx.supabase.co' dan project Supabase tidak 'Paused'.`
     };
   }
 };
