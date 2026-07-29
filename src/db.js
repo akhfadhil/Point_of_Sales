@@ -3,7 +3,7 @@ import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 // Helper Supabase Sync
 const syncSupabaseUpsert = async (table, data) => {
-  if (!isSupabaseConfigured() || !table || !data) return;
+  if (!isSupabaseConfigured() || !supabase || !table || !data) return;
   try {
     const { error } = await supabase.from(table).upsert(data);
     if (error) console.error(`[Supabase Sync Error - ${table}]`, error.message || error);
@@ -13,7 +13,7 @@ const syncSupabaseUpsert = async (table, data) => {
 };
 
 const syncSupabaseDelete = async (table, id) => {
-  if (!isSupabaseConfigured() || !table || !id) return;
+  if (!isSupabaseConfigured() || !supabase || !table || !id) return;
   try {
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) console.error(`[Supabase Delete Error - ${table}]`, error.message || error);
@@ -8406,7 +8406,7 @@ const saveDB = (db) => {
 export const db = {
   // Synchronize and seed Supabase on application load
   initSupabaseSync: async () => {
-    if (!isSupabaseConfigured()) return;
+    if (!isSupabaseConfigured() || !supabase) return;
     try {
       console.log('🔄 Initializing Supabase cloud database sync...');
       const tables = [
