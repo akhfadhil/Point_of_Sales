@@ -53,8 +53,40 @@ if (isSupabaseConfigured()) {
     console.error('⚠️ Supabase client creation error:', err);
     clientInstance = null;
   }
-} else {
-  console.warn('⚠️ Supabase credentials missing/invalid. Running in Local Storage fallback mode.');
 }
 
 export const supabase = clientInstance;
+
+export const testSupabaseConnection = async () => {
+  if (!isSupabaseConfigured() || !supabase) {
+    return { success: false, message: 'Kredensial Supabase belum terpasang di Vercel.' };
+  }
+
+  try {
+    const startTime = Date.now();
+    const { data, error, status, statusText } = await supabase
+      .from('users')
+      .select('id')
+      .limit(1);
+
+    const latency = Date.now() - startTime;
+
+    if (error) {
+      return {
+        success: false,
+        message: `HTTP ${status || 'Error'} (${statusText || ''}): ${error.message} ${error.hint ? `(Hint: ${error.hint})` : ''}`,
+        details: error
+      };
+    }
+
+    return {
+      success: true,
+      message: `🟢 KONEKSI TERHUBUNG! Respon Supabase: HTTP ${status} OK (${latency}ms). Database siap digunakan.`
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: `❌ Gagal Terhubung ke Supabase Cloud: ${err.message || 'Network / CORS Error'}`
+    };
+  }
+};

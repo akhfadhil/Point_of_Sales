@@ -1,7 +1,7 @@
 // src/components/views/DbInspectorView.jsx
 import React from 'react';
 import { formatRupiah } from '../../utils/formatters';
-import { getSupabaseConfigStatus } from '../../supabaseClient';
+import { getSupabaseConfigStatus, testSupabaseConnection } from '../../supabaseClient';
 
 export default function DbInspectorView({
   isOpen,
@@ -16,6 +16,14 @@ export default function DbInspectorView({
   if (!isOpen) return null;
 
   const configStatus = getSupabaseConfigStatus();
+
+  const handleTestConnection = async () => {
+    setIsSyncing(true);
+    setSyncStatus('Menguji koneksi ke Supabase...');
+    const res = await testSupabaseConnection();
+    setSyncStatus(res.message);
+    setIsSyncing(false);
+  };
 
   const handleForceSync = async () => {
     setIsSyncing(true);
@@ -33,12 +41,20 @@ export default function DbInspectorView({
         <h2 className="card-title" style={{ margin: 0 }}>Inspektor Database & Supabase Sync</h2>
         <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto', flexWrap: 'wrap' }}>
           <button
+            className="btn btn-secondary"
+            onClick={handleTestConnection}
+            disabled={isSyncing}
+            style={{ fontSize: '13px', padding: '6px 14px' }}
+          >
+            🔍 Tes Koneksi
+          </button>
+          <button
             className="btn btn-primary"
             onClick={handleForceSync}
             disabled={isSyncing}
             style={{ fontSize: '13px', padding: '6px 14px' }}
           >
-            {isSyncing ? '🔄 Syncing...' : '⚡ Upload Semua Data ke Supabase'}
+            {isSyncing ? '🔄 Syncing...' : '⚡ Upload Semua Data'}
           </button>
           <select
             className="form-control"

@@ -156,46 +156,17 @@ ALTER TABLE IF EXISTS public.payroll_disbursements DROP CONSTRAINT IF EXISTS pay
 ALTER TABLE IF EXISTS public.payroll_disbursements DROP CONSTRAINT IF EXISTS payroll_disbursements_approved_by_fkey;
 ALTER TABLE IF EXISTS public.cash_expenses DROP CONSTRAINT IF EXISTS cash_expenses_created_by_fkey;
 
--- ENABLE ROW LEVEL SECURITY (RLS) & PUBLIC PERMISSIONS
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.product_variants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.work_orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.work_order_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.piece_rate_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.worker_daily_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.worker_daily_log_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.payroll_disbursements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.cash_expenses ENABLE ROW LEVEL SECURITY;
-
--- Kebijakan Akses Publik (Allow Read & Write WITH CHECK)
-DROP POLICY IF EXISTS "Allow public full access users" ON public.users;
-DROP POLICY IF EXISTS "Allow public full access categories" ON public.categories;
-DROP POLICY IF EXISTS "Allow public full access products" ON public.products;
-DROP POLICY IF EXISTS "Allow public full access product_variants" ON public.product_variants;
-DROP POLICY IF EXISTS "Allow public full access orders" ON public.orders;
-DROP POLICY IF EXISTS "Allow public full access order_items" ON public.order_items;
-DROP POLICY IF EXISTS "Allow public full access work_orders" ON public.work_orders;
-DROP POLICY IF EXISTS "Allow public full access work_order_items" ON public.work_order_items;
-DROP POLICY IF EXISTS "Allow public full access piece_rate_items" ON public.piece_rate_items;
-DROP POLICY IF EXISTS "Allow public full access worker_daily_logs" ON public.worker_daily_logs;
-DROP POLICY IF EXISTS "Allow public full access worker_daily_log_items" ON public.worker_daily_log_items;
-DROP POLICY IF EXISTS "Allow public full access payroll_disbursements" ON public.payroll_disbursements;
-DROP POLICY IF EXISTS "Allow public full access cash_expenses" ON public.cash_expenses;
-
-CREATE POLICY "Allow public full access users" ON public.users FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access products" ON public.products FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access product_variants" ON public.product_variants FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access order_items" ON public.order_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access work_orders" ON public.work_orders FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access work_order_items" ON public.work_order_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access piece_rate_items" ON public.piece_rate_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access worker_daily_logs" ON public.worker_daily_logs FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access worker_daily_log_items" ON public.worker_daily_log_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access payroll_disbursements" ON public.payroll_disbursements FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow public full access cash_expenses" ON public.cash_expenses FOR ALL USING (true) WITH CHECK (true);
+-- DISABLE ROW LEVEL SECURITY (RLS) FOR UNRESTRICTED POS API ACCESS
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_variants DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.order_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.work_orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.work_order_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.piece_rate_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.worker_daily_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.worker_daily_log_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payroll_disbursements DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cash_expenses DISABLE ROW LEVEL SECURITY;
