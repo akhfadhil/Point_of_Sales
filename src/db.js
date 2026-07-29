@@ -8470,6 +8470,98 @@ export const db = {
     }
   },
 
+  // Manual Force Sync All Data to Supabase Cloud Database
+  forceSyncAllToSupabase: async () => {
+    if (!isSupabaseConfigured() || !supabase) {
+      return { success: false, message: 'Kredensial Supabase belum dikonfigurasi!' };
+    }
+
+    try {
+      console.log('🚀 Synchronizing all data to Supabase cloud...');
+      const current = getDB();
+
+      // 1. Users
+      if (current.users?.length) {
+        const { error } = await supabase.from('users').upsert(current.users);
+        if (error) console.error('Error syncing users:', error.message || error);
+      }
+
+      // 2. Categories
+      if (current.categories?.length) {
+        const { error } = await supabase.from('categories').upsert(current.categories);
+        if (error) console.error('Error syncing categories:', error.message || error);
+      }
+
+      // 3. Products
+      if (current.products?.length) {
+        const { error } = await supabase.from('products').upsert(current.products);
+        if (error) console.error('Error syncing products:', error.message || error);
+      }
+
+      // 4. Product Variants (chunks of 50)
+      const variants = current.product_variants || [];
+      for (let i = 0; i < variants.length; i += 50) {
+        const { error } = await supabase.from('product_variants').upsert(variants.slice(i, i + 50));
+        if (error) console.error('Error syncing variants:', error.message || error);
+      }
+
+      // 5. Piece Rate Items
+      if (current.piece_rate_items?.length) {
+        const pieceItems = current.piece_rate_items.map(p => ({
+          id: p.id,
+          name: p.item_name || p.name || 'Pekerjaan',
+          rate_price: Number(p.rate_price || p.rate_per_unit || 0),
+          category: p.category || 'Baju',
+          notes: p.notes || ''
+        }));
+        const { error } = await supabase.from('piece_rate_items').upsert(pieceItems);
+        if (error) console.error('Error syncing piece items:', error.message || error);
+      }
+
+      // 6. Orders
+      const sales = current.sales || current.orders || [];
+      if (sales.length) {
+        const mappedOrders = sales.map(s => ({
+          id: s.id,
+          order_number: s.order_number || s.invoice_number || s.id,
+          cashier_id: s.cashier_id || null,
+          customer_name: s.customer_name || 'Pelanggan Umum',
+          customer_phone: s.customer_phone || '',
+          total_amount: Number(s.total_amount || 0),
+          payment_method: s.payment_method || 'CASH',
+          payment_status: s.payment_status || 'PAID',
+          notes: s.notes || '',
+          created_at: s.created_at || new Date().toISOString()
+        }));
+        const { error } = await supabase.from('orders').upsert(mappedOrders);
+        if (error) console.error('Error syncing orders:', error.message || error);
+      }
+
+      // 7. Order Items
+      const saleItems = current.sale_items || current.order_items || [];
+      if (saleItems.length) {
+        const mappedOrderItems = saleItems.map(i => ({
+          id: i.id,
+          order_id: i.order_id || i.sale_id,
+          variant_id: i.variant_id,
+          product_name: i.product_name || 'Produk',
+          variant_detail: i.variant_detail || '',
+          unit_price: Number(i.unit_price || i.price_per_unit || 0),
+          quantity: Number(i.quantity || 1),
+          subtotal: Number(i.subtotal || 0)
+        }));
+        const { error } = await supabase.from('order_items').upsert(mappedOrderItems);
+        if (error) console.error('Error syncing order items:', error.message || error);
+      }
+
+      console.log('✅ Force sync to Supabase finished!');
+      return { success: true, message: 'Berhasil menyinkronkan seluruh data ke Supabase Cloud!' };
+    } catch (err) {
+      console.error('❌ Force sync failed:', err);
+      return { success: false, message: `Gagal sync: ${err.message}` };
+    }
+  },
+
   // Ambil semua data di tabel tertentu
   get: (table) => {
     return getDB()[table] || [];

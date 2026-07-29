@@ -18,34 +18,61 @@ export default function DbInspectorView({
   db,
   isMobile
 }) {
+  const [syncStatus, setSyncStatus] = React.useState(null);
+  const [isSyncing, setIsSyncing] = React.useState(false);
+
   if (!isOpen) return null;
+
+  const handleForceSync = async () => {
+    setIsSyncing(true);
+    setSyncStatus('Mengunggah seluruh data ke Supabase Database Cloud...');
+    const res = await db.forceSyncAllToSupabase();
+    setSyncStatus(res.message);
+    setIsSyncing(false);
+  };
 
   const tableData = db.get(selectedDbTable) || [];
 
   return (
     <section className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-        <h2 className="card-title" style={{ margin: 0 }}>Inspektor Database Lokal</h2>
-        <select
-          className="form-control"
-          style={{ width: isMobile ? '100%' : '250px', maxWidth: '100%' }}
-          value={selectedDbTable}
-          onChange={(e) => setSelectedDbTable(e.target.value)}
-        >
-          <option value="users">Tabel: users (Pengguna)</option>
-          <option value="categories">Tabel: categories (Kategori)</option>
-          <option value="products">Tabel: products (Produk Induk)</option>
-          <option value="product_variants">Tabel: product_variants (Varian & Harga)</option>
-          <option value="stock_movements">Tabel: stock_movements (Mutasi Stok)</option>
-          <option value="customers">Tabel: customers (Pelanggan & Utang)</option>
-          <option value="sales">Tabel: sales (Header Transaksi)</option>
-          <option value="sale_items">Tabel: sale_items (Detail Transaksi)</option>
-          <option value="debt_payments">Tabel: debt_payments (Cicilan Kasbon)</option>
-        </select>
+        <h2 className="card-title" style={{ margin: 0 }}>Inspektor Database & Supabase Sync</h2>
+        <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto', flexWrap: 'wrap' }}>
+          <button
+            className="btn btn-primary"
+            onClick={handleForceSync}
+            disabled={isSyncing}
+            style={{ fontSize: '13px', padding: '6px 14px' }}
+          >
+            {isSyncing ? '🔄 Syncing...' : '⚡ Upload Semua Data ke Supabase'}
+          </button>
+          <select
+            className="form-control"
+            style={{ width: isMobile ? '100%' : '230px', maxWidth: '100%' }}
+            value={selectedDbTable}
+            onChange={(e) => setSelectedDbTable(e.target.value)}
+          >
+            <option value="users">Tabel: users (Pengguna)</option>
+            <option value="categories">Tabel: categories (Kategori)</option>
+            <option value="products">Tabel: products (Produk Induk)</option>
+            <option value="product_variants">Tabel: product_variants (Varian & Harga)</option>
+            <option value="stock_movements">Tabel: stock_movements (Mutasi Stok)</option>
+            <option value="customers">Tabel: customers (Pelanggan & Utang)</option>
+            <option value="sales">Tabel: sales (Header Transaksi)</option>
+            <option value="sale_items">Tabel: sale_items (Detail Transaksi)</option>
+            <option value="debt_payments">Tabel: debt_payments (Cicilan Kasbon)</option>
+          </select>
+        </div>
       </div>
 
+      {syncStatus && (
+        <div style={{ padding: '10px 14px', marginBottom: '16px', borderRadius: '6px', backgroundColor: 'var(--bg-accent, #eef2ff)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: '500' }}>
+          {syncStatus}
+        </div>
+      )}
+
       <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-        Berikut adalah data mentah yang tersimpan secara persisten di <code>localStorage.getItem('oliviana_db')</code>.
+        Berikut adalah data yang tersimpan di memori aplikasi (<code>localStorage.getItem('oliviana_db')</code>).
       </p>
 
       <div className="table-wrapper">
