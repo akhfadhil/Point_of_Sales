@@ -13,15 +13,24 @@ const rawKey =
   import.meta.env.SUPABASE_KEY ||
   '';
 
-const cleanUrl = typeof rawUrl === 'string' ? rawUrl.trim().replace(/["']/g, '') : '';
+let cleanUrl = typeof rawUrl === 'string' ? rawUrl.trim().replace(/["']/g, '') : '';
 const cleanKey = typeof rawKey === 'string' ? rawKey.trim().replace(/["']/g, '') : '';
+
+// Auto-fix URL format if missing https://
+if (cleanUrl) {
+  if (cleanUrl.startsWith('http://')) {
+    cleanUrl = cleanUrl.replace('http://', 'https://');
+  } else if (!cleanUrl.startsWith('https://')) {
+    cleanUrl = `https://${cleanUrl}`;
+  }
+}
 
 export const getSupabaseConfigStatus = () => {
   return {
     hasUrl: Boolean(cleanUrl),
     hasKey: Boolean(cleanKey),
     isValidUrl: cleanUrl.startsWith('https://') && !cleanUrl.includes('your-project-id'),
-    urlPreview: cleanUrl ? `${cleanUrl.substring(0, 20)}...` : 'Belum Diatur',
+    urlPreview: cleanUrl ? `${cleanUrl.substring(0, 25)}...` : 'Belum Diatur',
     keyPreview: cleanKey ? `${cleanKey.substring(0, 10)}...` : 'Belum Diatur'
   };
 };
