@@ -1,5 +1,5 @@
 // src/db.js
-import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { supabase, isSupabaseConfigured, getSupabaseConfigStatus } from './supabaseClient';
 
 // Helper Supabase Sync
 const syncSupabaseUpsert = async (table, data) => {
@@ -8472,8 +8472,17 @@ export const db = {
 
   // Manual Force Sync All Data to Supabase Cloud Database
   forceSyncAllToSupabase: async () => {
+    const status = getSupabaseConfigStatus();
     if (!isSupabaseConfigured() || !supabase) {
-      return { success: false, message: 'Kredensial Supabase belum dikonfigurasi!' };
+      const details = [];
+      if (!status.hasUrl) details.push('VITE_SUPABASE_URL tidak terdeteksi');
+      if (!status.hasKey) details.push('VITE_SUPABASE_ANON_KEY tidak terdeteksi');
+      if (status.hasUrl && !status.isValidUrl) details.push('Format VITE_SUPABASE_URL tidak valid (harus diawali https://)');
+
+      return {
+        success: false,
+        message: `⚠️ Supabase belum aktif! (${details.join(', ')}). Pastikan nama variabel diawali VITE_ di Settings Vercel & jalankan 'Redeploy'.`
+      };
     }
 
     try {

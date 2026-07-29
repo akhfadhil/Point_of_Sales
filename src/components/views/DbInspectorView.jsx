@@ -1,16 +1,8 @@
 // src/components/views/DbInspectorView.jsx
 import React from 'react';
 import { formatRupiah } from '../../utils/formatters';
+import { getSupabaseConfigStatus } from '../../supabaseClient';
 
-/**
- * Komponen Tampilan Inspektor Database Lokal (Development Helper)
- * @param {Object} props
- * @param {boolean} props.isOpen - Status apakah tab db-viewer sedang aktif
- * @param {string} props.selectedDbTable - Nama tabel database terpilih
- * @param {Function} props.setSelectedDbTable - Setter tabel database terpilih
- * @param {Object} props.db - Instance database lokal
- * @param {boolean} props.isMobile - Status layar mobile/desktop
- */
 export default function DbInspectorView({
   isOpen,
   selectedDbTable,
@@ -22,6 +14,8 @@ export default function DbInspectorView({
   const [isSyncing, setIsSyncing] = React.useState(false);
 
   if (!isOpen) return null;
+
+  const configStatus = getSupabaseConfigStatus();
 
   const handleForceSync = async () => {
     setIsSyncing(true);
@@ -70,6 +64,20 @@ export default function DbInspectorView({
           {syncStatus}
         </div>
       )}
+
+      <div style={{ padding: '12px 14px', marginBottom: '16px', borderRadius: '8px', backgroundColor: configStatus.hasUrl && configStatus.hasKey ? '#ecfdf5' : '#fff1f2', border: `1px solid ${configStatus.hasUrl && configStatus.hasKey ? '#a7f3d0' : '#fecdd3'}`, color: 'var(--text-primary)', fontSize: '13px' }}>
+        <strong>Status Koneksi Supabase: </strong>
+        {configStatus.hasUrl && configStatus.hasKey ? (
+          <span style={{ color: '#047857', fontWeight: 'bold' }}>🟢 TERDETEKSI ({configStatus.urlPreview})</span>
+        ) : (
+          <span style={{ color: '#b91c1c', fontWeight: 'bold' }}>🔴 BELUM AKTIF. (URL: {configStatus.urlPreview} | Key: {configStatus.keyPreview})</span>
+        )}
+        {(!configStatus.hasUrl || !configStatus.hasKey) && (
+          <div style={{ marginTop: '6px', fontSize: '12px', color: '#9f1239' }}>
+            💡 <em>Pastikan Environment Variables di Vercel dinamai <code>VITE_SUPABASE_URL</code> dan <code>VITE_SUPABASE_ANON_KEY</code>, lalu lakukan <strong>Redeploy</strong> di Dashboard Vercel.</em>
+          </div>
+        )}
+      </div>
 
       <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
         Berikut adalah data yang tersimpan di memori aplikasi (<code>localStorage.getItem('oliviana_db')</code>).
