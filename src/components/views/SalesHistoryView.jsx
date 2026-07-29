@@ -37,8 +37,10 @@ export default function SalesHistoryView({
 
   if (!isOpen) return null;
 
-  // Filter Sales History (Text Search + Date Filter)
-  const filteredSales = allSales.slice().reverse().filter(sale => {
+  // Filter Sales History (Text Search + Date Filter - Sorted Newest First)
+  const sortedSales = allSales.slice().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+  const filteredSales = sortedSales.filter(sale => {
     const saleTime = new Date(sale.created_at).getTime();
     const now = new Date();
 

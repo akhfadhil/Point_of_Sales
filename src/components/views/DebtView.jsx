@@ -73,8 +73,10 @@ export default function DebtView({
   const currentSettledPage = Math.min(debtSettledPage, settledTotalPages);
   const paginatedSettled = settledCustomers.slice((currentSettledPage - 1) * settledLimit, currentSettledPage * settledLimit);
 
-  // Filter Debt Payments by search query & Date Range
-  const filteredDebtPayments = allDebtPayments.slice().reverse().filter(payment => {
+  // Filter Debt Payments by search query & Date Range (Sorted Newest First)
+  const sortedDebtPayments = allDebtPayments.slice().sort((a, b) => new Date(b.created_at || b.paid_at || 0) - new Date(a.created_at || a.paid_at || 0));
+
+  const filteredDebtPayments = sortedDebtPayments.filter(payment => {
     const payTime = new Date(payment.created_at).getTime();
     const now = new Date();
 

@@ -56,7 +56,7 @@ export default function PayrollSlipModal({
     const messageText = `*TOKO SERAGAM OLIVIANA*
 Jl. Semeru No. 81, Sukodono, Lumajang
 
-*SLIP GAJI BORONGAN PENJAHIT*
+*SLIP GAJI PENJAHIT*
 ----------------------------------------
 No. Slip   : ${disbursement?.payroll_number || 'PAY-OFFICIAL'}
 Tanggal    : ${new Date(disbursement?.paid_at || Date.now()).toLocaleDateString('id-ID')}
@@ -88,7 +88,7 @@ Terima kasih atas dedikasi & kerja keras Anda di Toko Seragam Oliviana!`;
         <div className="modal-header">
           <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <CheckCircle2 size={20} style={{ color: 'var(--success)' }} />
-            Slip Gaji Borongan (Pratinjau)
+            Slip Gaji (Pratinjau)
           </h3>
           <button type="button" className="btn btn-icon" onClick={onClose}>
             <X size={18} />
@@ -118,7 +118,7 @@ Terima kasih atas dedikasi & kerja keras Anda di Toko Seragam Oliviana!`;
               Jl. Semeru No. 81, Sukodono, Lumajang
             </p>
             <div style={{ borderBottom: '1px dashed #000', margin: '8px 0' }} />
-            <strong style={{ fontSize: '13px' }}>SLIP GAJI BORONGAN PENJAHIT</strong>
+            <strong style={{ fontSize: '13px' }}>SLIP GAJI PENJAHIT</strong>
           </div>
 
           <div style={{ marginBottom: '10px', fontSize: '11px' }}>

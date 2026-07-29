@@ -27,12 +27,15 @@ import PosView from './components/views/PosView';
 import MasterPieceRateView from './components/views/MasterPieceRateView';
 import WorkerDailyLogView from './components/views/WorkerDailyLogView';
 import PayrollDisbursementView from './components/views/PayrollDisbursementView';
+import UserManagementView from './components/views/UserManagementView';
 import PayrollSlipModal from './components/modals/PayrollSlipModal';
+import ChangePasswordModal from './components/modals/ChangePasswordModal';
 import { Menu, Sun, Moon, Database, X } from 'lucide-react';
 
 function App() {
   // App Layout State
   const [activeTab, setActiveTab] = useState('pos'); // 'pos' | 'dashboard' | 'inventory' | 'debt' | 'history' | 'check-stock'
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   // Authentication State & Handlers via useAuth Hook
   const {
@@ -452,6 +455,7 @@ function App() {
         handleResetDB={handleResetDB}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
+        onOpenChangePassword={() => setIsChangePasswordModalOpen(true)}
       />
 
       {/* MOBILE TOP HEADER BAR */}
@@ -663,7 +667,7 @@ function App() {
           isMobile={isMobile}
         />
 
-        {/* 8. MASTER TARIF BORONGAN (OWNER) */}
+        {/* 8. SETTING TARIF (OWNER) */}
         <MasterPieceRateView
           isOpen={activeTab === 'piece-rates'}
           showToast={showToast}
@@ -681,7 +685,7 @@ function App() {
           isMobile={isMobile}
         />
 
-        {/* 10. REKAP & PENCAIRAN GAJI BORONGAN (OWNER) */}
+        {/* 10. REKAP & PENCAIRAN GAJI (OWNER) */}
         <PayrollDisbursementView
           isOpen={activeTab === 'payroll'}
           currentUser={currentUser}
@@ -692,9 +696,29 @@ function App() {
           isMobile={isMobile}
         />
 
+        {/* 11. MANAJEMEN PENGGUNA (OWNER) */}
+        <UserManagementView
+          isOpen={activeTab === 'users'}
+          currentUser={currentUser}
+          showToast={showToast}
+          askConfirmation={askConfirmation}
+          setRefreshKey={setRefreshKey}
+          isMobile={isMobile}
+        />
+
       </main>
 
       {/* --- MODAL DIALOGS --- */}
+
+      {/* SELF-SERVICE CHANGE PASSWORD MODAL */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+        currentUser={currentUser}
+        setCurrentUser={setCurrentUser}
+        showToast={showToast}
+        isMobile={isMobile}
+      />
 
       {/* A. CHECKOUT SUCCESS & DOT MATRIX INVOICE SIMULATOR */}
       <CheckoutSuccessModal
@@ -734,7 +758,8 @@ function App() {
           || null;
 
         const currentUnitPrice = currentVariant ? getAdjustedPrice(currentVariant.selling_price) : 0;
-        const currentSubtotal = currentUnitPrice * (posModalQty || 1);
+        const parsedQty = Number(posModalQty) || 0;
+        const currentSubtotal = currentUnitPrice * parsedQty;
 
         return (
           <div className="modal-overlay">
@@ -749,15 +774,20 @@ function App() {
 
               <form onSubmit={(e) => {
                 e.preventDefault();
+                const targetQty = Number(posModalQty);
                 if (!currentVariant) {
                   showToast('Silakan pilih ukuran & warna varian.', 'warning');
                   return;
                 }
-                if (currentVariant.stock_quantity < posModalQty) {
-                  showToast('Stok tidak mencukupi.', 'error');
+                if (!targetQty || targetQty < 1 || isNaN(targetQty)) {
+                  showToast('Jumlah pembelian minimal 1 pcs.', 'warning');
                   return;
                 }
-                addToCart(currentVariant, Number(posModalQty));
+                if (currentVariant.stock_quantity < targetQty) {
+                  showToast(`Stok tidak mencukupi (sisa stok: ${currentVariant.stock_quantity} pcs).`, 'error');
+                  return;
+                }
+                addToCart(currentVariant, targetQty);
                 setActiveModal(null);
               }}>
                 {/* 1. Pilih Ukuran */}
@@ -899,7 +929,10 @@ function App() {
                       type="button"
                       className="btn btn-secondary"
                       style={{ width: '40px', height: '40px', fontSize: '18px', padding: 0, fontWeight: 'bold' }}
-                      onClick={() => setPosModalQty(Math.max(1, posModalQty - 1))}
+                      onClick={() => {
+                        const cur = Number(posModalQty) || 1;
+                        setPosModalQty(Math.max(1, cur - 1));
+                      }}
                     >
                       -
                     </button>
@@ -911,7 +944,20 @@ function App() {
                       className="form-control"
                       style={{ textAlign: 'center', fontSize: '16px', fontWeight: 'bold' }}
                       value={posModalQty}
-                      onChange={(e) => setPosModalQty(Math.max(1, Number(e.target.value)))}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          setPosModalQty('');
+                        } else {
+                          const num = parseInt(val, 10);
+                          setPosModalQty(isNaN(num) ? '' : num);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (posModalQty === '' || Number(posModalQty) < 1) {
+                          setPosModalQty(1);
+                        }
+                      }}
                       required
                     />
                     <button
@@ -919,8 +965,9 @@ function App() {
                       className="btn btn-secondary"
                       style={{ width: '40px', height: '40px', fontSize: '18px', padding: 0, fontWeight: 'bold' }}
                       onClick={() => {
-                        if (currentVariant && posModalQty < currentVariant.stock_quantity) {
-                          setPosModalQty(posModalQty + 1);
+                        const cur = Number(posModalQty) || 0;
+                        if (currentVariant && cur < currentVariant.stock_quantity) {
+                          setPosModalQty(cur + 1);
                         }
                       }}
                     >
@@ -947,7 +994,7 @@ function App() {
                       <span style={{ color: 'var(--primary)' }}>{formatRupiah(currentUnitPrice)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '16px', marginTop: '6px' }}>
-                      <span>Subtotal ({posModalQty} Pcs):</span>
+                      <span>Subtotal ({parsedQty} Pcs):</span>
                       <span style={{ color: 'var(--success)' }}>{formatRupiah(currentSubtotal)}</span>
                     </div>
                   </div>

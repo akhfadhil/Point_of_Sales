@@ -55,13 +55,13 @@ export default function HeaderBar({
         )}
         {activeTab === 'piece-rates' && (
           <>
-            <h1>Master Tarif Borongan</h1>
+            <h1>Master Tarif</h1>
             <p>Atur tarif borongan per jenis pakaian dan kelola data penjahit.</p>
           </>
         )}
         {activeTab === 'payroll' && (
           <>
-            <h1>Rekap & Pencairan Gaji Borongan</h1>
+            <h1>Rekap & Pencairan Gaji</h1>
             <p>Persetujuan gaji bulanan penjahit dan pencatatan pengeluaran kas otomatis.</p>
           </>
         )}
@@ -75,6 +75,12 @@ export default function HeaderBar({
           <>
             <h1>Inspektor Database</h1>
             <p>Lihat data tabel database lokal (LocalStorage) secara visual.</p>
+          </>
+        )}
+        {activeTab === 'users' && (
+          <>
+            <h1>Manajemen Pengguna</h1>
+            <p>Kelola data akun Owner, Kasir, dan Penjahit (Worker) dalam satu antarmuka.</p>
           </>
         )}
       </div>

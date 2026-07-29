@@ -1,6 +1,6 @@
-# 🛍️ Oliviana Point of Sales (POS) & Manajemen Stok Seragam
+# 🛍️ Oliviana Point of Sales (POS) & Manajemen Stok & Penggajian Konveksi
 
-Aplikasi **Point of Sales (POS) & Sistem Manajemen Stok Seragam** modern, cepat, dan *offline-ready* yang dirancang khusus untuk toko seragam sekolah (**Oliviana**). Aplikasi ini mengintegrasikan seluruh proses bisnis toko dari kasir penjualan harian, skema harga bertingkat, pencatatan utang pelanggan, hingga pengelolaan ratusan varian seragam sekolah (Ukuran & Warna) dari pabrik konveksi.
+Aplikasi **Point of Sales (POS), Sistem Manajemen Stok Seragam & Penggajian Borongan Penjahit** modern, cepat, dan *offline-ready* yang dirancang khusus untuk toko seragam sekolah dan konveksi (**Oliviana**). Aplikasi ini mengintegrasikan seluruh proses bisnis toko dari kasir penjualan harian, skema harga bertingkat, pencatatan utang pelanggan, pengelolaan ratusan varian seragam sekolah (Ukuran & Warna), hingga manajemen hasil kerja harian & pencairan gaji penjahit borongan.
 
 ---
 
@@ -80,16 +80,29 @@ Aplikasi **Point of Sales (POS) & Sistem Manajemen Stok Seragam** modern, cepat,
 
 ---
 
-### 8. 🏗️ Refactoring Codebase Total & Clean Architecture (Fase 1 - 6)
-* **Penyusutan Kode `App.jsx`:** Dari **~3.367 baris** menjadi **~980 baris** (berkurang **~69%**).
-* **Struktur Modular Modern:**
-  * **View Components (`src/components/views/`):** `LoginView`, `DbInspectorView`, `StockCheckerView`, `SalesHistoryView`, `DebtView`, `InventoryView`, `DashboardView`, `PosView`.
-  * **Modal Components (`src/components/modals/`):** `CheckoutSuccessModal`, `DebtReceiptModal`, `FactoryInboundModal`, `AddProductVariantModal`, `RepayDebtModal`.
-  * **Layout Components (`src/components/layout/`):** `Sidebar`, `HeaderBar`, `BottomNav`.
-  * **Custom Hooks (`src/hooks/`):** `useAuth` (sesi login & LocalStorage), `useCart` (keranjang & checkout POS), `useResponsive` (listener breakpoint responsive HP/Desktop).
-  * **Utilities (`src/utils/`):** `formatters.js`, `sizeSorting.js`, `printHelper.js`.
-* **Audit & Dead Code Removal:** Menghapus 25+ unused icon imports & variabel mati. Hasil build terverifikasi 0 error regression (`npm run build` PASS).
+### 8. 🧵 Modul Penggajian & Borongan Penjahit (Piece-Rate Payroll)
+* **🔐 Multi-Role Access Control (`OWNER`, `CASHIER`, `WORKER`):**
+  * Peran **`WORKER` (Penjahit)** memiliki navigasi khusus yang langsung diarahkan ke menu *Input Hasil Kerja Harian*, tanpa akses ke transaksi kasir atau data keuangan.
+  * Peran **`OWNER`** memiliki kontrol penuh untuk mengelola Master Tarif, menyetujui log pengerjaan, dan melakukan pencairan gaji.
+* **✂️ Master Tarif Borongan (`MasterPieceRateView`):** Pengaturan tarif ongkos jahit / potongan per pcs/unit berdasarkan jenis pekerjaan & varian seragam. Menggunakan filter tombol preset chip (*Rok Panggul Karet*, *Celana Panjang Levis*, *Rok Wiru*, *Hem Panjang*, dll) untuk perpindahan instan antar jenis pakaian tanpa dropdown.
+* **📊 Import 254 Data Tarif Excel (`Daftar_Ongkos_Jahit_Garment - Copy.xlsx`):** Sebanyak 254 item proses kerja dari 9 Model Garment telah di-seed secara otomatis ke dalam database (`v15_garment_type_filter`) dengan prefiks yang rapi dan bersih.
+* **📝 Input Hasil Kerja Harian (`WorkerDailyLogView`):** Form pencatatan harian penjahit untuk melaporkan jumlah unit pekerjaan yang diselesaikan beserta tanggal dan catatan.
+* **💰 Rekap & Pencairan Gaji Bulanan (`PayrollDisbursementView`):** Rekapitulasi penghitungan total gaji borongan per penjahit/periode bulan. Pencairan gaji otomatis mencatat pengeluaran kas toko (`cash_expenses`) dan mengubah status log menjadi `PAID`.
+* **🧾 Slip Gaji Printable (`PayrollSlipModal`):** Pencetakan slip gaji borongan resmi per pekerja via isolated printable iframe.
 
 ---
 
-*Status Project: **ALL MENUS & REFACTORING 100% COMPLETE (POS, Inventory, Debt, Sales History, Stock Checker, Financial Summary, DB Inspector, Dot Matrix Receipt, Clean Architecture & Date Filters DONE)*** 🚀
+### 9. 🏗️ Clean Architecture & Multi-Platform Deployment Setup
+* **Penyusutan Kode `App.jsx`:** Terstruktur modular dengan penyusutan file utama.
+* **Struktur Modular Modern:**
+  * **View Components (`src/components/views/`):** `LoginView`, `DbInspectorView`, `StockCheckerView`, `SalesHistoryView`, `DebtView`, `InventoryView` (Kelola produk & daftar detail varian stok), `DashboardView`, `PosView`, `MasterPieceRateView` (Pengaturan daftar & ongkos borongan), `WorkerDailyLogView`, `PayrollDisbursementView`, `UserManagementView` (Kelola akun Owner, Kasir, Penjahit).
+  * **Modal Components (`src/components/modals/`):** `CheckoutSuccessModal`, `DebtReceiptModal`, `FactoryInboundModal`, `AddProductVariantModal`, `RepayDebtModal`, `PayrollSlipModal`, `ChangePasswordModal` (Modal self-service ubah kata sandi pengguna).
+  * **Layout Components (`src/components/layout/`):** `Sidebar` (dengan pengelompokan kategori *Penjualan*, *Produk & Stok*, *Penggajian*, dan *Keuangan*), `HeaderBar`, `BottomNav`.
+  * **Custom Hooks (`src/hooks/`):** `useAuth`, `useCart`, `useResponsive`.
+  * **Utilities (`src/utils/`):** `formatters.js`, `sizeSorting.js`, `printHelper.js`.
+* **🚀 Vercel Production Ready (`vercel.json`):** Konfigurasi Single Page Application (SPA) routing re-write untuk kemudahan deployment ke platform Vercel.
+* **Audit & Build Verification:** Terverifikasi 0 error regression (`npm run build` PASS).
+
+---
+
+*Status Project: **ALL MENUS & PAYROLL MODULE 100% COMPLETE (POS, Inventory, Debt, Sales History, Stock Checker, Financial Summary, DB Inspector, Dot Matrix Receipt, Piece-Rate Payroll & Vercel Deployment DONE)*** 🚀

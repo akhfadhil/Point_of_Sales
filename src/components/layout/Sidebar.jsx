@@ -13,7 +13,8 @@ import {
   LogOut,
   RefreshCw,
   Scissors,
-  DollarSign
+  DollarSign,
+  Key
 } from 'lucide-react';
 
 /**
@@ -28,6 +29,7 @@ import {
  * @param {Function} props.handleResetDB - Handler reset database simulasi
  * @param {boolean} props.darkMode - Status mode gelap (dark mode)
  * @param {Function} props.setDarkMode - Setter toggle mode gelap
+ * @param {Function} props.onOpenChangePassword - Callback membuka modal ubah kata sandi
  */
 export default function Sidebar({
   isMobileMenuOpen,
@@ -38,7 +40,8 @@ export default function Sidebar({
   handleLogout,
   handleResetDB,
   darkMode,
-  setDarkMode
+  setDarkMode,
+  onOpenChangePassword
 }) {
   if (!currentUser) return null;
 
@@ -57,50 +60,10 @@ export default function Sidebar({
           </div>
 
           <nav className="sidebar-menu">
-            {currentUser.role === 'OWNER' && (
-              <>
-                <button
-                  type="button"
-                  className={`sidebar-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-                  onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
-                >
-                  <TrendingUp size={18} />
-                  Ringkasan Keuangan
-                </button>
-
-                <button
-                  type="button"
-                  className={`sidebar-item ${activeTab === 'piece-rates' ? 'active' : ''}`}
-                  onClick={() => { setActiveTab('piece-rates'); setIsMobileMenuOpen(false); }}
-                >
-                  <Scissors size={18} />
-                  Master Tarif Borongan
-                </button>
-
-                <button
-                  type="button"
-                  className={`sidebar-item ${activeTab === 'payroll' ? 'active' : ''}`}
-                  onClick={() => { setActiveTab('payroll'); setIsMobileMenuOpen(false); }}
-                >
-                  <DollarSign size={18} />
-                  Rekap Gaji Borongan
-                </button>
-              </>
-            )}
-
-            {currentUser.role === 'WORKER' && (
-              <button
-                type="button"
-                className={`sidebar-item ${activeTab === 'worker-daily-log' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('worker-daily-log'); setIsMobileMenuOpen(false); }}
-              >
-                <Scissors size={18} />
-                Input Hasil Kerja
-              </button>
-            )}
-
+            {/* KATEGORI 1: PENJUALAN (Owner & Cashier) */}
             {currentUser.role !== 'WORKER' && (
               <>
+                <div className="sidebar-group-title">Penjualan</div>
                 <button
                   type="button"
                   className={`sidebar-item ${activeTab === 'pos' ? 'active' : ''}`}
@@ -112,11 +75,11 @@ export default function Sidebar({
 
                 <button
                   type="button"
-                  className={`sidebar-item ${activeTab === 'inventory' ? 'active' : ''}`}
-                  onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }}
+                  className={`sidebar-item ${activeTab === 'history' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('history'); setIsMobileMenuOpen(false); }}
                 >
-                  <Package size={18} />
-                  Kelola Stok & Produk
+                  <History size={18} />
+                  Riwayat Transaksi
                 </button>
 
                 <button
@@ -127,18 +90,21 @@ export default function Sidebar({
                   <Users size={18} />
                   Utang & Kasbon
                 </button>
-
-                <button
-                  type="button"
-                  className={`sidebar-item ${activeTab === 'history' ? 'active' : ''}`}
-                  onClick={() => { setActiveTab('history'); setIsMobileMenuOpen(false); }}
-                >
-                  <History size={18} />
-                  Riwayat Transaksi
-                </button>
               </>
             )}
 
+            {/* KATEGORI 2: PRODUK & STOK */}
+            <div className="sidebar-group-title">Produk & Stok</div>
+            {currentUser.role !== 'WORKER' && (
+              <button
+                type="button"
+                className={`sidebar-item ${activeTab === 'inventory' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }}
+              >
+                <Package size={18} />
+                Kelola Stok & Produk
+              </button>
+            )}
             <button
               type="button"
               className={`sidebar-item ${activeTab === 'check-stock' ? 'active' : ''}`}
@@ -147,6 +113,69 @@ export default function Sidebar({
               <Eye size={18} />
               Cek Stok Barang
             </button>
+
+            {/* KATEGORI 3: PENGGAJIAN */}
+            {(currentUser.role === 'OWNER' || currentUser.role === 'WORKER') && (
+              <>
+                <div className="sidebar-group-title">Penggajian</div>
+                {currentUser.role === 'OWNER' && (
+                  <>
+                    <button
+                      type="button"
+                      className={`sidebar-item ${activeTab === 'piece-rates' ? 'active' : ''}`}
+                      onClick={() => { setActiveTab('piece-rates'); setIsMobileMenuOpen(false); }}
+                    >
+                      <Scissors size={18} />
+                      Master Tarif
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`sidebar-item ${activeTab === 'payroll' ? 'active' : ''}`}
+                      onClick={() => { setActiveTab('payroll'); setIsMobileMenuOpen(false); }}
+                    >
+                      <DollarSign size={18} />
+                      Rekap Gaji
+                    </button>
+                  </>
+                )}
+
+                {currentUser.role === 'WORKER' && (
+                  <button
+                    type="button"
+                    className={`sidebar-item ${activeTab === 'worker-daily-log' ? 'active' : ''}`}
+                    onClick={() => { setActiveTab('worker-daily-log'); setIsMobileMenuOpen(false); }}
+                  >
+                    <Scissors size={18} />
+                    Input Hasil Kerja
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* KATEGORI 4: KEUANGAN & PENGGUNA (Owner) */}
+            {currentUser.role === 'OWNER' && (
+              <>
+                <div className="sidebar-group-title">Keuangan & Sistem</div>
+                <button
+                  type="button"
+                  className={`sidebar-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
+                >
+                  <TrendingUp size={18} />
+                  Ringkasan Keuangan
+                </button>
+
+                <button
+                  type="button"
+                  className={`sidebar-item ${activeTab === 'users' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }}
+                >
+                  <Users size={18} />
+                  Kelola Pengguna
+                </button>
+              </>
+            )}
           </nav>
         </div>
 
@@ -172,6 +201,19 @@ export default function Sidebar({
               title="Ganti Tema"
             >
               {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm btn-icon"
+              style={{ flex: 1 }}
+              onClick={() => {
+                if (onOpenChangePassword) onOpenChangePassword();
+                setIsMobileMenuOpen(false);
+              }}
+              title="Ubah Kata Sandi Saya"
+            >
+              <Key size={16} />
             </button>
 
             {currentUser.role === 'OWNER' && (

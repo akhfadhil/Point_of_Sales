@@ -91,19 +91,19 @@ export default function DashboardView({
   const grossSales = filteredSales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
   const totalTransactions = filteredSales.length;
 
-  // Pagination logic for Sales
+  // Pagination logic for Sales (Sorted Newest First)
   const salesLimit = 5;
-  const reversedSales = filteredSales.slice().reverse();
-  const totalSalesPages = Math.ceil(reversedSales.length / salesLimit) || 1;
+  const sortedSales = filteredSales.slice().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  const totalSalesPages = Math.ceil(sortedSales.length / salesLimit) || 1;
   const currentSalesPage = Math.min(salesPage, totalSalesPages);
-  const paginatedSales = reversedSales.slice((currentSalesPage - 1) * salesLimit, currentSalesPage * salesLimit);
+  const paginatedSales = sortedSales.slice((currentSalesPage - 1) * salesLimit, currentSalesPage * salesLimit);
 
-  // Pagination logic for Stock Movements
+  // Pagination logic for Stock Movements (Sorted Newest First)
   const movementsLimit = 5;
-  const reversedMovements = filteredMovements.slice().reverse();
-  const totalMovementsPages = Math.ceil(reversedMovements.length / movementsLimit) || 1;
+  const sortedMovements = filteredMovements.slice().sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  const totalMovementsPages = Math.ceil(sortedMovements.length / movementsLimit) || 1;
   const currentMovementsPage = Math.min(movementsPage, totalMovementsPages);
-  const paginatedMovements = reversedMovements.slice((currentMovementsPage - 1) * movementsLimit, currentMovementsPage * movementsLimit);
+  const paginatedMovements = sortedMovements.slice((currentMovementsPage - 1) * movementsLimit, currentMovementsPage * movementsLimit);
 
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

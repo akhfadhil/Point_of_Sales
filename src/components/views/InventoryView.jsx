@@ -1,6 +1,5 @@
-// src/components/views/InventoryView.jsx
 import React, { useState } from 'react';
-import { Plus, X, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { Plus, X, ChevronUp, ChevronDown, Trash2, Edit2, CheckCircle, Tag } from 'lucide-react';
 import { formatRupiah } from '../../utils/formatters';
 import { sortSizes, compareVariants } from '../../utils/sizeSorting';
 
@@ -76,7 +75,10 @@ export default function InventoryView({
   setRefreshKey,
   isMobile
 }) {
-  const [variantViewMode, setVariantViewMode] = useState('matrix'); // 'matrix' | 'list'
+  // State Edit Harga Varian
+  const [editingVariant, setEditingVariant] = useState(null);
+  const [editPriceValue, setEditPriceValue] = useState('');
+  const [applyToAllColorsOfSize, setApplyToAllColorsOfSize] = useState(true);
 
   if (!isOpen) return null;
 
@@ -372,233 +374,131 @@ export default function InventoryView({
               {/* Dropdown Body: Variants */}
               {isExpanded && (
                 <div style={{ padding: '16px' }}>
-                  {/* Mode Switcher & Description Bar */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
-                    {product.description ? (
-                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-                        {product.description}
-                      </p>
-                    ) : <div />}
+                  {product.description && (
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 14px 0' }}>
+                      {product.description}
+                    </p>
+                  )}
 
-                    <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--bg-tertiary)', padding: '3px', borderRadius: '8px' }}>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${variantViewMode === 'matrix' ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px' }}
-                        onClick={() => setVariantViewMode('matrix')}
-                      >
-                        📊 Matriks Stok 2D
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${variantViewMode === 'list' ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px' }}
-                        onClick={() => setVariantViewMode('list')}
-                      >
-                        📑 Daftar Detail ({variants.length})
-                      </button>
+                  {/* Detailed List View (Mobile Cards or Desktop Table) */}
+                  {isMobile ? (
+                    /* Mobile View Card Grid */
+                    <div className="mobile-only">
+                      {variants.map(variant => (
+                        <div
+                          key={variant.id}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid var(--card-border)',
+                            backgroundColor: 'var(--card-bg)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                            <code style={{ fontSize: '12px', fontWeight: 'bold' }}>{variant.sku}</code>
+                            <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`} style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
+                              Stok: {variant.stock_quantity} Pcs
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
+                            <div>
+                              <span style={{ fontWeight: 'bold' }}>Ukuran: {variant.size}</span>
+                              <span style={{ color: 'var(--text-muted)', margin: '0 6px' }}>•</span>
+                              <span>Warna: {variant.color}</span>
+                            </div>
+                            <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
+                              {formatRupiah(variant.selling_price)}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', alignItems: 'center', paddingTop: '6px', borderTop: '1px dashed var(--card-border)' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm btn-icon"
+                              style={{ width: '32px', height: '32px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                              title="Edit Harga Varian"
+                              onClick={() => {
+                                setEditingVariant(variant);
+                                setEditPriceValue(String(variant.selling_price || ''));
+                              }}
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm btn-icon"
+                              style={{ width: '32px', height: '32px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                              title="Hapus Varian"
+                              onClick={() => {
+                                askConfirmation({
+                                  title: `Hapus Varian SKU ${variant.sku}`,
+                                  message: `Apakah Anda yakin ingin menghapus varian ukuran ${variant.size} (${variant.color}) ini?`,
+                                  confirmText: 'Hapus Varian',
+                                  confirmVariant: 'danger',
+                                  onConfirm: () => {
+                                    db.delete('product_variants', variant.id);
+                                    setRefreshKey(prev => prev + 1);
+                                    showToast(`Varian SKU ${variant.sku} berhasil dihapus.`, 'info');
+                                  }
+                                });
+                              }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {variants.length === 0 && (
+                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px', fontSize: '13px' }}>
+                          Belum ada varian ukuran/warna untuk produk ini.
+                        </div>
+                      )}
                     </div>
-                  </div>
-
-                  {variantViewMode === 'matrix' ? (
-                    /* 2D Stock & Price Matrix View (Colors x Sizes Grid with Sticky Left Column) */
-                    <div className="table-wrapper" style={{ overflowX: 'auto', position: 'relative' }}>
-                      <table className="table" style={{ fontSize: '13px', textAlign: 'center', borderCollapse: 'separate', borderSpacing: 0 }}>
+                  ) : (
+                    /* Desktop View Table */
+                    <div className="table-wrapper desktop-only">
+                      <table className="table">
                         <thead>
                           <tr>
-                            <th style={{
-                              textAlign: 'left',
-                              minWidth: '110px',
-                              position: 'sticky',
-                              left: 0,
-                              zIndex: 10,
-                              backgroundColor: 'var(--bg-tertiary)',
-                              borderRight: '2px solid var(--card-border)',
-                              borderBottom: '2px solid var(--card-border)'
-                            }}>
-                              Warna \ Ukuran
-                            </th>
-                            {uniqueSizes.map(size => (
-                              <th key={size} style={{ textAlign: 'center', minWidth: '65px', whiteSpace: 'nowrap', borderBottom: '2px solid var(--card-border)' }}>
-                                Uk. {size}
-                              </th>
-                            ))}
-                            <th style={{ textAlign: 'center', minWidth: '100px', backgroundColor: 'var(--bg-tertiary)', borderBottom: '2px solid var(--card-border)' }}>Total Stok</th>
+                            <th>SKU</th>
+                            <th>Ukuran</th>
+                            <th>Warna</th>
+                            <th>Harga Jual (Toko)</th>
+                            <th>Sisa Stok</th>
+                            <th style={{ textAlign: 'right' }}>Aksi</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {uniqueColors.map(color => {
-                            const colorVariants = variants.filter(v => v.color === color);
-                            const colorTotalStock = colorVariants.reduce((sum, v) => sum + v.stock_quantity, 0);
-
-                            return (
-                              <tr key={color}>
-                                <td style={{
-                                  textAlign: 'left',
-                                  fontWeight: 'bold',
-                                  position: 'sticky',
-                                  left: 0,
-                                  zIndex: 5,
-                                  backgroundColor: 'var(--card-bg)',
-                                  borderRight: '2px solid var(--card-border)'
-                                }}>
-                                  {color || 'Standard'}
-                                </td>
-                                {uniqueSizes.map(size => {
-                                  const v = colorVariants.find(item => item.size === size);
-                                  if (!v) {
-                                    return (
-                                      <td key={size} style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-                                        -
-                                      </td>
-                                    );
-                                  }
-                                  const isOut = v.stock_quantity <= 0;
-                                  const isLow = v.stock_quantity > 0 && v.stock_quantity < 5;
-
-                                  return (
-                                    <td key={size} style={{ padding: '6px 4px' }}>
-                                      <div
-                                        style={{
-                                          display: 'inline-flex',
-                                          flexDirection: 'column',
-                                          alignItems: 'center',
-                                          gap: '2px',
-                                          padding: '4px 8px',
-                                          borderRadius: '6px',
-                                          backgroundColor: isOut
-                                            ? 'rgba(220, 53, 69, 0.08)'
-                                            : isLow
-                                              ? 'rgba(255, 193, 7, 0.12)'
-                                              : 'rgba(40, 167, 69, 0.08)',
-                                          border: `1px solid ${isOut ? 'var(--danger)' : isLow ? 'var(--warning)' : 'var(--success)'}`
-                                        }}
-                                        title={`SKU: ${v.sku} | Harga: ${formatRupiah(v.selling_price)}`}
-                                      >
-                                        <span style={{
-                                          fontWeight: 'bold',
-                                          fontSize: '12px',
-                                          color: isOut ? 'var(--danger)' : isLow ? '#b45309' : 'var(--success)'
-                                        }}>
-                                          {isOut ? '0' : v.stock_quantity}
-                                        </span>
-                                        <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Pcs</span>
-                                      </div>
-                                    </td>
-                                  );
-                                })}
-                                <td style={{ fontWeight: 'bold', backgroundColor: 'var(--bg-tertiary)' }}>
-                                  <span className={`badge ${colorTotalStock > 0 ? 'success' : 'danger'}`} style={{ fontSize: '11px' }}>
-                                    {colorTotalStock} Pcs
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                          {uniqueColors.length === 0 && (
-                            <tr>
-                              <td colSpan={uniqueSizes.length + 2} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px' }}>
-                                Belum ada data varian ukuran/warna.
+                          {variants.map(variant => (
+                            <tr key={variant.id}>
+                              <td style={{ verticalAlign: 'middle' }}><code style={{ fontSize: '13px' }}>{variant.sku}</code></td>
+                              <td style={{ verticalAlign: 'middle' }}><strong>{variant.size}</strong></td>
+                              <td style={{ verticalAlign: 'middle' }}>{variant.color}</td>
+                              <td style={{ verticalAlign: 'middle', fontWeight: 'bold', color: 'var(--primary)' }}>{formatRupiah(variant.selling_price)}</td>
+                              <td style={{ verticalAlign: 'middle' }}>
+                                <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`}>
+                                  {variant.stock_quantity} Pcs
+                                </span>
                               </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    /* Traditional Detailed List View (Mobile Cards or Desktop Table) */
-                    isMobile ? (
-                      /* Mobile View Card Grid */
-                      <div className="mobile-only">
-                        {variants.map(variant => (
-                          <div
-                            key={variant.id}
-                            style={{
-                              padding: '12px 14px',
-                              borderRadius: '8px',
-                              border: '1px solid var(--card-border)',
-                              backgroundColor: 'var(--card-bg)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '8px'
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                              <code style={{ fontSize: '12px', fontWeight: 'bold' }}>{variant.sku}</code>
-                              <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`} style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
-                                Stok: {variant.stock_quantity} Pcs
-                              </span>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
-                              <div>
-                                <span style={{ fontWeight: 'bold' }}>Ukuran: {variant.size}</span>
-                                <span style={{ color: 'var(--text-muted)', margin: '0 6px' }}>•</span>
-                                <span>Warna: {variant.color}</span>
-                              </div>
-                              <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
-                                {formatRupiah(variant.selling_price)}
-                              </span>
-                            </div>
-
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '6px', borderTop: '1px dashed var(--card-border)' }}>
-                              <button
-                                type="button"
-                                className="btn btn-danger btn-sm"
-                                style={{ fontSize: '11px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                onClick={() => {
-                                  askConfirmation({
-                                    title: `Hapus Varian SKU ${variant.sku}`,
-                                    message: `Apakah Anda yakin ingin menghapus varian ukuran ${variant.size} (${variant.color}) ini?`,
-                                    confirmText: 'Hapus Varian',
-                                    confirmVariant: 'danger',
-                                    onConfirm: () => {
-                                      db.delete('product_variants', variant.id);
-                                      setRefreshKey(prev => prev + 1);
-                                      showToast(`Varian SKU ${variant.sku} berhasil dihapus.`, 'info');
-                                    }
-                                  });
-                                }}
-                              >
-                                <Trash2 size={12} /> Hapus Varian
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-
-                        {variants.length === 0 && (
-                          <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px', fontSize: '13px' }}>
-                            Belum ada varian ukuran/warna untuk produk ini.
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      /* Desktop View Table */
-                      <div className="table-wrapper desktop-only">
-                        <table className="table">
-                          <thead>
-                            <tr>
-                              <th>SKU</th>
-                              <th>Ukuran</th>
-                              <th>Warna</th>
-                              <th>Harga Jual (Toko)</th>
-                              <th>Sisa Stok</th>
-                              <th style={{ textAlign: 'right' }}>Aksi</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {variants.map(variant => (
-                              <tr key={variant.id}>
-                                <td><code style={{ fontSize: '13px' }}>{variant.sku}</code></td>
-                                <td><strong>{variant.size}</strong></td>
-                                <td>{variant.color}</td>
-                                <td>{formatRupiah(variant.selling_price)}</td>
-                                <td>
-                                  <span className={`badge ${variant.stock_quantity < 5 ? 'danger' : 'success'}`}>
-                                    {variant.stock_quantity} Pcs
-                                  </span>
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
+                              <td style={{ textAlign: 'right', verticalAlign: 'middle' }}>
+                                <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm btn-icon"
+                                    title="Edit Harga Varian"
+                                    onClick={() => {
+                                      setEditingVariant(variant);
+                                      setEditPriceValue(String(variant.selling_price || ''));
+                                    }}
+                                    style={{ width: '32px', height: '32px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
                                   <button
                                     type="button"
                                     className="btn btn-danger btn-sm btn-icon"
@@ -616,23 +516,24 @@ export default function InventoryView({
                                         }
                                       });
                                     }}
+                                    style={{ width: '32px', height: '32px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                   >
                                     <Trash2 size={14} />
                                   </button>
-                                </td>
-                              </tr>
-                            ))}
-                            {variants.length === 0 && (
-                              <tr>
-                                <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px' }}>
-                                  Belum ada varian ukuran/warna untuk produk ini.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    )
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {variants.length === 0 && (
+                            <tr>
+                              <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px' }}>
+                                Belum ada varian ukuran/warna untuk produk ini.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               )}
@@ -646,6 +547,102 @@ export default function InventoryView({
           </div>
         )}
       </div>
+
+      {/* MODAL EDIT HARGA VARIAN (DENGAN OPSIONAL EDIT SERENTAK PER UKURAN) */}
+      {editingVariant && (() => {
+        const sameSizeVariants = allVariants.filter(
+          v => v.product_id === editingVariant.product_id && v.size === editingVariant.size
+        );
+
+        return (
+          <div className="modal-overlay" onClick={() => setEditingVariant(null)}>
+            <div className="modal-content" style={{ maxWidth: '440px', width: '100%', padding: isMobile ? '16px' : '24px' }} onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Tag size={20} style={{ color: 'var(--primary)' }} />
+                  Edit Harga Varian
+                </h3>
+                <button type="button" className="btn btn-icon" onClick={() => setEditingVariant(null)}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const newPrice = Number(editPriceValue);
+                if (!editPriceValue || newPrice <= 0) {
+                  showToast('Harga jual varian harus lebih besar dari 0.', 'danger');
+                  return;
+                }
+
+                if (applyToAllColorsOfSize && sameSizeVariants.length > 0) {
+                  sameSizeVariants.forEach(v => {
+                    db.update('product_variants', v.id, { selling_price: newPrice });
+                  });
+                  showToast(`Harga seluruh varian Ukuran "${editingVariant.size}" (${sameSizeVariants.length} warna) berhasil diperbarui menjadi ${formatRupiah(newPrice)}!`);
+                } else {
+                  db.update('product_variants', editingVariant.id, { selling_price: newPrice });
+                  showToast(`Harga varian SKU ${editingVariant.sku} berhasil diperbarui menjadi ${formatRupiah(newPrice)}.`);
+                }
+
+                setEditingVariant(null);
+                if (setRefreshKey) setRefreshKey(prev => prev + 1);
+              }}>
+                <div className="modal-body" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-tertiary)', border: '1px solid var(--card-border)' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '700' }}>Varian Terpilih:</div>
+                    <div style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '2px' }}>
+                      Ukuran {editingVariant.size} <span style={{ fontSize: '13px', fontWeight: 'normal', color: 'var(--text-muted)' }}>({editingVariant.color})</span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>SKU: <code>{editingVariant.sku}</code></div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
+                      Harga Jual Baru (Rp) <span style={{ color: 'var(--danger)' }}>*</span>
+                    </label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="Contoh: 150000"
+                      min="100"
+                      value={editPriceValue}
+                      onChange={(e) => setEditPriceValue(e.target.value)}
+                      required
+                      style={{ height: '44px', borderRadius: '10px', fontWeight: 'bold', fontSize: '16px', color: 'var(--primary)' }}
+                    />
+                  </div>
+
+                  {sameSizeVariants.length > 1 && (
+                    <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--primary-light)', border: '1px solid var(--primary)' }}>
+                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--primary)', margin: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={applyToAllColorsOfSize}
+                          onChange={(e) => setApplyToAllColorsOfSize(e.target.checked)}
+                          style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', marginTop: '2px', cursor: 'pointer' }}
+                        />
+                        <span>
+                          Terapkan harga ini sekaligus ke <strong>seluruh {sameSizeVariants.length} warna</strong> untuk Ukuran "{editingVariant.size}"
+                        </span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                <div className="modal-footer" style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setEditingVariant(null)}>
+                    Batal
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    <CheckCircle size={16} /> Simpan Harga
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      })()}
     </section>
   );
 }
