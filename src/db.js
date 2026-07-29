@@ -1,8 +1,31 @@
 // src/db.js
+import { supabase, isSupabaseConfigured } from './supabaseClient';
+
+// Helper Supabase Sync
+const syncSupabaseUpsert = async (table, data) => {
+  if (!isSupabaseConfigured() || !table || !data) return;
+  try {
+    const { error } = await supabase.from(table).upsert(data);
+    if (error) console.error(`[Supabase Sync Error - ${table}]`, error.message || error);
+  } catch (err) {
+    console.error(`[Supabase Sync Exception - ${table}]`, err);
+  }
+};
+
+const syncSupabaseDelete = async (table, id) => {
+  if (!isSupabaseConfigured() || !table || !id) return;
+  try {
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (error) console.error(`[Supabase Delete Error - ${table}]`, error.message || error);
+  } catch (err) {
+    console.error(`[Supabase Delete Exception - ${table}]`, err);
+  }
+};
 
 const INITIAL_DATA = {
   users: [
     { id: 'u-1', name: 'Bu Oliviana (Owner)', email: 'owner@oliviana.com', role: 'OWNER' },
+
     { id: 'u-2', name: 'Ani (Kasir)', email: 'kasir@oliviana.com', role: 'CASHIER' },
     { id: 'u-3', name: 'Siti (Penjahit)', email: 'siti@oliviana.com', role: 'WORKER' },
     { id: 'u-4', name: 'Budi (Penjahit)', email: 'budi@oliviana.com', role: 'WORKER' },
@@ -8381,6 +8404,68 @@ const saveDB = (db) => {
 };
 
 export const db = {
+  // Synchronize and seed Supabase on application load
+  initSupabaseSync: async () => {
+    if (!isSupabaseConfigured()) return;
+    try {
+      console.log('🔄 Initializing Supabase cloud database sync...');
+      const tables = [
+        'users',
+        'categories',
+        'products',
+        'product_variants',
+        'piece_rate_items',
+        'orders',
+        'order_items',
+        'work_orders',
+        'work_order_items',
+        'worker_daily_logs',
+        'worker_daily_log_items',
+        'payroll_disbursements',
+        'cash_expenses'
+      ];
+
+      // Check if products exist in Supabase. If empty, seed initial data!
+      const { count } = await supabase.from('products').select('*', { count: 'exact', head: true });
+      if (count === 0 || count === null) {
+        console.log('🌱 Supabase database is empty. Seeding initial data from INITIAL_DATA...');
+        if (INITIAL_DATA.users?.length) await supabase.from('users').upsert(INITIAL_DATA.users);
+        if (INITIAL_DATA.categories?.length) await supabase.from('categories').upsert(INITIAL_DATA.categories);
+        if (INITIAL_DATA.products?.length) await supabase.from('products').upsert(INITIAL_DATA.products);
+
+        const variants = INITIAL_DATA.product_variants || [];
+        for (let i = 0; i < variants.length; i += 100) {
+          await supabase.from('product_variants').upsert(variants.slice(i, i + 100));
+        }
+
+        if (INITIAL_DATA.piece_rate_items?.length) {
+          await supabase.from('piece_rate_items').upsert(INITIAL_DATA.piece_rate_items);
+        }
+        console.log('✅ Supabase Seeding Completed Successfully!');
+        return;
+      }
+
+      // Fetch cloud records and merge into local cache
+      const current = getDB();
+      let updated = false;
+
+      for (const tbl of tables) {
+        const { data, error } = await supabase.from(tbl).select('*');
+        if (!error && data && data.length > 0) {
+          current[tbl] = data;
+          updated = true;
+        }
+      }
+
+      if (updated) {
+        saveDB(current);
+        console.log('⚡ Local database cache updated from Supabase Cloud!');
+      }
+    } catch (err) {
+      console.error('❌ Supabase Init/Sync Failed:', err);
+    }
+  },
+
   // Ambil semua data di tabel tertentu
   get: (table) => {
     return getDB()[table] || [];
@@ -8404,6 +8489,7 @@ export const db = {
 
     current[table].push(newItem);
     saveDB(current);
+    syncSupabaseUpsert(table, newItem);
     return newItem;
   },
 
@@ -8421,6 +8507,7 @@ export const db = {
     };
 
     saveDB(current);
+    syncSupabaseUpsert(table, current[table][idx]);
     return current[table][idx];
   },
 
@@ -8432,6 +8519,7 @@ export const db = {
     const filtered = current[table].filter(x => x.id !== id);
     current[table] = filtered;
     saveDB(current);
+    syncSupabaseDelete(table, id);
     return true;
   },
 
@@ -8439,6 +8527,9 @@ export const db = {
   reset: () => {
     saveDB(INITIAL_DATA);
     localStorage.setItem('oliviana_db_version', CURRENT_DB_VERSION);
+    if (isSupabaseConfigured()) {
+      db.initSupabaseSync();
+    }
     return INITIAL_DATA;
   },
 

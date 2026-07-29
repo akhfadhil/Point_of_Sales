@@ -76,6 +76,14 @@ function App() {
     }
   }, [toast]);
 
+  useEffect(() => {
+    // Initial Supabase cloud database sync
+    db.initSupabaseSync().then(() => {
+      setRefreshKey(prev => prev + 1);
+    });
+  }, []);
+
+
   const askConfirmation = ({ title, message, confirmText = 'Ya, Lanjutkan', cancelText = 'Batal', confirmVariant = 'danger', onConfirm }) => {
     setConfirmConfig({
       title,
