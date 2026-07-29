@@ -79,6 +79,12 @@ export default function DbInspectorView({
         )}
       </div>
 
+      {typeof window !== 'undefined' && window.__lastSupabaseError && (
+        <div style={{ padding: '10px 14px', marginBottom: '16px', borderRadius: '6px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b', fontSize: '12px' }}>
+          <strong>⚠️ Log Error Supabase Terakhir:</strong> {window.__lastSupabaseError}
+        </div>
+      )}
+
       <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
         Berikut adalah data yang tersimpan di memori aplikasi (<code>localStorage.getItem('oliviana_db')</code>).
       </p>

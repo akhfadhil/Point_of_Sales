@@ -6,9 +6,15 @@ const syncSupabaseUpsert = async (table, data) => {
   if (!isSupabaseConfigured() || !supabase || !table || !data) return;
   try {
     const { error } = await supabase.from(table).upsert(data);
-    if (error) console.error(`[Supabase Sync Error - ${table}]`, error.message || error);
+    if (error) {
+      const errMsg = `[Supabase Error ${table}] ${error.message || JSON.stringify(error)}`;
+      console.error(errMsg);
+      if (typeof window !== 'undefined') window.__lastSupabaseError = errMsg;
+    }
   } catch (err) {
-    console.error(`[Supabase Sync Exception - ${table}]`, err);
+    const errMsg = `[Supabase Exception ${table}] ${err.message || JSON.stringify(err)}`;
+    console.error(errMsg);
+    if (typeof window !== 'undefined') window.__lastSupabaseError = errMsg;
   }
 };
 
@@ -16,9 +22,15 @@ const syncSupabaseDelete = async (table, id) => {
   if (!isSupabaseConfigured() || !supabase || !table || !id) return;
   try {
     const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) console.error(`[Supabase Delete Error - ${table}]`, error.message || error);
+    if (error) {
+      const errMsg = `[Supabase Delete Error ${table}] ${error.message || JSON.stringify(error)}`;
+      console.error(errMsg);
+      if (typeof window !== 'undefined') window.__lastSupabaseError = errMsg;
+    }
   } catch (err) {
-    console.error(`[Supabase Delete Exception - ${table}]`, err);
+    const errMsg = `[Supabase Delete Exception ${table}] ${err.message || JSON.stringify(err)}`;
+    console.error(errMsg);
+    if (typeof window !== 'undefined') window.__lastSupabaseError = errMsg;
   }
 };
 
