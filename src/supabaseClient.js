@@ -16,13 +16,15 @@ const rawKey =
 let cleanUrl = typeof rawUrl === 'string' ? rawUrl.trim().replace(/["']/g, '') : '';
 const cleanKey = typeof rawKey === 'string' ? rawKey.trim().replace(/["']/g, '') : '';
 
-// Auto-fix URL format if missing https://
+// Auto-fix URL format if missing https:// or has /rest/v1/ attached
 if (cleanUrl) {
   if (cleanUrl.startsWith('http://')) {
     cleanUrl = cleanUrl.replace('http://', 'https://');
   } else if (!cleanUrl.startsWith('https://')) {
     cleanUrl = `https://${cleanUrl}`;
   }
+  // Automatically strip /rest/v1 path or trailing slashes
+  cleanUrl = cleanUrl.replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
 }
 
 export const getSupabaseConfigStatus = () => {
