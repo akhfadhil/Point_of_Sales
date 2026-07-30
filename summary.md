@@ -60,12 +60,14 @@ Aplikasi **Point of Sales (POS), Sistem Manajemen Stok Seragam & Penggajian Boro
 
 ---
 
-### 6. 📊 Ringkasan Keuangan & Inspektor Database
+### 6. 📊 Ringkasan Keuangan & Inspektor Database (Supabase Cloud Sync)
 * **Ringkasan Omset & Laba:** Performa penjualan harian, bulanan, dan total piutang toko dengan filter tanggal periode laporan.
 * **📄 Paginasi Independen:** Tabel *Penjualan Terbaru* dan *Log Mutasi Stok* memuat seluruh data transaksi dengan kontrol paginasi instan (5 baris/halaman).
-* **🗄️ Inspektor Database Lokal (Dev Helper):**
+* **🗄️ Inspektor Database & Supabase Cloud Sync:**
   * Relokasi tombol inspektor ke bentuk **Icon Button (`<Database />`)** di footer sidebar & mobile header.
-  * Dropdown selector tabel otomatis responsif 100% full-width di HP (`flexWrap: wrap`) untuk mencegah overflow offside.
+  * Dropdown selector tabel otomatis responsif 100% full-width di HP (`flexWrap: wrap`) untuk mencegah overflow.
+  * **🔍 Tes Koneksi Supabase:** Tombol pengujian koneksi langsung ke Supabase Cloud via JS Client v2 dengan feedback latency dan status HTTP.
+  * **⚡ Upload Semua Data (Force Sync):** Sinkronisasi massal seluruh tabel (`users`, `categories`, `products`, `product_variants`, `stock_movements`, `customers`, `sales`, `sale_items`, `debt_payments`, `piece_rates`, `worker_daily_logs`, `payroll_disbursements`) dari Local Storage ke Cloud Database Supabase.
 
 ---
 
@@ -92,12 +94,24 @@ Aplikasi **Point of Sales (POS), Sistem Manajemen Stok Seragam & Penggajian Boro
 
 ---
 
-### 9. 🏗️ Clean Architecture & Multi-Platform Deployment Setup
+### 9. 👥 Manajemen Pengguna & Keamanan Mandiri (User Management & Security)
+* **👥 Kelola Pengguna (`UserManagementView`):**
+  * Menu khusus **`OWNER`** untuk mengelola seluruh akun pengguna sistem (Owner, Kasir, dan Penjahit/Worker).
+  * Menampilkan badge role, pencarian instan nama/email/role, form tambah pengguna baru, serta fungsi edit & hapus user.
+  * Opsi reset kata sandi default/custom oleh Owner untuk memudahkan pemulihan akun staf.
+* **🔑 Self-Service Ubah Kata Sandi (`ChangePasswordModal`):**
+  * Modal mandiri yang memungkinkan setiap staf/pengguna (Owner, Kasir, Penjahit) mengubah kata sandi mereka sendiri secara aman.
+  * Dilengkapi validasi kata sandi lama, perbandingan kata sandi baru & konfirmasi, serta toggle lihat/sembunyikan kata sandi (Eye Icon).
+
+---
+
+### 10. 🏗️ Clean Architecture, Supabase Schema & Multi-Platform Deployment Setup
 * **Penyusutan Kode `App.jsx`:** Terstruktur modular dengan penyusutan file utama.
 * **Struktur Modular Modern:**
   * **View Components (`src/components/views/`):** `LoginView`, `DbInspectorView`, `StockCheckerView`, `SalesHistoryView`, `DebtView`, `InventoryView` (Kelola produk & daftar detail varian stok), `DashboardView`, `PosView`, `MasterPieceRateView` (Pengaturan daftar & ongkos borongan), `WorkerDailyLogView`, `PayrollDisbursementView`, `UserManagementView` (Kelola akun Owner, Kasir, Penjahit).
   * **Modal Components (`src/components/modals/`):** `CheckoutSuccessModal`, `DebtReceiptModal`, `FactoryInboundModal`, `AddProductVariantModal`, `RepayDebtModal`, `PayrollSlipModal`, `ChangePasswordModal` (Modal self-service ubah kata sandi pengguna).
-  * **Layout Components (`src/components/layout/`):** `Sidebar` (dengan pengelompokan kategori *Penjualan*, *Produk & Stok*, *Penggajian*, dan *Keuangan*), `HeaderBar`, `BottomNav`.
+  * **Layout Components (`src/components/layout/`):** `Sidebar` (dengan pengelompokan kategori *Penjualan*, *Produk & Stok*, *Penggajian*, dan *Keuangan & Sistem*), `HeaderBar`, `BottomNav`.
+  * **Backend Cloud & Sync (`src/supabaseClient.js`, `supabase_schema.sql`, `.env.example`):** Konfigurasi Supabase Client v2, DDL PostgreSQL lengkap (12 tabel + RLS Policies), serta environment variable setup untuk Vercel.
   * **Custom Hooks (`src/hooks/`):** `useAuth`, `useCart`, `useResponsive`.
   * **Utilities (`src/utils/`):** `formatters.js`, `sizeSorting.js`, `printHelper.js`.
 * **🚀 Vercel Production Ready (`vercel.json`):** Konfigurasi Single Page Application (SPA) routing re-write untuk kemudahan deployment ke platform Vercel.
@@ -105,4 +119,4 @@ Aplikasi **Point of Sales (POS), Sistem Manajemen Stok Seragam & Penggajian Boro
 
 ---
 
-*Status Project: **ALL MENUS & PAYROLL MODULE 100% COMPLETE (POS, Inventory, Debt, Sales History, Stock Checker, Financial Summary, DB Inspector, Dot Matrix Receipt, Piece-Rate Payroll & Vercel Deployment DONE)*** 🚀
+*Status Project: **ALL MENUS, PAYROLL, USER MANAGEMENT & SUPABASE CLOUD SYNC 100% COMPLETE (POS, Inventory, Debt, Sales History, Stock Checker, Financial Summary, DB Inspector & Supabase Sync, Dot Matrix Receipt, Piece-Rate Payroll, User Management & Vercel Deployment DONE)*** 🚀

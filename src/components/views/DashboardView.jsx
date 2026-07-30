@@ -232,7 +232,7 @@ export default function DashboardView({
               <h2 className="card-title" style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>
                 Penjualan Terbaru
               </h2>
-              <span className="badge info">{reversedSales.length} Transaksi</span>
+              <span className="badge info">{sortedSales.length} Transaksi</span>
             </div>
 
             {isMobile ? (
@@ -275,7 +275,7 @@ export default function DashboardView({
                     </div>
                   );
                 })}
-                {reversedSales.length === 0 && (
+                {sortedSales.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
                     Belum ada data penjualan pada periode ini.
                   </div>
@@ -311,7 +311,7 @@ export default function DashboardView({
                         </tr>
                       );
                     })}
-                    {reversedSales.length === 0 && (
+                    {sortedSales.length === 0 && (
                       <tr>
                         <td colSpan="4" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
                           Belum ada data penjualan pada periode ini.
@@ -361,7 +361,7 @@ export default function DashboardView({
               <h2 className="card-title" style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>
                 Log Mutasi Stok
               </h2>
-              <span className="badge warning">{reversedMovements.length} Mutasi</span>
+              <span className="badge warning">{sortedMovements.length} Mutasi</span>
             </div>
 
             {isMobile ? (
@@ -410,7 +410,7 @@ export default function DashboardView({
                     </div>
                   );
                 })}
-                {reversedMovements.length === 0 && (
+                {sortedMovements.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
                     Belum ada mutasi stok pada periode ini.
                   </div>
@@ -450,7 +450,7 @@ export default function DashboardView({
                         </tr>
                       );
                     })}
-                    {reversedMovements.length === 0 && (
+                    {sortedMovements.length === 0 && (
                       <tr>
                         <td colSpan="4" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
                           Belum ada mutasi stok pada periode ini.
