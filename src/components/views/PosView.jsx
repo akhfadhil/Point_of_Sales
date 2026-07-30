@@ -230,11 +230,12 @@ export default function PosView({
                           padding: '16px',
                           display: 'flex',
                           flexDirection: 'column',
-                          justify: 'space-between',
+                          justifyContent: 'space-between',
+                          height: '100%',
                           backgroundColor: 'var(--card-bg)'
                         }}
                       >
-                        <div>
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
                             <span className="badge info" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>{category ? category.name : 'Umum'}</span>
                             <span className={`badge ${totalStock > 0 ? 'success' : 'danger'}`} style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>
@@ -249,8 +250,8 @@ export default function PosView({
                           </p>
                         </div>
 
-                        <div style={{ borderTop: '1px dashed var(--card-border)', paddingTop: '10px', marginTop: '4px' }}>
-                          <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '8px' }}>
+                        <div style={{ borderTop: '1px dashed var(--card-border)', paddingTop: '10px', marginTop: 'auto' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '8px', minHeight: '22px', display: 'flex', alignItems: 'center' }}>
                             {priceRangeStr}
                           </div>
                           <button type="button" className="btn btn-primary btn-sm" style={{ width: '100%', fontSize: '12px' }}>
