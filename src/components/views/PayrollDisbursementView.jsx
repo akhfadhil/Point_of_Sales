@@ -255,15 +255,14 @@ export default function PayrollDisbursementView({
             >
               <div
                 style={{
-                  display: 'flex',
-                  flexDirection: isMobile ? 'column' : 'row',
-                  justify: 'space-between',
-                  alignItems: isMobile ? 'flex-start' : 'center',
-                  gap: '12px'
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : '1fr 180px 180px',
+                  alignItems: 'center',
+                  gap: isMobile ? '12px' : '16px'
                 }}
               >
                 {/* Worker Profile */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
                   <div
                     style={{
                       width: '42px',
@@ -275,48 +274,48 @@ export default function PayrollDisbursementView({
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontWeight: 'bold',
-                      fontSize: '18px'
+                      fontSize: '18px',
+                      flexShrink: 0
                     }}
                   >
                     {s.worker.name.charAt(0)}
                   </div>
-                  <div>
-                    <h4 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 2px 0' }}>{s.worker.name}</h4>
+                  <div style={{ minWidth: 0 }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 2px 0', wordBreak: 'break-word' }}>{s.worker.name}</h4>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                       Total {s.totalLogsCount} hari dilaporkan | {s.pendingLogsCount} hari belum dicairkan
                     </span>
                   </div>
                 </div>
 
-                {/* Amount & Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: isMobile ? '100%' : 'auto', justifyContent: 'space-between' }}>
-                  <div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>Gaji Pending:</span>
-                    <span style={{ fontSize: '18px', fontWeight: 'bold', color: s.pendingTotal > 0 ? 'var(--warning)' : 'var(--success)' }}>
-                      {formatRupiah(s.pendingTotal)}
-                    </span>
-                  </div>
+                {/* Amount */}
+                <div style={{ textAlign: isMobile ? 'left' : 'right', width: isMobile ? '100%' : 'auto' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>Gaji Pending:</span>
+                  <span style={{ fontSize: '18px', fontWeight: 'bold', color: s.pendingTotal > 0 ? 'var(--warning)' : 'var(--success)' }}>
+                    {formatRupiah(s.pendingTotal)}
+                  </span>
+                </div>
 
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setInspectWorkerModal(s)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}
-                    >
-                      <Eye size={14} /> Detail
-                    </button>
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: isMobile ? 'flex-start' : 'flex-end', width: isMobile ? '100%' : 'auto' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setInspectWorkerModal(s)}
+                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: '600', minWidth: '80px', flex: isMobile ? 1 : 'initial' }}
+                  >
+                    <Eye size={14} /> Detail
+                  </button>
 
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm"
-                      disabled={s.pendingTotal <= 0}
-                      onClick={() => handleApprovePayroll(s)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}
-                    >
-                      <CheckCircle size={14} /> Setujui
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    disabled={s.pendingTotal <= 0}
+                    onClick={() => handleApprovePayroll(s)}
+                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: '600', minWidth: '90px', flex: isMobile ? 1 : 'initial' }}
+                  >
+                    <CheckCircle size={14} /> Setujui
+                  </button>
                 </div>
               </div>
             </div>
