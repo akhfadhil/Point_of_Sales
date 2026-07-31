@@ -7,10 +7,16 @@
 CREATE TABLE IF NOT EXISTS public.users (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    username TEXT,
     email TEXT UNIQUE NOT NULL,
+    password TEXT,
     role TEXT NOT NULL CHECK (role IN ('OWNER', 'CASHIER', 'WORKER')),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration/patch jika tabel users sudah dibuat sebelumnya:
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS username TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password TEXT;
 
 -- 2. TABEL KATEGORI PRODUK
 CREATE TABLE IF NOT EXISTS public.categories (

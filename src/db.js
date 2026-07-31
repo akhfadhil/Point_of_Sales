@@ -7,9 +7,21 @@ const syncSupabaseUpsert = async (table, data) => {
   try {
     const { error } = await supabase.from(table).upsert(data);
     if (error) {
+      // Fallback jika kolom password/username di tabel users Supabase belum ditambahkan via SQL Editor
+      if (table === 'users' && (error.message?.includes('password') || error.message?.includes('username'))) {
+        console.warn('⚠️ Supabase users schema lacks password/username columns. Retrying with basic fields...');
+        const sanitized = Array.isArray(data)
+          ? data.map(({ password, username, ...rest }) => rest)
+          : (() => { const { password, username, ...rest } = data; return rest; })();
+        const { error: fallbackErr } = await supabase.from(table).upsert(sanitized);
+        if (!fallbackErr) return;
+      }
+
       const errMsg = `[Supabase Error ${table}] ${error.message || JSON.stringify(error)}`;
       console.error(errMsg);
       if (typeof window !== 'undefined') window.__lastSupabaseError = errMsg;
+    } else {
+      if (typeof window !== 'undefined') window.__lastSupabaseError = null;
     }
   } catch (err) {
     const errMsg = `[Supabase Exception ${table}] ${err.message || JSON.stringify(err)}`;
@@ -8671,11 +8683,26 @@ export const db = {
   },
 
   // Login autentikasi (Memvalidasi Username/Email, Password, dan Role)
-  login: (usernameOrEmail, password, role) => {
-    const users = db.get('users') || [];
+  login: async (usernameOrEmail, password, role) => {
     const input = (usernameOrEmail || '').toLowerCase().trim();
     const passInput = (password || '').trim();
     if (!input || !passInput) return null;
+
+    // Fetch data user terbaru dari Supabase Cloud jika terhubung (Sync Real-time antar-perangkat)
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data: remoteUsers, error } = await supabase.from('users').select('*');
+        if (!error && remoteUsers && remoteUsers.length > 0) {
+          const current = getDB();
+          current.users = remoteUsers;
+          saveDB(current);
+        }
+      } catch (err) {
+        console.warn('⚠️ Supabase users fetch on login failed, falling back to local cache:', err);
+      }
+    }
+
+    const users = db.get('users') || [];
 
     const matched = users.find(u => {
       const emailPrefix = u.email ? u.email.split('@')[0].toLowerCase() : '';
