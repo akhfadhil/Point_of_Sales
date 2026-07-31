@@ -496,6 +496,23 @@ export const db = {
     return newSale;
   },
 
+  getPieceRateItems: () => {
+    const current = getDB();
+    const pieceItems = current.piece_rate_items || [];
+    const products = current.products || [];
+
+    return pieceItems.map(p => {
+      const prod = products.find(prd => prd.id === p.product_id);
+      return {
+        ...p,
+        item_name: p.item_name || p.name || 'Pekerjaan',
+        rate_price: Number(p.rate_price || p.rate_per_unit || 0),
+        product_name: prod ? prod.name : (p.garment_type || p.category || 'Seragam'),
+        garment_type: p.garment_type || (prod ? prod.name : 'Seragam')
+      };
+    });
+  },
+
   updatePieceRateItem: (id, updates) => {
     const current = getDB();
     if (!current.piece_rate_items) return null;
