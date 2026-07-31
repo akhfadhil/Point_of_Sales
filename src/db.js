@@ -528,6 +528,41 @@ export const db = {
     return newSale;
   },
 
+  addStockFromFactory: (variantId, quantity, notes = '', userId = null) => {
+    const current = getDB();
+    if (!current.product_variants) current.product_variants = [];
+    if (!current.stock_movements) current.stock_movements = [];
+
+    const variantIdx = current.product_variants.findIndex(v => v.id === variantId);
+    if (variantIdx === -1) return null;
+
+    const qtyNum = Number(quantity) || 0;
+    const newStock = Number(current.product_variants[variantIdx].stock_quantity || 0) + qtyNum;
+
+    current.product_variants[variantIdx] = {
+      ...current.product_variants[variantIdx],
+      stock_quantity: newStock
+    };
+
+    const newMovement = {
+      id: `m-${Date.now()}`,
+      variant_id: variantId,
+      type: 'INBOUND',
+      quantity: qtyNum,
+      notes: notes || 'Pasokan Pabrik (Restock)',
+      created_by: userId,
+      created_at: new Date().toISOString()
+    };
+
+    current.stock_movements.push(newMovement);
+
+    saveDB(current);
+    syncSupabaseUpsert('product_variants', current.product_variants[variantIdx]);
+    syncSupabaseUpsert('stock_movements', newMovement);
+
+    return current.product_variants[variantIdx];
+  },
+
   getPieceRateItems: () => {
     const current = getDB();
     const pieceItems = current.piece_rate_items || [];
