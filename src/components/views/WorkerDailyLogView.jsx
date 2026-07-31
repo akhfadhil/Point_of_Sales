@@ -97,12 +97,29 @@ export default function WorkerDailyLogView({
     setEntryItems(entryItems.filter((_, idx) => idx !== index));
   };
 
-  // Calculate Batch Total
+  // Calculate Batch Total & Summary Items
   const calculatedBatchTotal = entryItems.reduce((acc, curr) => {
     const qty = Number(curr.quantity) || 0;
     const rate = Number(curr.rate_per_unit) || 0;
     return acc + (qty * rate);
   }, 0);
+
+  const filledSummaryItems = entryItems
+    .filter(it => it.piece_rate_item_id && Number(it.quantity) > 0 && Number(it.rate_per_unit) > 0)
+    .map(it => {
+      const master = masterItems.find(m => m.id === it.piece_rate_item_id);
+      const name = master ? master.item_name : 'Item Pekerjaan';
+      const qty = Number(it.quantity);
+      const rate = Number(it.rate_per_unit);
+      const subtotal = qty * rate;
+      return {
+        id: it.piece_rate_item_id,
+        name,
+        qty,
+        rate,
+        subtotal
+      };
+    });
 
   // Submit Handler
   const handleSubmitLog = (e) => {
@@ -464,6 +481,35 @@ export default function WorkerDailyLogView({
           >
             <Plus size={14} style={{ marginRight: '4px' }} /> + Tambah Baris Pekerjaan
           </button>
+
+          {/* Summary Breakdown Item Pekerjaan yang Diinput */}
+          {filledSummaryItems.length > 0 && (
+            <div
+              style={{
+                padding: '14px 16px',
+                borderRadius: '12px',
+                border: '1px solid var(--primary-light, #bfdbfe)',
+                background: 'var(--bg-accent, #eff6ff)',
+                marginBottom: '12px'
+              }}
+            >
+              <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '8px' }}>
+                📋 Rincian Pekerjaan yang Diinput:
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {filledSummaryItems.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>
+                      • {item.name} ({formatRupiah(item.rate)} x {item.qty} pcs)
+                    </span>
+                    <strong style={{ color: 'var(--success)' }}>
+                      {formatRupiah(item.subtotal)}
+                    </strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Total & Submit Button */}
           <div
