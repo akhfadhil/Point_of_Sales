@@ -21,18 +21,37 @@ import PayrollSlipModal from './components/modals/PayrollSlipModal';
 import ChangePasswordModal from './components/modals/ChangePasswordModal';
 import { Menu, Sun, Moon, Database, X } from 'lucide-react';
 
+// Auto-retry helper to handle new Vercel deployments seamlessly when chunk hashes update
+const lazyWithRetry = (componentImport) =>
+  lazy(async () => {
+    const pageHasBeenRefreshed = JSON.parse(
+      window.sessionStorage.getItem('pos_page_refreshed') || 'false'
+    );
+    try {
+      const component = await componentImport();
+      window.sessionStorage.setItem('pos_page_refreshed', 'false');
+      return component;
+    } catch (error) {
+      if (!pageHasBeenRefreshed) {
+        window.sessionStorage.setItem('pos_page_refreshed', 'true');
+        window.location.reload();
+      }
+      throw error;
+    }
+  });
+
 // Lazy Loaded View Components for Optimized Initial Bundle Size
-const DbInspectorView = lazy(() => import('./components/views/DbInspectorView'));
-const StockCheckerView = lazy(() => import('./components/views/StockCheckerView'));
-const SalesHistoryView = lazy(() => import('./components/views/SalesHistoryView'));
-const DebtView = lazy(() => import('./components/views/DebtView'));
-const InventoryView = lazy(() => import('./components/views/InventoryView'));
-const DashboardView = lazy(() => import('./components/views/DashboardView'));
-const PosView = lazy(() => import('./components/views/PosView'));
-const MasterPieceRateView = lazy(() => import('./components/views/MasterPieceRateView'));
-const WorkerDailyLogView = lazy(() => import('./components/views/WorkerDailyLogView'));
-const PayrollDisbursementView = lazy(() => import('./components/views/PayrollDisbursementView'));
-const UserManagementView = lazy(() => import('./components/views/UserManagementView'));
+const DbInspectorView = lazyWithRetry(() => import('./components/views/DbInspectorView'));
+const StockCheckerView = lazyWithRetry(() => import('./components/views/StockCheckerView'));
+const SalesHistoryView = lazyWithRetry(() => import('./components/views/SalesHistoryView'));
+const DebtView = lazyWithRetry(() => import('./components/views/DebtView'));
+const InventoryView = lazyWithRetry(() => import('./components/views/InventoryView'));
+const DashboardView = lazyWithRetry(() => import('./components/views/DashboardView'));
+const PosView = lazyWithRetry(() => import('./components/views/PosView'));
+const MasterPieceRateView = lazyWithRetry(() => import('./components/views/MasterPieceRateView'));
+const WorkerDailyLogView = lazyWithRetry(() => import('./components/views/WorkerDailyLogView'));
+const PayrollDisbursementView = lazyWithRetry(() => import('./components/views/PayrollDisbursementView'));
+const UserManagementView = lazyWithRetry(() => import('./components/views/UserManagementView'));
 
 const LoadingFallback = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px', flexDirection: 'column', gap: '12px', color: 'var(--text-muted)' }}>
