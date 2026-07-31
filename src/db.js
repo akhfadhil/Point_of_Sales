@@ -8670,29 +8670,33 @@ export const db = {
     return INITIAL_DATA;
   },
 
-  // Login simulasi fleksibel (Mendukung Username, Email, Prefix Email, atau Nama)
-  login: (usernameOrEmail, role) => {
+  // Login autentikasi (Memvalidasi Username/Email, Password, dan Role)
+  login: (usernameOrEmail, password, role) => {
     const users = db.get('users') || [];
     const input = (usernameOrEmail || '').toLowerCase().trim();
-    if (!input) return null;
+    const passInput = (password || '').trim();
+    if (!input || !passInput) return null;
 
     const matched = users.find(u => {
       const emailPrefix = u.email ? u.email.split('@')[0].toLowerCase() : '';
       const uName = (u.username || '').toLowerCase();
       const uEmail = (u.email || '').toLowerCase();
-      const fullNm = (u.name || '').toLowerCase();
 
       return (
         (uName && uName === input) ||
         (uEmail && uEmail === input) ||
-        (emailPrefix && emailPrefix === input) ||
-        (fullNm && fullNm.includes(input))
+        (emailPrefix && emailPrefix === input)
       );
     });
 
-    if (matched && matched.role === role) return matched;
+    if (!matched) return null;
+    if (matched.role !== role) return null;
 
-    return null;
+    // Check password (default '123456' if not explicitly set)
+    const expectedPassword = matched.password || '123456';
+    if (passInput !== expectedPassword) return null;
+
+    return matched;
   },
 
   // Tambah stok dari pabrik (Inbound)

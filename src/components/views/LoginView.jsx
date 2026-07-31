@@ -16,6 +16,8 @@ export default function LoginView({
   setSelectedRole,
   emailInput,
   setEmailInput,
+  passwordInput,
+  setPasswordInput,
   loginError,
   onSubmit
 }) {
@@ -60,6 +62,7 @@ export default function LoginView({
               className="form-control"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="Masukkan username"
               required
             />
           </div>
@@ -69,6 +72,10 @@ export default function LoginView({
               id="login-pass"
               type="password"
               className="form-control"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="Masukkan password"
+              required
             />
           </div>
 

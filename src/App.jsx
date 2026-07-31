@@ -43,6 +43,8 @@ function App() {
     setCurrentUser,
     emailInput,
     setEmailInput,
+    passwordInput,
+    setPasswordInput,
     selectedRole,
     setSelectedRole,
     loginError,
@@ -424,6 +426,8 @@ function App() {
         setSelectedRole={setSelectedRole}
         emailInput={emailInput}
         setEmailInput={setEmailInput}
+        passwordInput={passwordInput}
+        setPasswordInput={setPasswordInput}
         loginError={loginError}
         onSubmit={handleLogin}
       />
