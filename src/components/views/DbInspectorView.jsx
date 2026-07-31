@@ -84,9 +84,9 @@ export default function DbInspectorView({
       <div style={{ padding: '12px 14px', marginBottom: '16px', borderRadius: '8px', backgroundColor: configStatus.hasUrl && configStatus.hasKey ? '#ecfdf5' : '#fff1f2', border: `1px solid ${configStatus.hasUrl && configStatus.hasKey ? '#a7f3d0' : '#fecdd3'}`, color: 'var(--text-primary)', fontSize: '13px' }}>
         <strong>Status Koneksi Supabase: </strong>
         {configStatus.hasUrl && configStatus.hasKey ? (
-          <span style={{ color: '#047857', fontWeight: 'bold' }}>🟢 TERDETEKSI ({configStatus.urlPreview})</span>
+          <span style={{ color: '#047857', fontWeight: 'bold' }}>🟢 TERDETEKSI & TERHUBUNG</span>
         ) : (
-          <span style={{ color: '#b91c1c', fontWeight: 'bold' }}>🔴 BELUM AKTIF. (URL: {configStatus.urlPreview} | Key: {configStatus.keyPreview})</span>
+          <span style={{ color: '#b91c1c', fontWeight: 'bold' }}>🔴 BELUM AKTIF</span>
         )}
         {(!configStatus.hasUrl || !configStatus.hasKey) && (
           <div style={{ marginTop: '6px', fontSize: '12px', color: '#9f1239' }}>
