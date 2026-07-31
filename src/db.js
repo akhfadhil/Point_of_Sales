@@ -8455,11 +8455,32 @@ export const db = {
         console.log('✅ Initial master data uploaded to Supabase successfully!');
       }
 
-      // 2. Fetch existing sales/orders from Supabase to sync local cache
+      // 2. Fetch existing master data & sales/orders from Supabase to sync local cache
+      const { data: remoteUsers } = await supabase.from('users').select('*');
+      const { data: remoteCategories } = await supabase.from('categories').select('*');
+      const { data: remoteProducts } = await supabase.from('products').select('*');
+      const { data: remoteVariants } = await supabase.from('product_variants').select('*');
+      const { data: remotePieceItems } = await supabase.from('piece_rate_items').select('*');
       const { data: remoteOrders } = await supabase.from('orders').select('*');
       const { data: remoteOrderItems } = await supabase.from('order_items').select('*');
 
       const current = getDB();
+
+      if (remoteUsers && remoteUsers.length > 0) {
+        current.users = remoteUsers;
+      }
+      if (remoteCategories && remoteCategories.length > 0) {
+        current.categories = remoteCategories;
+      }
+      if (remoteProducts && remoteProducts.length > 0) {
+        current.products = remoteProducts;
+      }
+      if (remoteVariants && remoteVariants.length > 0) {
+        current.product_variants = remoteVariants;
+      }
+      if (remotePieceItems && remotePieceItems.length > 0) {
+        current.piece_rate_items = remotePieceItems;
+      }
       if (remoteOrders && remoteOrders.length > 0) {
         current.orders = remoteOrders;
         current.sales = remoteOrders.map(o => ({
