@@ -1,8 +1,9 @@
 // src/components/views/DashboardView.jsx
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, ShoppingCart, Package, Users, Calendar, Scissors, DollarSign, Activity } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Package, Users, Calendar, Scissors, DollarSign, Activity, Printer } from 'lucide-react';
 import { formatRupiah } from '../../utils/formatters';
 import { db } from '../../db';
+import { printReport } from '../../utils/printHelper';
 
 /**
  * Komponen Tampilan Ringkasan Keuangan & Dashboard Owner
@@ -232,6 +233,82 @@ export default function DashboardView({
               />
             </div>
           )}
+
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            style={{ marginLeft: isMobile ? '0' : 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', width: isMobile ? '100%' : 'auto', justifyContent: 'center' }}
+            onClick={() => {
+              const reportHtml = `
+                <div class="summary-box">
+                  <div class="stat-card">
+                    <div class="stat-label">Omset Penjualan (Gross)</div>
+                    <div class="stat-value">${formatRupiah(grossSales)}</div>
+                    <div style="font-size:11px;color:#64748b;">${totalTransactions} Transaksi</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">Total Pengeluaran Kas</div>
+                    <div class="stat-value" style="color:#dc2626;">${formatRupiah(totalExpenses)}</div>
+                    <div style="font-size:11px;color:#64748b;">Pencairan Gaji & Kas</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">Arus Kas (Laba Bersih)</div>
+                    <div class="stat-value" style="color:#2563eb;">${formatRupiah(netCashFlow)}</div>
+                    <div style="font-size:11px;color:#64748b;">Selisih Omset - Pengeluaran</div>
+                  </div>
+                </div>
+
+                <h4 style="margin-top:20px;margin-bottom:8px;font-size:14px;color:#0f172a;">Ringkasan Indikator Operasional</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Metrik Operasional Toko</th>
+                      <th class="text-right">Nilai / Jumlah</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Estimasi Upah Penjahit (Pending Approval)</td>
+                      <td class="text-right bold" style="color:#9333ea;">${formatRupiah(pendingWorkerPayroll)}</td>
+                    </tr>
+                    <tr>
+                      <td>Total Piutang Kasbon Pelanggan</td>
+                      <td class="text-right bold" style="color:#ea580c;">${formatRupiah(outstandingDebt)}</td>
+                    </tr>
+                    <tr>
+                      <td>Total Stok Fisik Barang Ready Toko</td>
+                      <td class="text-right bold" style="color:#0284c7;">${totalActiveStock} Pcs (${allVariants.length} Varian Produk)</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <h4 style="margin-top:24px;margin-bottom:8px;font-size:14px;color:#0f172a;">Daftar Transaksi Penjualan Terbaru (${sortedSales.length} Transaksi)</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>No. Nota / Invoice</th>
+                      <th>Tanggal Transaksi</th>
+                      <th>Metode Bayar</th>
+                      <th class="text-right">Total Tagihan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${sortedSales.slice(0, 20).map(sale => `
+                      <tr>
+                        <td class="bold">${sale.invoice_number || sale.id}</td>
+                        <td>${new Date(sale.created_at).toLocaleString('id-ID')}</td>
+                        <td>${sale.payment_method || 'CASH'}</td>
+                        <td class="text-right bold">${formatRupiah(sale.total_amount)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              `;
+              printReport('Laporan Ringkasan Keuangan & Operasional', reportHtml);
+            }}
+          >
+            <Printer size={14} /> Cetak / Export PDF Laporan
+          </button>
         </div>
       </div>
 

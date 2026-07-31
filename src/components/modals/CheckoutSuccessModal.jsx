@@ -19,6 +19,7 @@ export default function CheckoutSuccessModal({
   showToast,
   onClose
 }) {
+  const [paperSize, setPaperSize] = React.useState('a5');
   if (!isOpen || !invoice) return null;
 
   const cashier = db.find('users', u => u.id === invoice.cashier_id);
@@ -237,16 +238,31 @@ ${invoice.change_amount > 0 ? `Kembalian     : Rp ${Number(invoice.change_amount
           </div>
         </div>
 
-        <div className="modal-footer receipt-modal-footer" style={{ justifyContent: 'center' }}>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => printReceipt('sale-receipt-paper')}>
-            <Printer size={14} /> Print Nota
-          </button>
-          <button type="button" className="btn btn-success btn-sm" onClick={handleSendWhatsApp}>
-            <Send size={14} /> Kirim WhatsApp
-          </button>
-          <button type="button" className="btn btn-primary btn-sm" onClick={onClose}>
-            Tutup
-          </button>
+        <div className="modal-footer receipt-modal-footer" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Ukuran Kertas:</span>
+            <select
+              className="form-control"
+              style={{ fontSize: '12px', height: '32px', padding: '2px 8px', borderRadius: '6px' }}
+              value={paperSize}
+              onChange={(e) => setPaperSize(e.target.value)}
+            >
+              <option value="a5">📄 A5 Landscape (Nota Standard)</option>
+              <option value="58mm">🧾 Thermal 58mm (Mini Printer)</option>
+              <option value="80mm">🧾 Thermal 80mm (Kasir Standard)</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => printReceipt('sale-receipt-paper', paperSize)}>
+              <Printer size={14} /> Cetak Struk
+            </button>
+            <button type="button" className="btn btn-success btn-sm" onClick={handleSendWhatsApp}>
+              <Send size={14} /> Kirim WhatsApp
+            </button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={onClose}>
+              Tutup
+            </button>
+          </div>
         </div>
       </div>
     </div>

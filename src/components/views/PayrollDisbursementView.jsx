@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { formatRupiah } from '../../utils/formatters';
 import { db } from '../../db';
+import { printReport } from '../../utils/printHelper';
 
 /**
  * Komponen Tampilan Rekap & Pencairan Gaji Bulanan Penjahit (Owner View)
@@ -161,8 +162,8 @@ export default function PayrollDisbursementView({
           </p>
         </div>
 
-        {/* Month Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+        {/* Month Selector & Print Report Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: isMobile ? '100%' : 'auto', flexWrap: 'wrap' }}>
           <Calendar size={18} style={{ color: 'var(--primary)' }} />
           <span style={{ fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>Bulan:</span>
           <input
@@ -172,6 +173,56 @@ export default function PayrollDisbursementView({
             value={selectedMonthYear}
             onChange={(e) => setSelectedMonthYear(e.target.value)}
           />
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}
+            onClick={() => {
+              const reportHtml = `
+                <div class="summary-box">
+                  <div class="stat-card">
+                    <div class="stat-label">Total Upah Periode Ini</div>
+                    <div class="stat-value">${formatRupiah(totalMonthWorkAmount)}</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">Sudah Dicairkan</div>
+                    <div class="stat-value" style="color:#166534;">${formatRupiah(paidDisbursedAmount)}</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">Belum Dicairkan</div>
+                    <div class="stat-value" style="color:#854d0e;">${formatRupiah(pendingDisbursementAmount)}</div>
+                  </div>
+                </div>
+
+                <h4 style="margin-top:20px;margin-bottom:8px;font-size:14px;color:#0f172a;">Rincian Rekap Gaji Penjahit (${selectedMonthYear})</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Nama Penjahit</th>
+                      <th class="text-center">Total Log</th>
+                      <th class="text-right">Upah Disetujui</th>
+                      <th class="text-center">Status Pencairan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${workerSummaries.map(s => `
+                      <tr>
+                        <td class="bold">${s.worker.name}</td>
+                        <td class="text-center">${s.logs.length} Log</td>
+                        <td class="text-right bold">${formatRupiah(s.totalAmount)}</td>
+                        <td class="text-center">
+                          ${s.hasPaid ? '<span class="badge badge-success">Sudah Dicairkan</span>' : '<span class="badge badge-warning">Pending</span>'}
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              `;
+              printReport(`Laporan Rekap Gaji Penjahit (${selectedMonthYear})`, reportHtml);
+            }}
+          >
+            <Printer size={14} /> Cetak / PDF Laporan
+          </button>
         </div>
       </div>
 
