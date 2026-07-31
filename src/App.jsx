@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { db } from './db';
 import { formatRupiah } from './utils/formatters';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -17,20 +17,29 @@ import Sidebar from './components/layout/Sidebar';
 import HeaderBar from './components/layout/HeaderBar';
 import BottomNav from './components/layout/BottomNav';
 import LoginView from './components/views/LoginView';
-import DbInspectorView from './components/views/DbInspectorView';
-import StockCheckerView from './components/views/StockCheckerView';
-import SalesHistoryView from './components/views/SalesHistoryView';
-import DebtView from './components/views/DebtView';
-import InventoryView from './components/views/InventoryView';
-import DashboardView from './components/views/DashboardView';
-import PosView from './components/views/PosView';
-import MasterPieceRateView from './components/views/MasterPieceRateView';
-import WorkerDailyLogView from './components/views/WorkerDailyLogView';
-import PayrollDisbursementView from './components/views/PayrollDisbursementView';
-import UserManagementView from './components/views/UserManagementView';
 import PayrollSlipModal from './components/modals/PayrollSlipModal';
 import ChangePasswordModal from './components/modals/ChangePasswordModal';
 import { Menu, Sun, Moon, Database, X } from 'lucide-react';
+
+// Lazy Loaded View Components for Optimized Initial Bundle Size
+const DbInspectorView = lazy(() => import('./components/views/DbInspectorView'));
+const StockCheckerView = lazy(() => import('./components/views/StockCheckerView'));
+const SalesHistoryView = lazy(() => import('./components/views/SalesHistoryView'));
+const DebtView = lazy(() => import('./components/views/DebtView'));
+const InventoryView = lazy(() => import('./components/views/InventoryView'));
+const DashboardView = lazy(() => import('./components/views/DashboardView'));
+const PosView = lazy(() => import('./components/views/PosView'));
+const MasterPieceRateView = lazy(() => import('./components/views/MasterPieceRateView'));
+const WorkerDailyLogView = lazy(() => import('./components/views/WorkerDailyLogView'));
+const PayrollDisbursementView = lazy(() => import('./components/views/PayrollDisbursementView'));
+const UserManagementView = lazy(() => import('./components/views/UserManagementView'));
+
+const LoadingFallback = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px', flexDirection: 'column', gap: '12px', color: 'var(--text-muted)' }}>
+    <div style={{ width: '32px', height: '32px', border: '3px solid var(--card-border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    <span style={{ fontSize: '13px', fontWeight: '500' }}>Memuat Tampilan...</span>
+  </div>
+);
 
 function App() {
   // App Layout State
@@ -505,207 +514,172 @@ function App() {
           currentUser={currentUser}
         />
 
-        {/* --- DYNAMIC TAB CONTENTS --- */}
+        {/* --- DYNAMIC TAB CONTENTS (LAZY LOADED WITH SUSPENSE) --- */}
+        <Suspense fallback={<LoadingFallback />}>
+          {/* 1. OWNER DASHBOARD */}
+          <DashboardView
+            isOpen={activeTab === 'dashboard' && currentUser?.role === 'OWNER'}
+            dashboardMetrics={dashboardMetrics}
+            allSales={allSales}
+            allCustomers={allCustomers}
+            allMovements={allMovements}
+            allVariants={allVariants}
+            allProducts={allProducts}
+            isMobile={isMobile}
+          />
 
-        {/* 1. OWNER DASHBOARD */}
-        <DashboardView
-          isOpen={activeTab === 'dashboard' && currentUser?.role === 'OWNER'}
-          dashboardMetrics={dashboardMetrics}
-          allSales={allSales}
-          allCustomers={allCustomers}
-          allMovements={allMovements}
-          allVariants={allVariants}
-          allProducts={allProducts}
-          isMobile={isMobile}
-        />
+          {/* 2. KASIR POS VIEW */}
+          <PosView
+            isOpen={activeTab === 'pos'}
+            mobilePosActiveView={mobilePosActiveView}
+            setMobilePosActiveView={setMobilePosActiveView}
+            posSearchQuery={posSearchQuery}
+            setPosSearchQuery={setPosSearchQuery}
+            selectedCategoryFilter={selectedCategoryFilter}
+            setSelectedCategoryFilter={setSelectedCategoryFilter}
+            allProducts={allProducts}
+            allCategories={allCategories}
+            allVariants={allVariants}
+            allCustomers={allCustomers}
+            getAdjustedPrice={getAdjustedPrice}
+            setPosSelectedProduct={setPosSelectedProduct}
+            setPosModalVariantId={setPosModalVariantId}
+            setPosModalSize={setPosModalSize}
+            setPosModalColor={setPosModalColor}
+            setPosModalQty={setPosModalQty}
+            setActiveModal={setActiveModal}
+            cart={cart}
+            setCart={setCart}
+            updateCartQty={updateCartQty}
+            removeFromCart={removeFromCart}
+            customerType={customerType}
+            setCustomerType={setCustomerType}
+            selectedCustomerId={selectedCustomerId}
+            setSelectedCustomerId={setSelectedCustomerId}
+            customerSearchQuery={customerSearchQuery}
+            setCustomerSearchQuery={setCustomerSearchQuery}
+            customerPhoneInput={customerPhoneInput}
+            setCustomerPhoneInput={setCustomerPhoneInput}
+            handleCreateNewCustomer={handleCreateNewCustomer}
+            orderNotes={orderNotes}
+            setOrderNotes={setOrderNotes}
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+            cashReceived={cashReceived}
+            setCashReceived={setCashReceived}
+            isCheckingOut={isCheckingOut}
+            handleCheckout={handleCheckout}
+            isMobile={isMobile}
+          />
 
-        {/* 2. KASIR POS VIEW */}
-        <PosView
-          isOpen={activeTab === 'pos'}
-          mobilePosActiveView={mobilePosActiveView}
-          setMobilePosActiveView={setMobilePosActiveView}
-          posSearchQuery={posSearchQuery}
-          setPosSearchQuery={setPosSearchQuery}
-          selectedCategoryFilter={selectedCategoryFilter}
-          setSelectedCategoryFilter={setSelectedCategoryFilter}
-          allProducts={allProducts}
-          allCategories={allCategories}
-          allVariants={allVariants}
-          allCustomers={allCustomers}
-          getAdjustedPrice={getAdjustedPrice}
-          setPosSelectedProduct={setPosSelectedProduct}
-          setPosModalVariantId={setPosModalVariantId}
-          setPosModalSize={setPosModalSize}
-          setPosModalColor={setPosModalColor}
-          setPosModalQty={setPosModalQty}
-          setActiveModal={setActiveModal}
-          cart={cart}
-          setCart={setCart}
-          updateCartQty={updateCartQty}
-          removeFromCart={removeFromCart}
-          customerType={customerType}
-          setCustomerType={setCustomerType}
-          selectedCustomerId={selectedCustomerId}
-          setSelectedCustomerId={setSelectedCustomerId}
-          customerSearchQuery={customerSearchQuery}
-          setCustomerSearchQuery={setCustomerSearchQuery}
-          isAddingCustomer={isAddingCustomer}
-          setIsAddingCustomer={setIsAddingCustomer}
-          newCustomerName={newCustomerName}
-          setNewCustomerName={setNewCustomerName}
-          newCustomerPhone={newCustomerPhone}
-          setNewCustomerPhone={setNewCustomerPhone}
-          handleAddCustomer={handleAddCustomer}
-          paymentMethod={paymentMethod}
-          setPaymentMethod={setPaymentMethod}
-          paidAmount={paidAmount}
-          setPaidAmount={setPaidAmount}
-          getCartTotal={getCartTotal}
-          handleCheckout={handleCheckout}
-          isMobile={isMobile}
-        />
+          {/* 3. INVENTARIS PRODUK & VARIANT (OWNER) */}
+          <InventoryView
+            isOpen={activeTab === 'inventory' && currentUser?.role === 'OWNER'}
+            allProducts={allProducts}
+            allCategories={allCategories}
+            allVariants={allVariants}
+            showToast={showToast}
+            askConfirmation={askConfirmation}
+            setRefreshKey={setRefreshKey}
+            setActiveModal={setActiveModal}
+            setVariantProductOwner={setVariantProductOwner}
+            isMobile={isMobile}
+          />
 
-        {/* 3. MANAGE PRODUCTS & VARIANTS (INVENTORY) */}
-        <InventoryView
-          isOpen={activeTab === 'inventory'}
-          allProducts={allProducts}
-          allCategories={allCategories}
-          allVariants={allVariants}
-          inventoryProductFilter={inventoryProductFilter}
-          setInventoryProductFilter={setInventoryProductFilter}
-          inventorySizeFilter={inventorySizeFilter}
-          setInventorySizeFilter={setInventorySizeFilter}
-          inventoryColorFilter={inventoryColorFilter}
-          setInventoryColorFilter={setInventoryColorFilter}
-          inventorySearchQuery={inventorySearchQuery}
-          setInventorySearchQuery={setInventorySearchQuery}
-          expandedProductIds={expandedProductIds}
-          setExpandedProductIds={setExpandedProductIds}
-          setRestockProductId={setRestockProductId}
-          setRestockSize={setRestockSize}
-          setRestockColor={setRestockColor}
-          setFactoryInQty={setFactoryInQty}
-          setFactoryInNotes={setFactoryInNotes}
-          setNewProductName={setNewProductName}
-          setNewProductDesc={setNewProductDesc}
-          setNewProductCategory={setNewProductCategory}
-          setNewVariantProductId={setNewVariantProductId}
-          setNewVariantSize={setNewVariantSize}
-          setNewVariantColor={setNewVariantColor}
-          setNewVariantSellingPrice={setNewVariantSellingPrice}
-          setNewVariantStock={setNewVariantStock}
-          setActiveModal={setActiveModal}
-          askConfirmation={askConfirmation}
-          showToast={showToast}
-          db={db}
-          setRefreshKey={setRefreshKey}
-          isMobile={isMobile}
-        />
+          {/* 4. MANAGEMENT PIUTANG KASBON (OWNER) */}
+          <DebtView
+            isOpen={activeTab === 'debt' && currentUser?.role === 'OWNER'}
+            allCustomers={allCustomers}
+            allSales={allSales}
+            allDebtPayments={allDebtPayments}
+            showToast={showToast}
+            setRefreshKey={setRefreshKey}
+            setSelectedCustomerForRepay={setSelectedCustomerForRepay}
+            setSelectedDebtForReceipt={setSelectedDebtForReceipt}
+            setActiveModal={setActiveModal}
+            isMobile={isMobile}
+          />
 
-        {/* 4. MANAGE DEBT / KASBON */}
-        <DebtView
-          isOpen={activeTab === 'debt'}
-          allCustomers={allCustomers}
-          allDebtPayments={allDebtPayments}
-          db={db}
-          debtSearchQuery={debtSearchQuery}
-          setDebtSearchQuery={setDebtSearchQuery}
-          debtActivePage={debtActivePage}
-          setDebtActivePage={setDebtActivePage}
-          debtSettledPage={debtSettledPage}
-          setDebtSettledPage={setDebtSettledPage}
-          debtHistoryPage={debtHistoryPage}
-          setDebtHistoryPage={setDebtHistoryPage}
-          setSelectedCustomer={setSelectedCustomer}
-          setDebtRepayAmount={setDebtRepayAmount}
-          setDebtRepayMethod={setDebtRepayMethod}
-          setActiveModal={setActiveModal}
-          setSelectedDebtPayment={setSelectedDebtPayment}
-          isMobile={isMobile}
-        />
+          {/* 5. RIWAYAT TRANSAKSI PENJUALAN */}
+          <SalesHistoryView
+            isOpen={activeTab === 'history'}
+            allSales={allSales}
+            allSaleItems={allSaleItems}
+            showToast={showToast}
+            askConfirmation={askConfirmation}
+            setRefreshKey={setRefreshKey}
+            isMobile={isMobile}
+          />
 
-        {/* 5. SALES HISTORY */}
-        <SalesHistoryView
-          isOpen={activeTab === 'history'}
-          allSales={allSales}
-          allCustomers={allCustomers}
-          db={db}
-          historySearchQuery={historySearchQuery}
-          setHistorySearchQuery={setHistorySearchQuery}
-          historyPage={historyPage}
-          setHistoryPage={setHistoryPage}
-          setCurrentSaleInvoice={setCurrentSaleInvoice}
-          setActiveModal={setActiveModal}
-          isMobile={isMobile}
-        />
+          {/* 6. CEK STOK CEPAT (KASIR & WORKER) */}
+          <StockCheckerView
+            isOpen={activeTab === 'check-stock'}
+            allProducts={allProducts}
+            allVariants={allVariants}
+            allCategories={allCategories}
+            stockCategoryFilter={stockCategoryFilter}
+            setStockCategoryFilter={setStockCategoryFilter}
+            stockSizeFilter={stockSizeFilter}
+            setStockSizeFilter={setStockSizeFilter}
+            stockColorFilter={stockColorFilter}
+            setStockColorFilter={setStockColorFilter}
+            stockSearchQuery={stockSearchQuery}
+            setStockSearchQuery={setStockSearchQuery}
+            stockPage={stockPage}
+            setStockPage={setStockPage}
+            currentUser={currentUser}
+            isMobile={isMobile}
+          />
 
-        {/* 6. GENERAL: CHECK STOCK (SHARED) */}
-        <StockCheckerView
-          isOpen={activeTab === 'check-stock'}
-          allVariants={allVariants}
-          allProducts={allProducts}
-          allCategories={allCategories}
-          stockProductFilter={stockProductFilter}
-          setStockProductFilter={setStockProductFilter}
-          stockSizeFilter={stockSizeFilter}
-          setStockSizeFilter={setStockSizeFilter}
-          stockColorFilter={stockColorFilter}
-          setStockColorFilter={setStockColorFilter}
-          stockSearchQuery={stockSearchQuery}
-          setStockSearchQuery={setStockSearchQuery}
-          stockPage={stockPage}
-          setStockPage={setStockPage}
-          currentUser={currentUser}
-          isMobile={isMobile}
-        />
+          {/* 7. GENERAL: DATABASE VIEWER (DEVELOPMENT HELPER) */}
+          <DbInspectorView
+            isOpen={activeTab === 'db-viewer'}
+            selectedDbTable={selectedDbTable}
+            setSelectedDbTable={setSelectedDbTable}
+            db={db}
+            isMobile={isMobile}
+          />
 
-        {/* 7. GENERAL: DATABASE VIEWER (DEVELOPMENT HELPER) */}
-        <DbInspectorView
-          isOpen={activeTab === 'db-viewer'}
-          selectedDbTable={selectedDbTable}
-          setSelectedDbTable={setSelectedDbTable}
-          db={db}
-          isMobile={isMobile}
-        />
+          {/* 8. SETTING TARIF (OWNER) */}
+          <MasterPieceRateView
+            isOpen={activeTab === 'piece-rates'}
+            showToast={showToast}
+            askConfirmation={askConfirmation}
+            setRefreshKey={setRefreshKey}
+            isMobile={isMobile}
+          />
 
-        {/* 8. SETTING TARIF (OWNER) */}
-        <MasterPieceRateView
-          isOpen={activeTab === 'piece-rates'}
-          showToast={showToast}
-          askConfirmation={askConfirmation}
-          setRefreshKey={setRefreshKey}
-          isMobile={isMobile}
-        />
+          {/* 9. INPUT HASIL KERJA HARIAN (WORKER) */}
+          <WorkerDailyLogView
+            isOpen={activeTab === 'worker-log'}
+            currentUser={currentUser}
+            showToast={showToast}
+            setRefreshKey={setRefreshKey}
+            isMobile={isMobile}
+          />
 
-        {/* 9. INPUT HASIL KERJA HARIAN (WORKER) */}
-        <WorkerDailyLogView
-          isOpen={activeTab === 'worker-daily-log'}
-          currentUser={currentUser}
-          showToast={showToast}
-          setRefreshKey={setRefreshKey}
-          isMobile={isMobile}
-        />
+          {/* 10. REKAP & PENCAIRAN GAJI BORONGAN (OWNER) */}
+          <PayrollDisbursementView
+            isOpen={activeTab === 'payroll'}
+            currentUser={currentUser}
+            showToast={showToast}
+            askConfirmation={askConfirmation}
+            setRefreshKey={setRefreshKey}
+            setActiveModal={setActiveModal}
+            setPrintPayrollData={setPrintPayrollData}
+            isMobile={isMobile}
+          />
 
-        {/* 10. REKAP & PENCAIRAN GAJI (OWNER) */}
-        <PayrollDisbursementView
-          isOpen={activeTab === 'payroll'}
-          currentUser={currentUser}
-          showToast={showToast}
-          askConfirmation={askConfirmation}
-          setRefreshKey={setRefreshKey}
-          setPrintPayrollData={setPrintPayrollData}
-          isMobile={isMobile}
-        />
-
-        {/* 11. MANAJEMEN PENGGUNA (OWNER) */}
-        <UserManagementView
-          isOpen={activeTab === 'users'}
-          currentUser={currentUser}
-          showToast={showToast}
-          askConfirmation={askConfirmation}
-          setRefreshKey={setRefreshKey}
-          isMobile={isMobile}
-        />
+          {/* 11. MANAJEMEN PENGGUNA (OWNER) */}
+          <UserManagementView
+            isOpen={activeTab === 'users'}
+            currentUser={currentUser}
+            showToast={showToast}
+            askConfirmation={askConfirmation}
+            setRefreshKey={setRefreshKey}
+            isMobile={isMobile}
+          />
+        </Suspense>
 
       </main>
 
