@@ -8411,7 +8411,7 @@ if (localStorage.getItem('oliviana_db_version') !== CURRENT_DB_VERSION) {
 
 const getDB = () => {
   const data = JSON.parse(localStorage.getItem('oliviana_db')) || INITIAL_DATA;
-  if (!data.users || data.users.length < 4) {
+  if (!data.users) {
     data.users = INITIAL_DATA.users;
   }
   if (!data.piece_rate_items) data.piece_rate_items = INITIAL_DATA.piece_rate_items;
