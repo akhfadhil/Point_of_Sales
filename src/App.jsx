@@ -558,16 +558,18 @@ function App() {
             setSelectedCustomerId={setSelectedCustomerId}
             customerSearchQuery={customerSearchQuery}
             setCustomerSearchQuery={setCustomerSearchQuery}
-            customerPhoneInput={customerPhoneInput}
-            setCustomerPhoneInput={setCustomerPhoneInput}
-            handleCreateNewCustomer={handleCreateNewCustomer}
-            orderNotes={orderNotes}
-            setOrderNotes={setOrderNotes}
+            isAddingCustomer={isAddingCustomer}
+            setIsAddingCustomer={setIsAddingCustomer}
+            newCustomerName={newCustomerName}
+            setNewCustomerName={setNewCustomerName}
+            newCustomerPhone={newCustomerPhone}
+            setNewCustomerPhone={setNewCustomerPhone}
+            handleAddCustomer={handleAddCustomer}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
-            cashReceived={cashReceived}
-            setCashReceived={setCashReceived}
-            isCheckingOut={isCheckingOut}
+            paidAmount={paidAmount}
+            setPaidAmount={setPaidAmount}
+            getCartTotal={getCartTotal}
             handleCheckout={handleCheckout}
             isMobile={isMobile}
           />
@@ -651,7 +653,7 @@ function App() {
 
           {/* 9. INPUT HASIL KERJA HARIAN (WORKER) */}
           <WorkerDailyLogView
-            isOpen={activeTab === 'worker-log'}
+            isOpen={activeTab === 'worker-daily-log' || activeTab === 'worker-log'}
             currentUser={currentUser}
             showToast={showToast}
             setRefreshKey={setRefreshKey}
