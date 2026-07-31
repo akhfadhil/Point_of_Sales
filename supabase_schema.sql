@@ -150,6 +150,17 @@ CREATE TABLE IF NOT EXISTS public.cash_expenses (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 12. TABEL PERGERAKAN STOK
+CREATE TABLE IF NOT EXISTS public.stock_movements (
+    id TEXT PRIMARY KEY,
+    variant_id TEXT,
+    type TEXT NOT NULL,
+    quantity INT NOT NULL DEFAULT 0,
+    notes TEXT,
+    created_by TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- DROP STRICT FOREIGN KEY CONSTRAINTS IF THEY ALREADY EXIST
 ALTER TABLE IF EXISTS public.orders DROP CONSTRAINT IF EXISTS orders_cashier_id_fkey;
 ALTER TABLE IF EXISTS public.order_items DROP CONSTRAINT IF EXISTS order_items_order_id_fkey;
