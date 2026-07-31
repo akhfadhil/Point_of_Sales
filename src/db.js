@@ -17,6 +17,16 @@ const syncSupabaseUpsert = async (table, data) => {
         if (!fallbackErr) return;
       }
 
+      // Fallback jika kolom status/total_daily_amount di worker_daily_logs belum ditambahkan
+      if (table === 'worker_daily_logs' && (error.message?.includes('status') || error.message?.includes('total_daily_amount'))) {
+        console.warn('⚠️ Supabase worker_daily_logs schema lacks status/total_daily_amount. Retrying with basic fields...');
+        const sanitized = Array.isArray(data)
+          ? data.map(({ status, total_daily_amount, ...rest }) => ({ ...rest, total_amount: total_daily_amount || rest.total_amount || 0 }))
+          : (() => { const { status, total_daily_amount, ...rest } = data; return { ...rest, total_amount: total_daily_amount || rest.total_amount || 0 }; })();
+        const { error: fallbackErr } = await supabase.from(table).upsert(sanitized);
+        if (!fallbackErr) return;
+      }
+
       const errMsg = `[Supabase Error ${table}] ${error.message || JSON.stringify(error)}`;
       console.error(errMsg);
       if (typeof window !== 'undefined') window.__lastSupabaseError = errMsg;
@@ -8320,6 +8330,8 @@ export const db = {
       const { data: remotePieceItems } = await supabase.from('piece_rate_items').select('*');
       const { data: remoteOrders } = await supabase.from('orders').select('*');
       const { data: remoteOrderItems } = await supabase.from('order_items').select('*');
+      const { data: remoteWorkerLogs } = await supabase.from('worker_daily_logs').select('*');
+      const { data: remoteWorkerLogItems } = await supabase.from('worker_daily_log_items').select('*');
 
       const current = getDB();
 
@@ -8342,7 +8354,9 @@ export const db = {
         current.orders = remoteOrders;
         current.sales = remoteOrders.map(o => ({
           ...o,
-          invoice_number: o.order_number || o.invoice_number || o.id
+          invoice_number: o.order_number || o.invoice_number || o.id,
+          total_amount: Number(o.total_amount || 0),
+          paid_amount: Number(o.paid_amount || o.total_amount || 0)
         }));
       }
       if (Array.isArray(remoteOrderItems)) {
@@ -8352,6 +8366,16 @@ export const db = {
           sale_id: i.order_id || i.sale_id,
           price_per_unit: i.unit_price || i.price_per_unit
         }));
+      }
+      if (Array.isArray(remoteWorkerLogs)) {
+        current.worker_daily_logs = remoteWorkerLogs.map(l => ({
+          ...l,
+          total_daily_amount: Number(l.total_daily_amount || l.total_amount || 0),
+          status: l.status || 'PENDING'
+        }));
+      }
+      if (Array.isArray(remoteWorkerLogItems)) {
+        current.worker_daily_log_items = remoteWorkerLogItems;
       }
       saveDB(current);
     } catch (err) {
@@ -8829,6 +8853,12 @@ export const db = {
     current.worker_daily_log_items.push(...formattedItems);
     saveDB(current);
 
+    syncSupabaseUpsert('worker_daily_logs', {
+      ...newLogHeader,
+      total_amount: totalDailyAmount
+    });
+    formattedItems.forEach(it => syncSupabaseUpsert('worker_daily_log_items', it));
+
     return { ...newLogHeader, items: formattedItems };
   },
 
@@ -8926,6 +8956,32 @@ export const db = {
     current.cash_expenses.push(newExpense);
 
     saveDB(current);
+
+    // Sync updated logs to Supabase
+    workerLogs.forEach(l => {
+      syncSupabaseUpsert('worker_daily_logs', {
+        ...l,
+        status: 'PAID'
+      });
+    });
+    syncSupabaseUpsert('payroll_disbursements', {
+      id: payrollId,
+      worker_id: workerId,
+      month_year: monthYear,
+      total_earnings: totalAmount,
+      approved_by: approvedBy,
+      paid_at: newDisbursement.paid_at
+    });
+    syncSupabaseUpsert('cash_expenses', {
+      id: newExpense.id,
+      category: 'PAYROLL',
+      amount: totalAmount,
+      description: newExpense.description,
+      reference_id: payrollId,
+      created_by: approvedBy,
+      created_at: newExpense.created_at
+    });
+
     return { success: true, disbursement: newDisbursement, expense: newExpense };
   },
 

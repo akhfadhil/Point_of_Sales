@@ -112,8 +112,13 @@ CREATE TABLE IF NOT EXISTS public.worker_daily_logs (
     worker_id TEXT,
     log_date DATE NOT NULL,
     total_amount NUMERIC(12, 2) DEFAULT 0,
+    total_daily_amount NUMERIC(12, 2) DEFAULT 0,
+    status TEXT DEFAULT 'PENDING',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.worker_daily_logs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'PENDING';
+ALTER TABLE public.worker_daily_logs ADD COLUMN IF NOT EXISTS total_daily_amount NUMERIC(12, 2) DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS public.worker_daily_log_items (
     id TEXT PRIMARY KEY,
