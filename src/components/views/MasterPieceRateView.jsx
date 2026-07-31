@@ -45,9 +45,13 @@ export default function MasterPieceRateView({
 
   // Filtered Piece Rate Items
   const filteredPieceRates = pieceRateItems.filter(item => {
+    const itemName = String(item?.item_name || item?.name || '').toLowerCase();
+    const prodName = String(item?.product_name || '').toLowerCase();
+    const searchStr = String(searchQuery || '').toLowerCase();
+
     const matchesSearch =
-      item.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.product_name && item.product_name.toLowerCase().includes(searchQuery.toLowerCase()));
+      itemName.includes(searchStr) ||
+      prodName.includes(searchStr);
     const matchesProduct = !selectedProductFilter ||
       item.product_id === selectedProductFilter ||
       item.garment_type === selectedProductFilter ||

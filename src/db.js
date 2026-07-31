@@ -8413,10 +8413,11 @@ if (localStorage.getItem('oliviana_db_version') !== CURRENT_DB_VERSION) {
 
 const getDB = () => {
   const data = JSON.parse(localStorage.getItem('oliviana_db')) || INITIAL_DATA;
-  if (!data.users) {
-    data.users = INITIAL_DATA.users;
-  }
-  if (!data.piece_rate_items) data.piece_rate_items = INITIAL_DATA.piece_rate_items;
+  if (!data.users || data.users.length === 0) data.users = INITIAL_DATA.users;
+  if (!data.categories || data.categories.length === 0) data.categories = INITIAL_DATA.categories;
+  if (!data.products || data.products.length === 0) data.products = INITIAL_DATA.products;
+  if (!data.product_variants || data.product_variants.length === 0) data.product_variants = INITIAL_DATA.product_variants;
+  if (!data.piece_rate_items || data.piece_rate_items.length === 0) data.piece_rate_items = INITIAL_DATA.piece_rate_items;
   if (!data.worker_daily_logs) data.worker_daily_logs = INITIAL_DATA.worker_daily_logs;
   if (!data.worker_daily_log_items) data.worker_daily_log_items = INITIAL_DATA.worker_daily_log_items;
   if (!data.payroll_disbursements) data.payroll_disbursements = INITIAL_DATA.payroll_disbursements;
@@ -8480,29 +8481,29 @@ export const db = {
 
       const current = getDB();
 
-      if (Array.isArray(remoteUsers)) {
+      if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
         current.users = remoteUsers;
       }
-      if (Array.isArray(remoteCategories)) {
+      if (Array.isArray(remoteCategories) && remoteCategories.length > 0) {
         current.categories = remoteCategories;
       }
-      if (Array.isArray(remoteProducts)) {
+      if (Array.isArray(remoteProducts) && remoteProducts.length > 0) {
         current.products = remoteProducts;
       }
-      if (Array.isArray(remoteVariants)) {
+      if (Array.isArray(remoteVariants) && remoteVariants.length > 0) {
         current.product_variants = remoteVariants;
       }
-      if (Array.isArray(remotePieceItems)) {
+      if (Array.isArray(remotePieceItems) && remotePieceItems.length > 0) {
         current.piece_rate_items = remotePieceItems;
       }
-      if (Array.isArray(remoteOrders)) {
+      if (Array.isArray(remoteOrders) && remoteOrders.length > 0) {
         current.orders = remoteOrders;
         current.sales = remoteOrders.map(o => ({
           ...o,
           invoice_number: o.order_number || o.invoice_number || o.id
         }));
       }
-      if (Array.isArray(remoteOrderItems)) {
+      if (Array.isArray(remoteOrderItems) && remoteOrderItems.length > 0) {
         current.order_items = remoteOrderItems;
         current.sale_items = remoteOrderItems.map(i => ({
           ...i,
@@ -8905,6 +8906,7 @@ export const db = {
       const prod = products.find(p => p.id === item.product_id);
       return {
         ...item,
+        item_name: item.item_name || item.name || 'Pekerjaan',
         product_name: item.garment_type || (prod ? prod.name : 'Umum / Lain-lain')
       };
     });
