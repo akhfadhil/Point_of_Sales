@@ -8692,9 +8692,7 @@ export const db = {
 
     if (matched && matched.role === role) return matched;
 
-    // Fallback: Jika username/role cocok
-    const roleFallback = users.find(u => u.role === role);
-    return roleFallback || null;
+    return null;
   },
 
   // Tambah stok dari pabrik (Inbound)
