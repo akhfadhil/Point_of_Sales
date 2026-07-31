@@ -8211,35 +8211,37 @@ const INITIAL_DATA = {
     { id: 'wdli-32', daily_log_id: 'wdl-12', piece_rate_item_id: 'pri-241', quantity: 60, rate_per_unit: 600, subtotal: 36000 },
     { id: 'wdli-33', daily_log_id: 'wdl-12', piece_rate_item_id: 'pri-243', quantity: 60, rate_per_unit: 400, subtotal: 24000 }
   ],
-  payroll_disbursements: [
-    {
-      id: 'pay-1',
-      payroll_number: 'PAY-202606-001',
-      worker_id: 'u-3',
-      month_year: '2026-06',
-      total_amount: 2850000,
-      approved_by: 'u-1',
-      paid_at: '2026-06-30T16:00:00Z'
-    }
-  ],
-  cash_expenses: [
-    {
-      id: 'exp-1',
-      expense_category: 'PAYROLL',
-      amount: 2850000,
-      description: 'Pencairan Gaji Borongan Juni 2026 - Siti',
-      reference_id: 'pay-1',
-      created_by: 'u-1',
-      created_at: '2026-06-30T16:00:00Z'
-    }
-  ]
+  payroll_disbursements: [],
+  cash_expenses: [],
+  worker_daily_logs: [],
+  worker_daily_log_items: [],
+  customers: [],
+  sales: [],
+  orders: [],
+  sale_items: [],
+  order_items: [],
+  debt_payments: []
 };
 
-const CURRENT_DB_VERSION = 'v18_fix_duplicate_log_items';
+const CURRENT_DB_VERSION = 'v20_purge_all_dummy_simulation_data';
 
-// Selalu pastikan LocalStorage diperbarui jika belum ter-set
+// Selalu pastikan LocalStorage diperbarui dan data simulasi lama dibersihkan jika versi berubah
 if (localStorage.getItem('oliviana_db_version') !== CURRENT_DB_VERSION) {
-  if (!localStorage.getItem('oliviana_db')) {
+  const existingDb = JSON.parse(localStorage.getItem('oliviana_db'));
+  if (existingDb) {
+    // Bersihkan seluruh data simulasi lama (sales, customers, debt_payments, logs, expenses)
+    existingDb.sales = (existingDb.sales || []).filter(s => !s.id.startsWith('sl-'));
+    existingDb.orders = (existingDb.orders || []).filter(o => !o.id.startsWith('sl-') && !o.id.startsWith('ord-1'));
+    existingDb.sale_items = (existingDb.sale_items || []).filter(i => !i.id.startsWith('sli-'));
+    existingDb.order_items = (existingDb.order_items || []).filter(i => !i.id.startsWith('sli-'));
+    existingDb.customers = (existingDb.customers || []).filter(c => !c.id.startsWith('cst-'));
+    existingDb.debt_payments = (existingDb.debt_payments || []).filter(p => !p.id.startsWith('dp-'));
+    existingDb.worker_daily_logs = (existingDb.worker_daily_logs || []).filter(l => !l.id.startsWith('wdl-'));
+    existingDb.worker_daily_log_items = (existingDb.worker_daily_log_items || []).filter(i => !i.id.startsWith('wdli-'));
+    existingDb.payroll_disbursements = (existingDb.payroll_disbursements || []).filter(p => !p.id.startsWith('pay-1'));
+    existingDb.cash_expenses = (existingDb.cash_expenses || []).filter(e => !e.id.startsWith('exp-1'));
+    localStorage.setItem('oliviana_db', JSON.stringify(existingDb));
+  } else {
     localStorage.setItem('oliviana_db', JSON.stringify(INITIAL_DATA));
   }
   localStorage.setItem('oliviana_db_version', CURRENT_DB_VERSION);
@@ -8252,10 +8254,16 @@ const getDB = () => {
   if (!data.products || data.products.length === 0) data.products = INITIAL_DATA.products;
   if (!data.product_variants || data.product_variants.length === 0) data.product_variants = INITIAL_DATA.product_variants;
   if (!data.piece_rate_items || data.piece_rate_items.length === 0) data.piece_rate_items = INITIAL_DATA.piece_rate_items;
-  if (!data.worker_daily_logs) data.worker_daily_logs = INITIAL_DATA.worker_daily_logs;
-  if (!data.worker_daily_log_items) data.worker_daily_log_items = INITIAL_DATA.worker_daily_log_items;
-  if (!data.payroll_disbursements) data.payroll_disbursements = INITIAL_DATA.payroll_disbursements;
-  if (!data.cash_expenses) data.cash_expenses = INITIAL_DATA.cash_expenses;
+  if (!data.customers) data.customers = [];
+  if (!data.sales) data.sales = [];
+  if (!data.orders) data.orders = [];
+  if (!data.sale_items) data.sale_items = [];
+  if (!data.order_items) data.order_items = [];
+  if (!data.debt_payments) data.debt_payments = [];
+  if (!data.worker_daily_logs) data.worker_daily_logs = [];
+  if (!data.worker_daily_log_items) data.worker_daily_log_items = [];
+  if (!data.payroll_disbursements) data.payroll_disbursements = [];
+  if (!data.cash_expenses) data.cash_expenses = [];
   return data;
 };
 
@@ -8330,14 +8338,14 @@ export const db = {
       if (Array.isArray(remotePieceItems) && remotePieceItems.length > 0) {
         current.piece_rate_items = remotePieceItems;
       }
-      if (Array.isArray(remoteOrders) && remoteOrders.length > 0) {
+      if (Array.isArray(remoteOrders)) {
         current.orders = remoteOrders;
         current.sales = remoteOrders.map(o => ({
           ...o,
           invoice_number: o.order_number || o.invoice_number || o.id
         }));
       }
-      if (Array.isArray(remoteOrderItems) && remoteOrderItems.length > 0) {
+      if (Array.isArray(remoteOrderItems)) {
         current.order_items = remoteOrderItems;
         current.sale_items = remoteOrderItems.map(i => ({
           ...i,
