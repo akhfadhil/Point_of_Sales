@@ -31,30 +31,21 @@ export default function LoginView({
           <button
             type="button"
             className={`login-role-btn ${selectedRole === 'OWNER' ? 'active' : ''}`}
-            onClick={() => {
-              setSelectedRole('OWNER');
-              setEmailInput('owner@oliviana.com');
-            }}
+            onClick={() => setSelectedRole('OWNER')}
           >
             Owner
           </button>
           <button
             type="button"
             className={`login-role-btn ${selectedRole === 'CASHIER' ? 'active' : ''}`}
-            onClick={() => {
-              setSelectedRole('CASHIER');
-              setEmailInput('kasir@oliviana.com');
-            }}
+            onClick={() => setSelectedRole('CASHIER')}
           >
             Kasir
           </button>
           <button
             type="button"
             className={`login-role-btn ${selectedRole === 'WORKER' ? 'active' : ''}`}
-            onClick={() => {
-              setSelectedRole('WORKER');
-              setEmailInput('siti@oliviana.com');
-            }}
+            onClick={() => setSelectedRole('WORKER')}
           >
             Penjahit
           </button>
@@ -62,10 +53,10 @@ export default function LoginView({
 
         <form onSubmit={onSubmit}>
           <div className="form-group">
-            <label htmlFor="login-email" className="form-label">Email Pengguna</label>
+            <label htmlFor="login-username" className="form-label">Username</label>
             <input
-              id="login-email"
-              type="email"
+              id="login-username"
+              type="text"
               className="form-control"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
@@ -78,8 +69,6 @@ export default function LoginView({
               id="login-pass"
               type="password"
               className="form-control"
-              placeholder="•••••••• (Bebas untuk simulasi)"
-              defaultValue="123456"
             />
           </div>
 
@@ -89,15 +78,6 @@ export default function LoginView({
             Masuk ke Aplikasi
           </button>
         </form>
-
-        <div className="login-help-info">
-          <strong>Akun Simulasi Default:</strong>
-          <ul style={{ paddingLeft: '20px', marginTop: '6px', listStyleType: 'disc' }}>
-            <li>Owner: <code>owner@oliviana.com</code></li>
-            <li>Kasir: <code>kasir@oliviana.com</code></li>
-            <li>Penjahit: <code>siti@oliviana.com</code> / <code>budi@oliviana.com</code></li>
-          </ul>
-        </div>
       </main>
     </div>
   );

@@ -11,7 +11,6 @@ import {
   Moon,
   Database,
   LogOut,
-  RefreshCw,
   Scissors,
   DollarSign,
   Key
@@ -26,7 +25,6 @@ import {
  * @param {Function} props.setActiveTab - Setter tab view aktif
  * @param {Object} props.currentUser - Data user yang sedang aktif login
  * @param {Function} props.handleLogout - Handler proses logout
- * @param {Function} props.handleResetDB - Handler reset database simulasi
  * @param {boolean} props.darkMode - Status mode gelap (dark mode)
  * @param {Function} props.setDarkMode - Setter toggle mode gelap
  * @param {Function} props.onOpenChangePassword - Callback membuka modal ubah kata sandi
@@ -38,7 +36,6 @@ export default function Sidebar({
   setActiveTab,
   currentUser,
   handleLogout,
-  handleResetDB,
   darkMode,
   setDarkMode,
   onOpenChangePassword
@@ -94,25 +91,28 @@ export default function Sidebar({
             )}
 
             {/* KATEGORI 2: PRODUK & STOK */}
-            <div className="sidebar-group-title">Produk & Stok</div>
             {currentUser.role !== 'WORKER' && (
-              <button
-                type="button"
-                className={`sidebar-item ${activeTab === 'inventory' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }}
-              >
-                <Package size={18} />
-                Kelola Stok & Produk
-              </button>
+              <>
+                <div className="sidebar-group-title">Produk & Stok</div>
+                <button
+                  type="button"
+                  className={`sidebar-item ${activeTab === 'inventory' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }}
+                >
+                  <Package size={18} />
+                  Kelola Stok & Produk
+                </button>
+
+                <button
+                  type="button"
+                  className={`sidebar-item ${activeTab === 'check-stock' ? 'active' : ''}`}
+                  onClick={() => { setActiveTab('check-stock'); setIsMobileMenuOpen(false); }}
+                >
+                  <Eye size={18} />
+                  Cek Stok Barang
+                </button>
+              </>
             )}
-            <button
-              type="button"
-              className={`sidebar-item ${activeTab === 'check-stock' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('check-stock'); setIsMobileMenuOpen(false); }}
-            >
-              <Eye size={18} />
-              Cek Stok Barang
-            </button>
 
             {/* KATEGORI 3: PENGGAJIAN */}
             {(currentUser.role === 'OWNER' || currentUser.role === 'WORKER') && (
@@ -192,6 +192,22 @@ export default function Sidebar({
             </div>
           </div>
 
+          {/* Mode Aktif Indicator */}
+          <div
+            style={{
+              padding: '6px 10px',
+              margin: '8px 0',
+              borderRadius: '8px',
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--card-border)',
+              fontSize: '11px',
+              color: 'var(--text-secondary)'
+            }}
+          >
+            <strong style={{ color: 'var(--primary)', display: 'block', marginBottom: '1px' }}>Mode Aktif:</strong>
+            {currentUser.role === 'OWNER' ? 'Akses Owner (Penuh)' : currentUser.role === 'WORKER' ? 'Akses Penjahit (Worker)' : 'Akses Kasir'}
+          </div>
+
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               type="button"
@@ -238,15 +254,6 @@ export default function Sidebar({
               <LogOut size={16} />
             </button>
           </div>
-
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            style={{ fontSize: '11px', padding: '4px' }}
-            onClick={handleResetDB}
-          >
-            <RefreshCw size={10} /> Reset DB Simulasi
-          </button>
         </div>
       </aside>
     </>

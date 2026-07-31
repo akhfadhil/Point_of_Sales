@@ -12,7 +12,7 @@ export default function useAuth(setActiveTab, setCart) {
     const saved = localStorage.getItem('oliviana_current_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [emailInput, setEmailInput] = useState('owner@oliviana.com');
+  const [emailInput, setEmailInput] = useState('');
   const [selectedRole, setSelectedRole] = useState('OWNER'); // 'OWNER' | 'CASHIER'
   const [loginError, setLoginError] = useState('');
 
@@ -33,7 +33,7 @@ export default function useAuth(setActiveTab, setCart) {
         }
       }
     } else {
-      setLoginError('Email atau role tidak cocok. Silakan cek detail akun simulasi.');
+      setLoginError('Username atau role tidak cocok. Silakan periksa kembali detail akun Anda.');
     }
   };
 

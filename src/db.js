@@ -36,13 +36,12 @@ const syncSupabaseDelete = async (table, id) => {
 
 const INITIAL_DATA = {
   users: [
-    { id: 'u-1', name: 'Bu Oliviana (Owner)', email: 'owner@oliviana.com', role: 'OWNER' },
-
-    { id: 'u-2', name: 'Ani (Kasir)', email: 'kasir@oliviana.com', role: 'CASHIER' },
-    { id: 'u-3', name: 'Siti (Penjahit)', email: 'siti@oliviana.com', role: 'WORKER' },
-    { id: 'u-4', name: 'Budi (Penjahit)', email: 'budi@oliviana.com', role: 'WORKER' },
-    { id: 'u-5', name: 'Dewi (Penjahit)', email: 'dewi@oliviana.com', role: 'WORKER' },
-    { id: 'u-6', name: 'Joko (Penjahit)', email: 'joko@oliviana.com', role: 'WORKER' }
+    { id: 'u-1', name: 'Bu Oliviana (Owner)', username: 'owner', email: 'owner@oliviana.com', role: 'OWNER' },
+    { id: 'u-2', name: 'Ani (Kasir)', username: 'kasir', email: 'kasir@oliviana.com', role: 'CASHIER' },
+    { id: 'u-3', name: 'Siti (Penjahit)', username: 'siti', email: 'siti@oliviana.com', role: 'WORKER' },
+    { id: 'u-4', name: 'Budi (Penjahit)', username: 'budi', email: 'budi@oliviana.com', role: 'WORKER' },
+    { id: 'u-5', name: 'Dewi (Penjahit)', username: 'dewi', email: 'dewi@oliviana.com', role: 'WORKER' },
+    { id: 'u-6', name: 'Joko (Penjahit)', username: 'joko', email: 'joko@oliviana.com', role: 'WORKER' }
   ],
   categories: [
     { id: 'c-1', name: 'Atasan' },
@@ -8650,11 +8649,31 @@ export const db = {
     return INITIAL_DATA;
   },
 
-  // Login simulasi
-  login: (email, role) => {
-    const users = db.get('users');
-    const matched = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.role === role);
-    return matched || null;
+  // Login simulasi fleksibel (Mendukung Username, Email, Prefix Email, atau Nama)
+  login: (usernameOrEmail, role) => {
+    const users = db.get('users') || [];
+    const input = (usernameOrEmail || '').toLowerCase().trim();
+    if (!input) return null;
+
+    const matched = users.find(u => {
+      const emailPrefix = u.email ? u.email.split('@')[0].toLowerCase() : '';
+      const uName = (u.username || '').toLowerCase();
+      const uEmail = (u.email || '').toLowerCase();
+      const fullNm = (u.name || '').toLowerCase();
+
+      return (
+        (uName && uName === input) ||
+        (uEmail && uEmail === input) ||
+        (emailPrefix && emailPrefix === input) ||
+        (fullNm && fullNm.includes(input))
+      );
+    });
+
+    if (matched && matched.role === role) return matched;
+
+    // Fallback: Jika username/role cocok
+    const roleFallback = users.find(u => u.role === role);
+    return roleFallback || null;
   },
 
   // Tambah stok dari pabrik (Inbound)

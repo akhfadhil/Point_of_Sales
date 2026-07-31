@@ -1,5 +1,5 @@
 // src/components/views/WorkerDailyLogView.jsx
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Calendar, Plus, Trash2, CheckCircle2, Clock, FileText, Send, X, Layers } from 'lucide-react';
 import { formatRupiah } from '../../utils/formatters';
 import { db } from '../../db';
@@ -23,17 +23,30 @@ export default function WorkerDailyLogView({
   // Form State
   const [logDate, setLogDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [entryItems, setEntryItems] = useState([
-    { piece_rate_item_id: '', quantity: '1', rate_per_unit: 0 }
+    { product_id: '', piece_rate_item_id: '', quantity: '1', rate_per_unit: 0 }
   ]);
 
   // Selected Log Detail Modal State
   const [selectedLogDetail, setSelectedLogDetail] = useState(null);
 
-  if (!isOpen) return null;
-
   // Fetch Master Piece Rate Items & Worker's Daily Logs
-  const masterItems = db.getPieceRateItems();
-  const workerLogs = currentUser ? db.getWorkerDailyLogs(currentUser.id) : [];
+  const masterItems = isOpen ? db.getPieceRateItems() : [];
+  const workerLogs = (isOpen && currentUser) ? db.getWorkerDailyLogs(currentUser.id) : [];
+
+  // Ambil daftar unik Produk / Pakaian dari Master Tarif Borongan (Hook dipanggil tanpa kondisi di top-level)
+  const productOptions = useMemo(() => {
+    const map = new Map();
+    masterItems.forEach(item => {
+      const name = item.product_name || item.garment_type || item.product_id;
+      const key = name;
+      if (key && !map.has(key)) {
+        map.set(key, { id: key, name: name });
+      }
+    });
+    return Array.from(map.values());
+  }, [masterItems]);
+
+  if (!isOpen) return null;
 
   // Calculate Worker Stats
   const pendingLogs = workerLogs.filter(l => l.status === 'PENDING');
@@ -45,12 +58,20 @@ export default function WorkerDailyLogView({
   // Form Handlers
   const handleItemChange = (index, field, value) => {
     const updated = [...entryItems];
-    if (field === 'piece_rate_item_id') {
+    if (field === 'product_id') {
+      updated[index] = {
+        ...updated[index],
+        product_id: value,
+        piece_rate_item_id: '', // Reset jenis pekerjaan saat produk berubah
+        rate_per_unit: 0
+      };
+    } else if (field === 'piece_rate_item_id') {
       const selectedMaster = masterItems.find(m => m.id === value);
       updated[index] = {
         ...updated[index],
         piece_rate_item_id: value,
-        rate_per_unit: selectedMaster ? Number(selectedMaster.rate_price) : 0
+        rate_per_unit: selectedMaster ? Number(selectedMaster.rate_price) : 0,
+        product_id: updated[index].product_id || (selectedMaster ? (selectedMaster.product_id || selectedMaster.product_name) : '')
       };
     } else if (field === 'quantity') {
       updated[index] = {
@@ -64,7 +85,7 @@ export default function WorkerDailyLogView({
   const handleAddRow = () => {
     setEntryItems([
       ...entryItems,
-      { piece_rate_item_id: '', quantity: '1', rate_per_unit: 0 }
+      { product_id: '', piece_rate_item_id: '', quantity: '1', rate_per_unit: 0 }
     ]);
   };
 
@@ -94,7 +115,7 @@ export default function WorkerDailyLogView({
     );
 
     if (validItems.length === 0) {
-      showToast('Pilih jenis pekerjaan dan masukkan kuantitas yang valid.', 'danger');
+      showToast('Pilih produk, jenis pekerjaan, dan masukkan kuantitas yang valid.', 'danger');
       return;
     }
 
@@ -102,7 +123,7 @@ export default function WorkerDailyLogView({
     showToast('Laporan hasil kerja harian berhasil dikirim!');
 
     // Reset Form
-    setEntryItems([{ piece_rate_item_id: '', quantity: '1', rate_per_unit: 0 }]);
+    setEntryItems([{ product_id: '', piece_rate_item_id: '', quantity: '1', rate_per_unit: 0 }]);
     if (setRefreshKey) setRefreshKey(prev => prev + 1);
   };
 
@@ -121,17 +142,17 @@ export default function WorkerDailyLogView({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <span style={{ fontSize: '12px', opacity: 0.85, textTransform: 'uppercase', tracking: '1px' }}>
+            <span style={{ fontSize: '12px', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '1px', color: '#ffffff' }}>
               Portal Penjahit Konveksi
             </span>
-            <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '2px 0 0 0' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '2px 0 0 0', color: '#ffffff' }}>
               Halo, {currentUser?.name || 'Penjahit'} 👋
             </h2>
-            <p style={{ fontSize: '13px', margin: '4px 0 0 0', opacity: 0.9 }}>
+            <p style={{ fontSize: '13px', margin: '4px 0 0 0', opacity: 0.9, color: '#ffffff' }}>
               Laporkan hasil kerja borongan harian Anda di sini
             </p>
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.2)', padding: '10px', borderRadius: '12px' }}>
+          <div style={{ background: 'rgba(255,255,255,0.2)', padding: '10px', borderRadius: '12px', color: '#ffffff' }}>
             <FileText size={28} />
           </div>
         </div>
@@ -181,78 +202,185 @@ export default function WorkerDailyLogView({
 
         <form onSubmit={handleSubmitLog}>
           {/* Select Date */}
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label">Tanggal Pengerjaan</label>
+          <div className="form-group" style={{ marginBottom: '20px', maxWidth: isMobile ? '100%' : '280px' }}>
+            <label className="form-label" style={{ fontWeight: '600', fontSize: '13px' }}>Tanggal Pengerjaan</label>
             <input
               type="date"
               className="form-control"
+              style={{ height: '42px', borderRadius: '8px', fontSize: '14px' }}
               value={logDate}
               onChange={(e) => setLogDate(e.target.value)}
               required
             />
           </div>
 
-          {/* Items Entry Builder */}
-          <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>
-            Rincian Item Borongan yang Dikerjakan:
-          </label>
+          {/* Items Entry Builder Header (Desktop) */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <label className="form-label" style={{ fontWeight: '600', fontSize: '13px', margin: 0 }}>
+              Rincian Item Borongan yang Dikerjakan:
+            </label>
+          </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+          {!isMobile && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1.8fr) minmax(0, 2.2fr) minmax(0, 0.9fr) minmax(0, 1.1fr) 38px',
+                gap: '12px',
+                padding: '6px 14px',
+                marginBottom: '6px',
+                fontSize: '11px',
+                fontWeight: '700',
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}
+            >
+              <div style={{ minWidth: 0 }}>1. Produk / Pakaian</div>
+              <div style={{ minWidth: 0 }}>2. Jenis Pekerjaan</div>
+              <div style={{ minWidth: 0, textAlign: 'center' }}>3. Qty (Pcs)</div>
+              <div style={{ minWidth: 0, textAlign: 'right' }}>Subtotal</div>
+              <div style={{ minWidth: 0, textAlign: 'center' }}>Hapus</div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
             {entryItems.map((item, idx) => {
               const subtotal = (Number(item.quantity) || 0) * (Number(item.rate_per_unit) || 0);
+
+              // Filter jenis pekerjaan berdasarkan produk yang dipilih di baris ini
+              const availableJobs = item.product_id
+                ? masterItems.filter(m => m.product_name === item.product_id || m.garment_type === item.product_id || m.product_id === item.product_id)
+                : [];
 
               return (
                 <div
                   key={idx}
                   style={{
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-card-subtle, rgba(0,0,0,0.02))'
+                    padding: isMobile ? '12px' : '10px 14px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--card-border, #e2e8f0)',
+                    background: 'var(--bg-secondary, #ffffff)',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                    transition: 'all 0.2s ease',
+                    overflow: 'hidden'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--primary)' }}>
-                      Item #{idx + 1}
-                    </span>
-                    {entryItems.length > 1 && (
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm btn-icon"
-                        style={{ padding: '2px 6px' }}
-                        onClick={() => handleRemoveRow(idx)}
-                        title="Hapus baris"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    )}
-                  </div>
+                  {isMobile && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--primary)' }}>
+                        Item Pekerjaan #{idx + 1}
+                      </span>
+                      {entryItems.length > 1 && (
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm btn-icon"
+                          style={{ padding: '4px 8px', borderRadius: '6px' }}
+                          onClick={() => handleRemoveRow(idx)}
+                          title="Hapus item"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  )}
 
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr', gap: '10px' }}>
-                    <div>
-                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Pilih Pekerjaan</label>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.8fr) minmax(0, 2.2fr) minmax(0, 0.9fr) minmax(0, 1.1fr) 38px',
+                      gap: '12px',
+                      alignItems: 'center'
+                    }}
+                  >
+                    {/* Step 1: Produk */}
+                    <div style={{ minWidth: 0 }}>
+                      {isMobile && (
+                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
+                          1. Pilih Produk / Pakaian
+                        </label>
+                      )}
                       <select
                         className="form-control"
-                        style={{ fontSize: '13px' }}
-                        value={item.piece_rate_item_id}
-                        onChange={(e) => handleItemChange(idx, 'piece_rate_item_id', e.target.value)}
+                        style={{
+                          fontSize: '13px',
+                          height: '42px',
+                          borderRadius: '8px',
+                          margin: 0,
+                          width: '100%',
+                          maxWidth: '100%',
+                          textOverflow: 'ellipsis',
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap'
+                        }}
+                        value={item.product_id || ''}
+                        onChange={(e) => handleItemChange(idx, 'product_id', e.target.value)}
                         required
                       >
-                        <option value="">-- Pilih Pekerjaan Borongan --</option>
-                        {masterItems.map(m => (
-                          <option key={m.id} value={m.id}>
-                            [{m.product_name}] {m.item_name} - ({formatRupiah(m.rate_price)}/pcs)
+                        <option value="">-- Pilih Produk --</option>
+                        {productOptions.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
                           </option>
                         ))}
                       </select>
                     </div>
 
-                    <div>
-                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Jumlah (Pcs)</label>
+                    {/* Step 2: Jenis Pekerjaan */}
+                    <div style={{ minWidth: 0 }}>
+                      {isMobile && (
+                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
+                          2. Pilih Jenis Pekerjaan
+                        </label>
+                      )}
+                      <select
+                        className="form-control"
+                        style={{
+                          fontSize: '13px',
+                          height: '42px',
+                          borderRadius: '8px',
+                          margin: 0,
+                          width: '100%',
+                          maxWidth: '100%',
+                          textOverflow: 'ellipsis',
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap'
+                        }}
+                        value={item.piece_rate_item_id || ''}
+                        onChange={(e) => handleItemChange(idx, 'piece_rate_item_id', e.target.value)}
+                        disabled={!item.product_id}
+                        required
+                      >
+                        <option value="">
+                          {!item.product_id ? '-- Pilih Produk Dulu --' : '-- Pilih Jenis Pekerjaan --'}
+                        </option>
+                        {availableJobs.map(m => (
+                          <option key={m.id} value={m.id}>
+                            {m.item_name} - ({formatRupiah(m.rate_price)}/pcs)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Step 3: Qty */}
+                    <div style={{ minWidth: 0 }}>
+                      {isMobile && (
+                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
+                          3. Jumlah (Pcs)
+                        </label>
+                      )}
                       <input
                         type="number"
                         className="form-control"
-                        style={{ fontSize: '13px' }}
+                        style={{
+                          fontSize: '13px',
+                          height: '42px',
+                          borderRadius: '8px',
+                          textAlign: isMobile ? 'left' : 'center',
+                          margin: 0,
+                          width: '100%',
+                          maxWidth: '100%'
+                        }}
                         min="1"
                         placeholder="Qty"
                         value={item.quantity}
@@ -261,16 +389,60 @@ export default function WorkerDailyLogView({
                       />
                     </div>
 
-                    <div>
-                      <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Subtotal</label>
+                    {/* Subtotal */}
+                    <div style={{ minWidth: 0 }}>
+                      {isMobile && (
+                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
+                          Subtotal
+                        </label>
+                      )}
                       <input
                         type="text"
                         className="form-control"
-                        style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--success)' }}
+                        style={{
+                          fontSize: '13px',
+                          fontWeight: 'bold',
+                          height: '42px',
+                          borderRadius: '8px',
+                          color: 'var(--success)',
+                          textAlign: isMobile ? 'left' : 'right',
+                          backgroundColor: 'var(--bg-tertiary, #f8fafc)',
+                          margin: 0,
+                          width: '100%',
+                          maxWidth: '100%'
+                        }}
                         value={formatRupiah(subtotal)}
                         readOnly
                       />
                     </div>
+
+                    {/* Delete Action Button (Desktop Alignment) */}
+                    {!isMobile && (
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 0 }}>
+                        {entryItems.length > 1 ? (
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-icon"
+                            style={{
+                              width: '38px',
+                              height: '38px',
+                              padding: 0,
+                              borderRadius: '8px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
+                            }}
+                            onClick={() => handleRemoveRow(idx)}
+                            title="Hapus baris ini"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        ) : (
+                          <div style={{ width: '38px' }} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -280,32 +452,56 @@ export default function WorkerDailyLogView({
           <button
             type="button"
             className="btn btn-secondary btn-sm"
-            style={{ width: '100%', marginBottom: '16px', borderStyle: 'dashed' }}
+            style={{
+              width: '100%',
+              height: '40px',
+              marginBottom: '20px',
+              borderStyle: 'dashed',
+              borderRadius: '8px',
+              fontWeight: '600'
+            }}
             onClick={handleAddRow}
           >
-            <Plus size={14} /> + Tambah Item Pekerjaan Lain
+            <Plus size={14} style={{ marginRight: '4px' }} /> + Tambah Baris Pekerjaan
           </button>
 
           {/* Total & Submit Button */}
           <div
             style={{
-              padding: '12px',
-              borderRadius: '8px',
-              background: 'var(--bg-card-subtle, rgba(0,0,0,0.03))',
+              padding: '14px 18px',
+              borderRadius: '12px',
+              border: '1px solid var(--card-border, #e2e8f0)',
+              background: 'var(--bg-tertiary, #f8fafc)',
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '16px'
+              marginBottom: '20px'
             }}
           >
-            <span style={{ fontWeight: 'bold', fontSize: '14px' }}>Total Laporan Hari Ini:</span>
-            <span style={{ fontWeight: 'bold', fontSize: '18px', color: 'var(--primary)' }}>
+            <span style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-secondary)' }}>
+              Total Laporan Hari Ini:
+            </span>
+            <span style={{ fontWeight: '800', fontSize: '20px', color: 'var(--primary)' }}>
               {formatRupiah(calculatedBatchTotal)}
             </span>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
-            <Send size={16} /> Kirim Laporan Harian
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{
+              width: '100%',
+              height: '46px',
+              fontSize: '15px',
+              fontWeight: '600',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            <Send size={18} /> Kirim Laporan Harian
           </button>
         </form>
       </div>

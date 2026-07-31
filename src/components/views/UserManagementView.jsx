@@ -45,7 +45,7 @@ export default function UserManagementView({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [formName, setFormName] = useState('');
-  const [formEmail, setFormEmail] = useState('');
+  const [formUsername, setFormUsername] = useState('');
   const [formPassword, setFormPassword] = useState('123456');
   const [formRole, setFormRole] = useState('WORKER');
   const [showPasswordToggle, setShowPasswordToggle] = useState(false);
@@ -59,6 +59,7 @@ export default function UserManagementView({
   const filteredUsers = users.filter(u => {
     const matchesSearch =
       (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (u.username && u.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesRole = roleFilter ? u.role === roleFilter : true;
     return matchesSearch && matchesRole;
@@ -73,7 +74,7 @@ export default function UserManagementView({
   const handleOpenAddModal = () => {
     setEditingUser(null);
     setFormName('');
-    setFormEmail('');
+    setFormUsername('');
     setFormPassword('123456');
     setFormRole('WORKER');
     setShowPasswordToggle(false);
@@ -83,7 +84,7 @@ export default function UserManagementView({
   const handleOpenEditModal = (userItem) => {
     setEditingUser(userItem);
     setFormName(userItem.name || '');
-    setFormEmail(userItem.email || '');
+    setFormUsername(userItem.username || (userItem.email ? userItem.email.split('@')[0] : ''));
     setFormPassword(userItem.password || '123456');
     setFormRole(userItem.role || 'WORKER');
     setShowPasswordToggle(false);
@@ -93,24 +94,23 @@ export default function UserManagementView({
   const handleSaveUser = (e) => {
     e.preventDefault();
 
-    if (!formName.trim() || !formEmail.trim() || !formPassword.trim()) {
-      showToast('Nama, Email, dan Kata Sandi wajib diisi.', 'danger');
+    if (!formName.trim() || !formUsername.trim() || !formPassword.trim()) {
+      showToast('Nama, Username, dan Kata Sandi wajib diisi.', 'danger');
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formEmail.trim())) {
-      showToast('Format email tidak valid (contoh: penjahit@oliviana.com).', 'danger');
-      return;
-    }
+    const cleanUsername = formUsername.trim().toLowerCase();
 
-    // Check duplicate email for new user
+    // Check duplicate username for new user
     const existing = users.find(
-      u => u.email.toLowerCase() === formEmail.trim().toLowerCase() && (!editingUser || u.id !== editingUser.id)
+      u =>
+        ((u.username && u.username.toLowerCase() === cleanUsername) ||
+         (u.email && u.email.toLowerCase().startsWith(cleanUsername))) &&
+        (!editingUser || u.id !== editingUser.id)
     );
 
     if (existing) {
-      showToast('Email ini sudah terdaftar untuk pengguna lain.', 'danger');
+      showToast('Username ini sudah terdaftar untuk pengguna lain.', 'danger');
       return;
     }
 
@@ -118,7 +118,8 @@ export default function UserManagementView({
       // Update
       db.update('users', editingUser.id, {
         name: formName.trim(),
-        email: formEmail.trim(),
+        username: cleanUsername,
+        email: `${cleanUsername}@oliviana.com`,
         password: formPassword.trim(),
         role: formRole
       });
@@ -129,7 +130,8 @@ export default function UserManagementView({
       db.insert('users', {
         id: newId,
         name: formName.trim(),
-        email: formEmail.trim(),
+        username: cleanUsername,
+        email: `${cleanUsername}@oliviana.com`,
         password: formPassword.trim(),
         role: formRole
       });
@@ -364,7 +366,7 @@ export default function UserManagementView({
                         {u.name}
                       </h4>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {u.email}
+                        @{u.username || (u.email ? u.email.split('@')[0] : 'user')}
                       </div>
                     </div>
                   </div>
@@ -409,7 +411,7 @@ export default function UserManagementView({
               <thead>
                 <tr style={{ background: 'var(--bg-tertiary)' }}>
                   <th style={{ padding: '12px 16px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pengguna</th>
-                  <th style={{ padding: '12px 16px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email Login</th>
+                  <th style={{ padding: '12px 16px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Username</th>
                   <th style={{ padding: '12px 16px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Role / Akses</th>
                   <th style={{ padding: '12px 16px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center', width: '120px' }}>Aksi</th>
                 </tr>
@@ -446,8 +448,8 @@ export default function UserManagementView({
                         </span>
                       </div>
                     </td>
-                    <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-secondary)', verticalAlign: 'middle' }}>
-                      {u.email}
+                    <td style={{ padding: '12px 16px', fontSize: '13px', color: 'var(--text-secondary)', verticalAlign: 'middle', fontWeight: '500' }}>
+                      @{u.username || (u.email ? u.email.split('@')[0] : 'user')}
                     </td>
                     <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                       {getRoleBadge(u.role)}
@@ -515,14 +517,14 @@ export default function UserManagementView({
 
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>
-                    Email Login <span style={{ color: 'var(--danger)' }}>*</span>
+                    Username <span style={{ color: 'var(--danger)' }}>*</span>
                   </label>
                   <input
-                    type="email"
+                    type="text"
                     className="form-control"
-                    placeholder="Contoh: rina@oliviana.com"
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
+                    placeholder="Contoh: rina"
+                    value={formUsername}
+                    onChange={(e) => setFormUsername(e.target.value)}
                     required
                     style={{ height: '42px', borderRadius: '10px' }}
                   />

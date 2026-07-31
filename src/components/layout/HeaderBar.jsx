@@ -84,11 +84,6 @@ export default function HeaderBar({
           </>
         )}
       </div>
-      <div className="header-actions">
-        <span className="badge info" style={{ padding: '8px 12px', fontSize: '12px' }}>
-          Mode Aktif: {currentUser.role === 'OWNER' ? 'Akses Owner (Penuh)' : currentUser.role === 'WORKER' ? 'Akses Penjahit (Worker)' : 'Akses Kasir'}
-        </span>
-      </div>
     </header>
   );
 }

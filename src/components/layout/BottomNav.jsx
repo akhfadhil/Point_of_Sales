@@ -21,24 +21,14 @@ export default function BottomNav({
   return (
     <nav className="bottom-nav">
       {currentUser.role === 'WORKER' ? (
-        <>
-          <button
-            type="button"
-            className={`bottom-nav-item ${activeTab === 'worker-daily-log' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('worker-daily-log'); setIsMobileMenuOpen(false); }}
-          >
-            <TrendingUp size={20} />
-            <span>Hasil Kerja</span>
-          </button>
-          <button
-            type="button"
-            className={`bottom-nav-item ${activeTab === 'check-stock' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('check-stock'); setIsMobileMenuOpen(false); }}
-          >
-            <Search size={20} />
-            <span>Cek Stok</span>
-          </button>
-        </>
+        <button
+          type="button"
+          className={`bottom-nav-item ${activeTab === 'worker-daily-log' ? 'active' : ''}`}
+          onClick={() => { setActiveTab('worker-daily-log'); setIsMobileMenuOpen(false); }}
+        >
+          <TrendingUp size={20} />
+          <span>Hasil Kerja</span>
+        </button>
       ) : (
         <>
           {currentUser.role === 'OWNER' && (

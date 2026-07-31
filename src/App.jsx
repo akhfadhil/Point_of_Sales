@@ -83,6 +83,13 @@ function App() {
     });
   }, []);
 
+  // Proteksi Navigasi khusus Role WORKER (Penjahit)
+  useEffect(() => {
+    if (currentUser?.role === 'WORKER' && activeTab !== 'worker-daily-log') {
+      setActiveTab('worker-daily-log');
+    }
+  }, [currentUser, activeTab]);
+
 
   const askConfirmation = ({ title, message, confirmText = 'Ya, Lanjutkan', cancelText = 'Batal', confirmVariant = 'danger', onConfirm }) => {
     setConfirmConfig({
@@ -232,23 +239,6 @@ function App() {
     }
   }, [currentUser, activeTab]);
 
-
-
-
-  const handleResetDB = () => {
-    askConfirmation({
-      title: 'Reset Database Simulasi',
-      message: 'Apakah Anda yakin ingin me-reset database simulasi ke kondisi awal? Semua transaksi dan data baru akan terhapus.',
-      confirmText: 'Reset Database',
-      confirmVariant: 'danger',
-      onConfirm: () => {
-        db.reset();
-        setRefreshKey(prev => prev + 1);
-        setCart([]);
-        showToast('Database berhasil di-reset ke kondisi awal.', 'success');
-      }
-    });
-  };
 
 
 
@@ -460,7 +450,6 @@ function App() {
         setActiveTab={setActiveTab}
         currentUser={currentUser}
         handleLogout={handleLogout}
-        handleResetDB={handleResetDB}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         onOpenChangePassword={() => setIsChangePasswordModalOpen(true)}
