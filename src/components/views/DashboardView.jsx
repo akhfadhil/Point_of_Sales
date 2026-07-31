@@ -1,7 +1,8 @@
 // src/components/views/DashboardView.jsx
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, ShoppingCart, Package, Users, Calendar } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Package, Users, Calendar, Scissors, DollarSign, Activity } from 'lucide-react';
 import { formatRupiah } from '../../utils/formatters';
+import { db } from '../../db';
 
 /**
  * Komponen Tampilan Ringkasan Keuangan & Dashboard Owner
@@ -88,8 +89,63 @@ export default function DashboardView({
   });
 
   // Calculate filtered metrics
-  const grossSales = filteredSales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
+  const grossSales = filteredSales.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
   const totalTransactions = filteredSales.length;
+
+  // Fetch Worker Logs & Expenses for Expanded Financial Metrics
+  const allWorkerLogs = db.getWorkerDailyLogs() || [];
+  const allExpenses = db.getCashExpenses() || [];
+
+  const filteredWorkerLogs = allWorkerLogs.filter(log => {
+    const logTime = new Date(log.log_date || log.created_at).getTime();
+    const now = new Date();
+    if (datePreset === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+      return logTime >= startOfDay && logTime <= endOfDay;
+    } else if (datePreset === '7days') {
+      const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
+      return logTime >= sevenDaysAgo;
+    } else if (datePreset === 'thisMonth') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      return logTime >= startOfMonth;
+    } else if (datePreset === 'custom') {
+      if (startDate && logTime < new Date(startDate).setHours(0, 0, 0, 0)) return false;
+      if (endDate && logTime > new Date(endDate).setHours(23, 59, 59, 999)) return false;
+      return true;
+    }
+    return true;
+  });
+
+  const filteredExpenses = allExpenses.filter(exp => {
+    const expTime = new Date(exp.created_at || exp.paid_at).getTime();
+    const now = new Date();
+    if (datePreset === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+      return expTime >= startOfDay && expTime <= endOfDay;
+    } else if (datePreset === '7days') {
+      const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
+      return expTime >= sevenDaysAgo;
+    } else if (datePreset === 'thisMonth') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      return expTime >= startOfMonth;
+    } else if (datePreset === 'custom') {
+      if (startDate && expTime < new Date(startDate).setHours(0, 0, 0, 0)) return false;
+      if (endDate && expTime > new Date(endDate).setHours(23, 59, 59, 999)) return false;
+      return true;
+    }
+    return true;
+  });
+
+  const pendingWorkerPayroll = filteredWorkerLogs
+    .filter(l => l.status !== 'PAID')
+    .reduce((sum, l) => sum + Number(l.total_daily_amount || l.total_amount || 0), 0);
+
+  const totalExpenses = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const netCashFlow = grossSales - totalExpenses;
+  const outstandingDebt = (allCustomers || []).reduce((sum, c) => sum + Number(c.total_debt || 0), 0);
+  const totalActiveStock = (allVariants || []).reduce((sum, v) => sum + Number(v.stock_quantity || 0), 0);
 
   // Pagination logic for Sales (Sorted Newest First)
   const salesLimit = 5;
@@ -181,6 +237,7 @@ export default function DashboardView({
 
       {/* Cards Grid */}
       <div className="stats-grid">
+        {/* 1. Gross Revenue */}
         <div className="card stat-card">
           <div className="stat-icon-wrapper success">
             <TrendingUp size={24} />
@@ -188,36 +245,69 @@ export default function DashboardView({
           <div className="stat-info">
             <span className="stat-label">Omset Penjualan (Gross)</span>
             <span className="stat-value">{formatRupiah(grossSales)}</span>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{totalTransactions} Transaksi</small>
           </div>
         </div>
 
+        {/* 2. Pending Worker Payroll */}
         <div className="card stat-card">
-          <div className="stat-icon-wrapper primary">
-            <ShoppingCart size={24} />
+          <div className="stat-icon-wrapper warning" style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', color: '#9333ea' }}>
+            <Scissors size={24} />
           </div>
           <div className="stat-info">
-            <span className="stat-label">Total Transaksi</span>
-            <span className="stat-value">{totalTransactions} Transaksi</span>
+            <span className="stat-label">Estimasi Upah Penjahit</span>
+            <span className="stat-value" style={{ color: '#9333ea' }}>{formatRupiah(pendingWorkerPayroll)}</span>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Pending Pencairan</small>
           </div>
         </div>
 
-        <div className="card stat-card">
-          <div className="stat-icon-wrapper warning">
-            <Package size={24} />
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Total Barang Terjual</span>
-            <span className="stat-value">{dashboardMetrics?.totalItemsSold || 0} Pcs</span>
-          </div>
-        </div>
-
+        {/* 3. Total Expenses */}
         <div className="card stat-card">
           <div className="stat-icon-wrapper danger">
+            <DollarSign size={24} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Total Pengeluaran Kas</span>
+            <span className="stat-value" style={{ color: 'var(--danger)' }}>{formatRupiah(totalExpenses)}</span>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Pencairan Gaji & Kas</small>
+          </div>
+        </div>
+
+        {/* 4. Net Cash Flow */}
+        <div className="card stat-card">
+          <div className="stat-icon-wrapper primary">
+            <Activity size={24} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Arus Kas (Omset - Kas)</span>
+            <span className="stat-value" style={{ color: netCashFlow >= 0 ? 'var(--primary)' : 'var(--danger)' }}>
+              {formatRupiah(netCashFlow)}
+            </span>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Laba Kas Bersih</small>
+          </div>
+        </div>
+
+        {/* 5. Outstanding Debt */}
+        <div className="card stat-card">
+          <div className="stat-icon-wrapper" style={{ backgroundColor: 'rgba(249, 115, 22, 0.15)', color: '#f97316' }}>
             <Users size={24} />
           </div>
           <div className="stat-info">
             <span className="stat-label">Piutang Kasbon Pelanggan</span>
-            <span className="stat-value">{formatRupiah(dashboardMetrics?.outstandingDebt || 0)}</span>
+            <span className="stat-value">{formatRupiah(outstandingDebt)}</span>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Total Sisa Kasbon</small>
+          </div>
+        </div>
+
+        {/* 6. Active Inventory Stock */}
+        <div className="card stat-card">
+          <div className="stat-icon-wrapper" style={{ backgroundColor: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9' }}>
+            <Package size={24} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Total Stok Barang Toko</span>
+            <span className="stat-value">{totalActiveStock} Pcs</span>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{allVariants.length} Varian Produk</small>
           </div>
         </div>
       </div>
