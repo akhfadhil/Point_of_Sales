@@ -8403,9 +8403,11 @@ const INITIAL_DATA = {
 
 const CURRENT_DB_VERSION = 'v18_fix_duplicate_log_items';
 
-// Selalu pastikan LocalStorage diperbarui dengan data terbaru jika versi berubah
+// Selalu pastikan LocalStorage diperbarui jika belum ter-set
 if (localStorage.getItem('oliviana_db_version') !== CURRENT_DB_VERSION) {
-  localStorage.setItem('oliviana_db', JSON.stringify(INITIAL_DATA));
+  if (!localStorage.getItem('oliviana_db')) {
+    localStorage.setItem('oliviana_db', JSON.stringify(INITIAL_DATA));
+  }
   localStorage.setItem('oliviana_db_version', CURRENT_DB_VERSION);
 }
 
@@ -8478,29 +8480,29 @@ export const db = {
 
       const current = getDB();
 
-      if (remoteUsers && remoteUsers.length > 0) {
+      if (Array.isArray(remoteUsers)) {
         current.users = remoteUsers;
       }
-      if (remoteCategories && remoteCategories.length > 0) {
+      if (Array.isArray(remoteCategories)) {
         current.categories = remoteCategories;
       }
-      if (remoteProducts && remoteProducts.length > 0) {
+      if (Array.isArray(remoteProducts)) {
         current.products = remoteProducts;
       }
-      if (remoteVariants && remoteVariants.length > 0) {
+      if (Array.isArray(remoteVariants)) {
         current.product_variants = remoteVariants;
       }
-      if (remotePieceItems && remotePieceItems.length > 0) {
+      if (Array.isArray(remotePieceItems)) {
         current.piece_rate_items = remotePieceItems;
       }
-      if (remoteOrders && remoteOrders.length > 0) {
+      if (Array.isArray(remoteOrders)) {
         current.orders = remoteOrders;
         current.sales = remoteOrders.map(o => ({
           ...o,
           invoice_number: o.order_number || o.invoice_number || o.id
         }));
       }
-      if (remoteOrderItems && remoteOrderItems.length > 0) {
+      if (Array.isArray(remoteOrderItems)) {
         current.order_items = remoteOrderItems;
         current.sale_items = remoteOrderItems.map(i => ({
           ...i,
