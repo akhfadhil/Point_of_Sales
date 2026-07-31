@@ -55,7 +55,7 @@ const syncSupabaseDelete = async (table, id) => {
   }
 };
 
-const CURRENT_DB_VERSION = 'v21_restore_all_variants_stock_zero';
+const CURRENT_DB_VERSION = 'v22_restore_piece_rate_garment_types';
 
 // Selalu pastikan LocalStorage diperbarui dan data simulasi lama dibersihkan jika versi berubah
 if (localStorage.getItem('oliviana_db_version') !== CURRENT_DB_VERSION) {
@@ -64,6 +64,7 @@ if (localStorage.getItem('oliviana_db_version') !== CURRENT_DB_VERSION) {
     existingDb.products = INITIAL_DATA.products;
     existingDb.categories = INITIAL_DATA.categories;
     existingDb.product_variants = INITIAL_DATA.product_variants;
+    existingDb.piece_rate_items = INITIAL_DATA.piece_rate_items;
     existingDb.sales = (existingDb.sales || []).filter(s => !s.id.startsWith('sl-'));
     existingDb.orders = (existingDb.orders || []).filter(o => !o.id.startsWith('sl-') && !o.id.startsWith('ord-1'));
     existingDb.sale_items = (existingDb.sale_items || []).filter(i => !i.id.startsWith('sli-'));
@@ -168,8 +169,36 @@ export const db = {
       if (Array.isArray(remoteProducts) && remoteProducts.length > 0) {
         current.products = remoteProducts;
       }
-      if (Array.isArray(remotePieceItems) && remotePieceItems.length > 0) {
+      if (Array.isArray(remotePieceItems) && remotePieceItems.length >= INITIAL_DATA.piece_rate_items.length && remotePieceItems.some(p => p.garment_type)) {
         current.piece_rate_items = remotePieceItems;
+      } else {
+        const pieceMap = new Map();
+        INITIAL_DATA.piece_rate_items.forEach(p => pieceMap.set(p.id, p));
+        if (Array.isArray(remotePieceItems)) {
+          remotePieceItems.forEach(p => {
+            const match = pieceMap.get(p.id);
+            pieceMap.set(p.id, {
+              ...p,
+              item_name: p.item_name || p.name || match?.item_name || 'Pekerjaan',
+              garment_type: p.garment_type || match?.garment_type || p.category || 'Seragam',
+              product_id: p.product_id || match?.product_id || null
+            });
+          });
+        }
+        current.piece_rate_items = Array.from(pieceMap.values());
+        for (let i = 0; i < current.piece_rate_items.length; i += 50) {
+          const chunk = current.piece_rate_items.slice(i, i + 50).map(p => ({
+            id: p.id,
+            name: p.item_name || p.name || 'Pekerjaan',
+            item_name: p.item_name || p.name || 'Pekerjaan',
+            garment_type: p.garment_type || p.category || 'Seragam',
+            product_id: p.product_id || null,
+            rate_price: Number(p.rate_price || p.rate_per_unit || 0),
+            category: p.garment_type || p.category || 'Seragam',
+            notes: p.notes || ''
+          }));
+          await supabase.from('piece_rate_items').upsert(chunk);
+        }
       }
 
       // Restore seluruh 428 varian master (stok 0) jika data di Supabase belum lengkap
@@ -269,8 +298,11 @@ export const db = {
         const pieceItems = current.piece_rate_items.map(p => ({
           id: p.id,
           name: p.item_name || p.name || 'Pekerjaan',
+          item_name: p.item_name || p.name || 'Pekerjaan',
+          garment_type: p.garment_type || p.category || 'Seragam',
+          product_id: p.product_id || null,
           rate_price: Number(p.rate_price || p.rate_per_unit || 0),
-          category: p.category || 'Baju',
+          category: p.garment_type || p.category || 'Seragam',
           notes: p.notes || ''
         }));
         const { error } = await supabase.from('piece_rate_items').upsert(pieceItems);
@@ -503,12 +535,13 @@ export const db = {
 
     return pieceItems.map(p => {
       const prod = products.find(prd => prd.id === p.product_id);
+      const garmentType = p.garment_type || (prod ? prod.name : (p.category || 'Seragam'));
       return {
         ...p,
         item_name: p.item_name || p.name || 'Pekerjaan',
         rate_price: Number(p.rate_price || p.rate_per_unit || 0),
-        product_name: prod ? prod.name : (p.garment_type || p.category || 'Seragam'),
-        garment_type: p.garment_type || (prod ? prod.name : 'Seragam')
+        product_name: garmentType,
+        garment_type: garmentType
       };
     });
   },

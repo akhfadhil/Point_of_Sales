@@ -100,11 +100,18 @@ CREATE TABLE IF NOT EXISTS public.work_order_items (
 CREATE TABLE IF NOT EXISTS public.piece_rate_items (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    item_name TEXT,
+    garment_type TEXT,
+    product_id TEXT,
     rate_price NUMERIC(12, 2) NOT NULL DEFAULT 0,
     category TEXT,
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.piece_rate_items ADD COLUMN IF NOT EXISTS garment_type TEXT;
+ALTER TABLE public.piece_rate_items ADD COLUMN IF NOT EXISTS product_id TEXT;
+ALTER TABLE public.piece_rate_items ADD COLUMN IF NOT EXISTS item_name TEXT;
 
 -- 10. TABEL LAPORAN HARIAN PEKERJA
 CREATE TABLE IF NOT EXISTS public.worker_daily_logs (
