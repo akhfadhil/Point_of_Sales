@@ -580,11 +580,34 @@ function App() {
             allProducts={allProducts}
             allCategories={allCategories}
             allVariants={allVariants}
-            showToast={showToast}
-            askConfirmation={askConfirmation}
-            setRefreshKey={setRefreshKey}
+            inventoryProductFilter={inventoryProductFilter}
+            setInventoryProductFilter={setInventoryProductFilter}
+            inventorySizeFilter={inventorySizeFilter}
+            setInventorySizeFilter={setInventorySizeFilter}
+            inventoryColorFilter={inventoryColorFilter}
+            setInventoryColorFilter={setInventoryColorFilter}
+            inventorySearchQuery={inventorySearchQuery}
+            setInventorySearchQuery={setInventorySearchQuery}
+            expandedProductIds={expandedProductIds}
+            setExpandedProductIds={setExpandedProductIds}
+            setRestockProductId={setRestockProductId}
+            setRestockSize={setRestockSize}
+            setRestockColor={setRestockColor}
+            setFactoryInQty={setFactoryInQty}
+            setFactoryInNotes={setFactoryInNotes}
+            setNewProductName={setNewProductName}
+            setNewProductDesc={setNewProductDesc}
+            setNewProductCategory={setNewProductCategory}
+            setNewVariantProductId={setNewVariantProductId}
+            setNewVariantSize={setNewVariantSize}
+            setNewVariantColor={setNewVariantColor}
+            setNewVariantSellingPrice={setNewVariantSellingPrice}
+            setNewVariantStock={setNewVariantStock}
             setActiveModal={setActiveModal}
-            setVariantProductOwner={setVariantProductOwner}
+            askConfirmation={askConfirmation}
+            showToast={showToast}
+            db={db}
+            setRefreshKey={setRefreshKey}
             isMobile={isMobile}
           />
 
@@ -592,13 +615,21 @@ function App() {
           <DebtView
             isOpen={activeTab === 'debt' && currentUser?.role === 'OWNER'}
             allCustomers={allCustomers}
-            allSales={allSales}
             allDebtPayments={allDebtPayments}
-            showToast={showToast}
-            setRefreshKey={setRefreshKey}
-            setSelectedCustomerForRepay={setSelectedCustomerForRepay}
-            setSelectedDebtForReceipt={setSelectedDebtForReceipt}
+            db={db}
+            debtSearchQuery={debtSearchQuery}
+            setDebtSearchQuery={setDebtSearchQuery}
+            debtActivePage={debtActivePage}
+            setDebtActivePage={setDebtActivePage}
+            debtSettledPage={debtSettledPage}
+            setDebtSettledPage={setDebtSettledPage}
+            debtHistoryPage={debtHistoryPage}
+            setDebtHistoryPage={setDebtHistoryPage}
+            setSelectedCustomer={setSelectedCustomer}
+            setDebtRepayAmount={setDebtRepayAmount}
+            setDebtRepayMethod={setDebtRepayMethod}
             setActiveModal={setActiveModal}
+            setSelectedDebtPayment={setSelectedDebtPayment}
             isMobile={isMobile}
           />
 
@@ -606,21 +637,25 @@ function App() {
           <SalesHistoryView
             isOpen={activeTab === 'history'}
             allSales={allSales}
-            allSaleItems={allSaleItems}
-            showToast={showToast}
-            askConfirmation={askConfirmation}
-            setRefreshKey={setRefreshKey}
+            allCustomers={allCustomers}
+            db={db}
+            historySearchQuery={historySearchQuery}
+            setHistorySearchQuery={setHistorySearchQuery}
+            historyPage={historyPage}
+            setHistoryPage={setHistoryPage}
+            setCurrentSaleInvoice={setCurrentSaleInvoice}
+            setActiveModal={setActiveModal}
             isMobile={isMobile}
           />
 
           {/* 6. CEK STOK CEPAT (KASIR & WORKER) */}
           <StockCheckerView
             isOpen={activeTab === 'check-stock'}
-            allProducts={allProducts}
             allVariants={allVariants}
+            allProducts={allProducts}
             allCategories={allCategories}
-            stockCategoryFilter={stockCategoryFilter}
-            setStockCategoryFilter={setStockCategoryFilter}
+            stockProductFilter={stockProductFilter}
+            setStockProductFilter={setStockProductFilter}
             stockSizeFilter={stockSizeFilter}
             setStockSizeFilter={setStockSizeFilter}
             stockColorFilter={stockColorFilter}
