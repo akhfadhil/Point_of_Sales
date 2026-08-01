@@ -39,6 +39,16 @@ const mapDebtPaymentForSupabase = (dp) => ({
   created_at: dp.created_at || new Date().toISOString()
 });
 
+const mapCashExpenseForSupabase = (exp) => ({
+  id: exp.id,
+  category: exp.category || exp.expense_category || 'OPERASIONAL',
+  amount: Number(exp.amount || 0),
+  description: exp.description || exp.notes || '',
+  reference_id: exp.reference_id || null,
+  created_by: exp.created_by || null,
+  created_at: exp.created_at || new Date().toISOString()
+});
+
 // Helper Supabase Sync
 const syncSupabaseUpsert = async (table, data) => {
   if (!isSupabaseConfigured() || !supabase || !table || !data) return;
@@ -50,6 +60,8 @@ const syncSupabaseUpsert = async (table, data) => {
       payload = Array.isArray(data) ? data.map(mapOrderItemForSupabase) : mapOrderItemForSupabase(data);
     } else if (table === 'debt_payments') {
       payload = Array.isArray(data) ? data.map(mapDebtPaymentForSupabase) : mapDebtPaymentForSupabase(data);
+    } else if (table === 'cash_expenses') {
+      payload = Array.isArray(data) ? data.map(mapCashExpenseForSupabase) : mapCashExpenseForSupabase(data);
     }
 
     const { error } = await supabase.from(table).upsert(payload);
@@ -1109,6 +1121,26 @@ export const db = {
 
   getCashExpenses: () => {
     const current = getDB();
-    return (current.cash_expenses || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return (current.cash_expenses || []).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  },
+
+  addCashExpense: (category, amount, description = '', createdBy = null, referenceId = null) => {
+    const current = getDB();
+    if (!current.cash_expenses) current.cash_expenses = [];
+
+    const newExp = {
+      id: `exp-${Date.now()}`,
+      category: category || 'OPERASIONAL',
+      amount: Number(amount) || 0,
+      description: description || '',
+      reference_id: referenceId || null,
+      created_by: createdBy,
+      created_at: new Date().toISOString()
+    };
+
+    current.cash_expenses.push(newExp);
+    saveDB(current);
+    syncSupabaseUpsert('cash_expenses', newExp);
+    return newExp;
   }
 };
