@@ -139,6 +139,41 @@ export default function DashboardView({
     return true;
   });
 
+  const allDebtPayments = db.get('debt_payments') || [];
+  const filteredDebtPayments = allDebtPayments.filter(payment => {
+    const payTime = new Date(payment.created_at || payment.paid_at || 0).getTime();
+    const now = new Date();
+    if (datePreset === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+      return payTime >= startOfDay && payTime <= endOfDay;
+    } else if (datePreset === '7days') {
+      const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
+      return payTime >= sevenDaysAgo;
+    } else if (datePreset === 'thisMonth') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      return payTime >= startOfMonth;
+    } else if (datePreset === 'custom') {
+      if (startDate && payTime < new Date(startDate).setHours(0, 0, 0, 0)) return false;
+      if (endDate && payTime > new Date(endDate).setHours(23, 59, 59, 999)) return false;
+      return true;
+    }
+    return true;
+  });
+
+  const salesCashReceived = filteredSales.reduce((sum, s) => {
+    if (s.payment_method === 'DEBT') {
+      return sum + Number(s.paid_amount || 0);
+    }
+    return sum + Number(s.total_amount || 0);
+  }, 0);
+
+  const debtRepaymentReceived = filteredDebtPayments.reduce((sum, p) => {
+    return sum + Number(p.amount !== undefined ? p.amount : (p.amount_paid || 0));
+  }, 0);
+
+  const realizedCashIn = salesCashReceived + debtRepaymentReceived;
+
   const pendingWorkerPayroll = filteredWorkerLogs
     .filter(l => l.status !== 'PAID')
     .reduce((sum, l) => sum + Number(l.total_daily_amount || l.total_amount || 0), 0);
@@ -252,9 +287,9 @@ export default function DashboardView({
                     <div style="font-size:11px;color:#64748b;">Pencairan Gaji & Kas</div>
                   </div>
                   <div class="stat-card">
-                    <div class="stat-label">Arus Kas (Laba Bersih)</div>
-                    <div class="stat-value" style="color:#2563eb;">${formatRupiah(netCashFlow)}</div>
-                    <div style="font-size:11px;color:#64748b;">Selisih Omset - Pengeluaran</div>
+                    <div class="stat-label">Penerimaan Kas Real (Terbayar)</div>
+                    <div class="stat-value" style="color:#10b981;">${formatRupiah(realizedCashIn)}</div>
+                    <div style="font-size:11px;color:#64748b;">Total Tunai/DP & Cicilan Masuk</div>
                   </div>
                 </div>
 
@@ -350,17 +385,17 @@ export default function DashboardView({
           </div>
         </div>
 
-        {/* 4. Net Cash Flow */}
+        {/* 4. Realized Cash In (Total Terbayar) */}
         <div className="card stat-card">
-          <div className="stat-icon-wrapper primary">
-            <Activity size={24} />
+          <div className="stat-icon-wrapper primary" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+            <DollarSign size={24} />
           </div>
           <div className="stat-info">
-            <span className="stat-label">Arus Kas (Omset - Kas)</span>
-            <span className="stat-value" style={{ color: netCashFlow >= 0 ? 'var(--primary)' : 'var(--danger)' }}>
-              {formatRupiah(netCashFlow)}
+            <span className="stat-label">Penerimaan Kas Real (Terbayar)</span>
+            <span className="stat-value" style={{ color: '#10b981' }}>
+              {formatRupiah(realizedCashIn)}
             </span>
-            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Laba Kas Bersih</small>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Total Uang Masuk (Lunas & DP)</small>
           </div>
         </div>
 
