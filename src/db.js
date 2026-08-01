@@ -2,36 +2,71 @@ import { INITIAL_DATA } from './initialData';
 // src/db.js
 import { supabase, isSupabaseConfigured, getSupabaseConfigStatus } from './supabaseClient';
 
+const mapOrderForSupabase = (s) => ({
+  id: s.id,
+  order_number: s.order_number || s.invoice_number || s.id,
+  cashier_id: s.cashier_id || null,
+  customer_id: s.customer_id || null,
+  customer_name: s.customer_name || 'Pelanggan Umum',
+  customer_phone: s.customer_phone || '',
+  total_amount: Number(s.total_amount || 0),
+  paid_amount: Number(s.paid_amount || 0),
+  change_amount: Number(s.change_amount || 0),
+  payment_method: s.payment_method || 'CASH',
+  payment_status: s.payment_status || 'PAID',
+  notes: s.notes || '',
+  work_order_number: s.work_order_number || null,
+  created_at: s.created_at || new Date().toISOString()
+});
+
+const mapOrderItemForSupabase = (i) => ({
+  id: i.id,
+  order_id: i.order_id || i.sale_id,
+  variant_id: i.variant_id,
+  product_name: i.product_name || 'Produk',
+  variant_detail: i.variant_detail || '',
+  unit_price: Number(i.unit_price || i.price_per_unit || 0),
+  quantity: Number(i.quantity || 1),
+  subtotal: Number(i.subtotal || 0)
+});
+
 // Helper Supabase Sync
 const syncSupabaseUpsert = async (table, data) => {
   if (!isSupabaseConfigured() || !supabase || !table || !data) return;
   try {
-    const { error } = await supabase.from(table).upsert(data);
+    let payload = data;
+    if (table === 'orders') {
+      payload = Array.isArray(data) ? data.map(mapOrderForSupabase) : mapOrderForSupabase(data);
+    } else if (table === 'order_items') {
+      payload = Array.isArray(data) ? data.map(mapOrderItemForSupabase) : mapOrderItemForSupabase(data);
+    }
+
+    const { error } = await supabase.from(table).upsert(payload);
     if (error) {
       if (table === 'users' && (error.message?.includes('password') || error.message?.includes('username'))) {
         console.warn('⚠️ Supabase users schema lacks password/username columns. Retrying with basic fields...');
-        const sanitized = Array.isArray(data)
-          ? data.map(({ password, username, ...rest }) => rest)
-          : (() => { const { password, username, ...rest } = data; return rest; })();
+        const sanitized = Array.isArray(payload)
+          ? payload.map(({ password, username, ...rest }) => rest)
+          : (() => { const { password, username, ...rest } = payload; return rest; })();
         const { error: fallbackErr } = await supabase.from(table).upsert(sanitized);
         if (!fallbackErr) return;
       }
 
       if (table === 'worker_daily_logs' && (error.message?.includes('status') || error.message?.includes('total_daily_amount'))) {
         console.warn('⚠️ Supabase worker_daily_logs schema lacks status/total_daily_amount. Retrying with basic fields...');
-        const sanitized = Array.isArray(data)
-          ? data.map(({ status, total_daily_amount, ...rest }) => ({ ...rest, total_amount: total_daily_amount || rest.total_amount || 0 }))
-          : (() => { const { status, total_daily_amount, ...rest } = data; return { ...rest, total_amount: total_daily_amount || rest.total_amount || 0 }; })();
+        const sanitized = Array.isArray(payload)
+          ? payload.map(({ status, total_daily_amount, ...rest }) => ({ ...rest, total_amount: total_daily_amount || rest.total_amount || 0 }))
+          : (() => { const { status, total_daily_amount, ...rest } = payload; return { ...rest, total_amount: total_daily_amount || rest.total_amount || 0 }; })();
         const { error: fallbackErr } = await supabase.from(table).upsert(sanitized);
         if (!fallbackErr) return;
       }
 
-      if (table === 'orders' && (error.message?.includes('customer_id') || error.message?.includes('paid_amount') || error.message?.includes('change_amount'))) {
-        console.warn('⚠️ Supabase orders schema lacks customer_id/paid_amount/change_amount. Retrying with basic fields...');
-        const sanitized = Array.isArray(data)
-          ? data.map(({ customer_id, paid_amount, change_amount, ...rest }) => rest)
-          : (() => { const { customer_id, paid_amount, change_amount, ...rest } = data; return rest; })();
-        const { error: fallbackErr } = await supabase.from(table).upsert(sanitized);
+      if (table === 'orders') {
+        console.warn('⚠️ Supabase orders schema lacks new columns. Retrying with basic fields...', error.message);
+        const fallbackOrders = Array.isArray(payload)
+          ? payload.map(({ customer_id, paid_amount, change_amount, work_order_number, ...rest }) => rest)
+          : (() => { const { customer_id, paid_amount, change_amount, work_order_number, ...rest } = payload; return rest; })();
+        const { error: fallbackErr } = await supabase.from(table).upsert(fallbackOrders);
         if (!fallbackErr) return;
       }
 
@@ -229,8 +264,20 @@ export const db = {
       }
 
       if (Array.isArray(remoteOrders)) {
-        current.orders = remoteOrders;
-        current.sales = remoteOrders.map(o => ({
+        const orderMap = new Map();
+        (current.orders || []).forEach(o => orderMap.set(o.id, o));
+        remoteOrders.forEach(o => {
+          const local = orderMap.get(o.id);
+          orderMap.set(o.id, {
+            ...local,
+            ...o,
+            invoice_number: o.order_number || o.invoice_number || local?.invoice_number || o.id,
+            total_amount: Number(o.total_amount !== undefined ? o.total_amount : (local?.total_amount || 0)),
+            paid_amount: Number(o.paid_amount !== undefined ? o.paid_amount : (local?.paid_amount || o.total_amount || 0))
+          });
+        });
+        current.orders = Array.from(orderMap.values());
+        current.sales = current.orders.map(o => ({
           ...o,
           invoice_number: o.order_number || o.invoice_number || o.id,
           total_amount: Number(o.total_amount || 0),
@@ -239,8 +286,11 @@ export const db = {
       }
 
       if (Array.isArray(remoteOrderItems)) {
-        current.order_items = remoteOrderItems;
-        current.sale_items = remoteOrderItems.map(i => ({
+        const itemMap = new Map();
+        (current.order_items || []).forEach(i => itemMap.set(i.id, i));
+        remoteOrderItems.forEach(i => itemMap.set(i.id, { ...itemMap.get(i.id), ...i }));
+        current.order_items = Array.from(itemMap.values());
+        current.sale_items = current.order_items.map(i => ({
           ...i,
           sale_id: i.order_id || i.sale_id,
           price_per_unit: i.unit_price || i.price_per_unit
