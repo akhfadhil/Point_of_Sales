@@ -33,6 +33,15 @@ export default function DbInspectorView({
     setIsSyncing(false);
   };
 
+  const handlePullFresh = async () => {
+    setIsSyncing(true);
+    setSyncStatus('Mengosongkan cache lokal & mengambil data murni terbaru dari Supabase Cloud...');
+    const res = await db.pullFreshFromSupabase();
+    setSyncStatus(res.message);
+    setIsSyncing(false);
+    if (res.success && typeof window !== 'undefined') window.location.reload();
+  };
+
   const tableData = db.get(selectedDbTable) || [];
 
   return (
@@ -55,6 +64,14 @@ export default function DbInspectorView({
             style={{ fontSize: '13px', padding: '6px 14px' }}
           >
             {isSyncing ? '🔄 Syncing...' : '⚡ Upload Semua Data'}
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={handlePullFresh}
+            disabled={isSyncing}
+            style={{ fontSize: '13px', padding: '6px 14px', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--primary)', color: 'var(--primary)', fontWeight: '600' }}
+          >
+            🔄 Pull Data dari Cloud
           </button>
           <select
             className="form-control"

@@ -546,6 +546,67 @@ export const db = {
     }
   },
 
+  // Purge local cache & pull 100% fresh clean state from Supabase Cloud
+  pullFreshFromSupabase: async () => {
+    if (!isSupabaseConfigured() || !supabase) {
+      return { success: false, message: 'Supabase belum terkonfigurasi.' };
+    }
+    try {
+      console.log('🔄 Pulling fresh data from Supabase Cloud...');
+      const { data: remoteUsers } = await supabase.from('users').select('*');
+      const { data: remoteCategories } = await supabase.from('categories').select('*');
+      const { data: remoteProducts } = await supabase.from('products').select('*');
+      const { data: remoteVariants } = await supabase.from('product_variants').select('*');
+      const { data: remotePieceItems } = await supabase.from('piece_rate_items').select('*');
+      const { data: remoteOrders } = await supabase.from('orders').select('*');
+      const { data: remoteOrderItems } = await supabase.from('order_items').select('*');
+      const { data: remoteWorkerLogs } = await supabase.from('worker_daily_logs').select('*');
+      const { data: remoteWorkerLogItems } = await supabase.from('worker_daily_log_items').select('*');
+      const { data: remoteCustomers } = await supabase.from('customers').select('*');
+      const { data: remoteDebtPayments } = await supabase.from('debt_payments').select('*');
+      const { data: remoteStockMovements } = await supabase.from('stock_movements').select('*');
+
+      const fresh = {
+        users: remoteUsers || INITIAL_DATA.users,
+        categories: remoteCategories || INITIAL_DATA.categories,
+        products: remoteProducts || INITIAL_DATA.products,
+        product_variants: remoteVariants || INITIAL_DATA.product_variants,
+        piece_rate_items: remotePieceItems || INITIAL_DATA.piece_rate_items,
+        orders: remoteOrders || [],
+        sales: (remoteOrders || []).map(o => ({
+          ...o,
+          invoice_number: o.order_number || o.invoice_number || o.id,
+          total_amount: Number(o.total_amount || 0),
+          paid_amount: Number(o.paid_amount !== undefined ? o.paid_amount : (o.total_amount || 0))
+        })),
+        order_items: remoteOrderItems || [],
+        sale_items: (remoteOrderItems || []).map(i => ({
+          ...i,
+          sale_id: i.order_id || i.sale_id,
+          price_per_unit: i.unit_price || i.price_per_unit
+        })),
+        customers: remoteCustomers || [],
+        debt_payments: remoteDebtPayments || [],
+        stock_movements: remoteStockMovements || [],
+        worker_daily_logs: (remoteWorkerLogs || []).map(l => ({
+          ...l,
+          total_daily_amount: Number(l.total_daily_amount || l.total_amount || 0),
+          status: l.status || 'PENDING'
+        })),
+        worker_daily_log_items: remoteWorkerLogItems || [],
+        payroll_disbursements: [],
+        cash_expenses: []
+      };
+
+      saveDB(fresh);
+      console.log('✅ Local cache successfully reset and updated from Supabase!');
+      return { success: true, message: 'Berhasil mengosongkan cache lokal & mengambil data murni dari Supabase Cloud!' };
+    } catch (err) {
+      console.error('❌ Failed to pull fresh data from Supabase:', err);
+      return { success: false, message: `Gagal pull data: ${err.message}` };
+    }
+  },
+
   get: (table) => {
     return getDB()[table] || [];
   },
