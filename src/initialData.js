@@ -2,11 +2,7 @@
 export const INITIAL_DATA = {
   users: [
     { id: 'u-1', name: 'Bu Oliviana (Owner)', username: 'owner', email: 'owner@oliviana.com', role: 'OWNER' },
-    { id: 'u-2', name: 'Ani (Kasir)', username: 'kasir', email: 'kasir@oliviana.com', role: 'CASHIER' },
-    { id: 'u-3', name: 'Siti (Penjahit)', username: 'siti', email: 'siti@oliviana.com', role: 'WORKER' },
-    { id: 'u-4', name: 'Budi (Penjahit)', username: 'budi', email: 'budi@oliviana.com', role: 'WORKER' },
-    { id: 'u-5', name: 'Dewi (Penjahit)', username: 'dewi', email: 'dewi@oliviana.com', role: 'WORKER' },
-    { id: 'u-6', name: 'Joko (Penjahit)', username: 'joko', email: 'joko@oliviana.com', role: 'WORKER' }
+    { id: 'u-2', name: 'Ani (Kasir)', username: 'kasir', email: 'kasir@oliviana.com', role: 'CASHIER' }
   ],
   categories: [
     { id: 'c-1', name: 'Atasan' },
@@ -8299,66 +8295,8 @@ export const INITIAL_DATA = {
     { id: 'pri-253', product_id: 'p-9', garment_type: 'Rok Panggul (16)', item_name: "Ngobras panggul samping", rate_price: 100, created_at: '2026-07-28T00:00:00.000Z' },
     { id: 'pri-254', product_id: 'p-9', garment_type: 'Rok Panggul (16)', item_name: "Masang merek", rate_price: 100, created_at: '2026-07-28T00:00:00.000Z' }
   ],
-  worker_daily_logs: [
-    { id: 'wdl-1', worker_id: 'u-3', log_date: '2026-07-25', total_daily_amount: 50000, status: 'PAID', created_at: '2026-07-25T17:00:00Z' },
-    { id: 'wdl-2', worker_id: 'u-3', log_date: '2026-07-27', total_daily_amount: 63500, status: 'PENDING', created_at: '2026-07-27T16:30:00Z' },
-    { id: 'wdl-3', worker_id: 'u-3', log_date: '2026-07-28', total_daily_amount: 77000, status: 'PENDING', created_at: '2026-07-28T17:00:00Z' },
-    { id: 'wdl-4', worker_id: 'u-4', log_date: '2026-07-26', total_daily_amount: 76000, status: 'PAID', created_at: '2026-07-26T17:30:00Z' },
-    { id: 'wdl-5', worker_id: 'u-4', log_date: '2026-07-27', total_daily_amount: 89000, status: 'PENDING', created_at: '2026-07-27T17:00:00Z' },
-    { id: 'wdl-6', worker_id: 'u-4', log_date: '2026-07-28', total_daily_amount: 59500, status: 'PENDING', created_at: '2026-07-28T17:30:00Z' },
-    { id: 'wdl-7', worker_id: 'u-5', log_date: '2026-07-24', total_daily_amount: 42000, status: 'PAID', created_at: '2026-07-24T17:00:00Z' },
-    { id: 'wdl-8', worker_id: 'u-5', log_date: '2026-07-27', total_daily_amount: 67500, status: 'PENDING', created_at: '2026-07-27T17:15:00Z' },
-    { id: 'wdl-9', worker_id: 'u-5', log_date: '2026-07-28', total_daily_amount: 62000, status: 'PENDING', created_at: '2026-07-28T16:45:00Z' },
-    { id: 'wdl-10', worker_id: 'u-6', log_date: '2026-07-25', total_daily_amount: 55000, status: 'PAID', created_at: '2026-07-25T17:30:00Z' },
-    { id: 'wdl-11', worker_id: 'u-6', log_date: '2026-07-27', total_daily_amount: 65000, status: 'PENDING', created_at: '2026-07-27T17:30:00Z' },
-    { id: 'wdl-12', worker_id: 'u-6', log_date: '2026-07-28', total_daily_amount: 81000, status: 'PENDING', created_at: '2026-07-28T17:15:00Z' }
-  ],
-  worker_daily_log_items: [
-    { id: 'wdli-1', daily_log_id: 'wdl-1', piece_rate_item_id: 'pri-8', quantity: 50, rate_per_unit: 450, subtotal: 22500 },
-    { id: 'wdli-2', daily_log_id: 'wdl-1', piece_rate_item_id: 'pri-12', quantity: 50, rate_per_unit: 550, subtotal: 27500 },
-    
-    { id: 'wdli-3', daily_log_id: 'wdl-2', piece_rate_item_id: 'pri-110', quantity: 40, rate_per_unit: 550, subtotal: 22000 },
-    { id: 'wdli-4', daily_log_id: 'wdl-2', piece_rate_item_id: 'pri-118', quantity: 30, rate_per_unit: 800, subtotal: 24000 },
-    { id: 'wdli-5', daily_log_id: 'wdl-2', piece_rate_item_id: 'pri-121', quantity: 50, rate_per_unit: 350, subtotal: 17500 },
-    
-    { id: 'wdli-6', daily_log_id: 'wdl-3', piece_rate_item_id: 'pri-31', quantity: 35, rate_per_unit: 800, subtotal: 28000 },
-    { id: 'wdli-7', daily_log_id: 'wdl-3', piece_rate_item_id: 'pri-35', quantity: 40, rate_per_unit: 600, subtotal: 24000 },
-    { id: 'wdli-8', daily_log_id: 'wdl-3', piece_rate_item_id: 'pri-32', quantity: 50, rate_per_unit: 500, subtotal: 25000 },
-
-    { id: 'wdli-9', daily_log_id: 'wdl-4', piece_rate_item_id: 'pri-223', quantity: 80, rate_per_unit: 500, subtotal: 40000 },
-    { id: 'wdli-10', daily_log_id: 'wdl-4', piece_rate_item_id: 'pri-218', quantity: 80, rate_per_unit: 450, subtotal: 36000 },
-
-    { id: 'wdli-11', daily_log_id: 'wdl-5', piece_rate_item_id: 'pri-48', quantity: 45, rate_per_unit: 1000, subtotal: 45000 },
-    { id: 'wdli-12', daily_log_id: 'wdl-5', piece_rate_item_id: 'pri-62', quantity: 40, rate_per_unit: 550, subtotal: 22000 },
-    { id: 'wdli-13', daily_log_id: 'wdl-5', piece_rate_item_id: 'pri-71', quantity: 40, rate_per_unit: 550, subtotal: 22000 },
-
-    { id: 'wdli-14', daily_log_id: 'wdl-6', piece_rate_item_id: 'pri-178', quantity: 60, rate_per_unit: 400, subtotal: 24000 },
-    { id: 'wdli-15', daily_log_id: 'wdl-6', piece_rate_item_id: 'pri-171', quantity: 60, rate_per_unit: 300, subtotal: 18000 },
-    { id: 'wdli-16', daily_log_id: 'wdl-6', piece_rate_item_id: 'pri-172', quantity: 50, rate_per_unit: 350, subtotal: 17500 },
-
-    { id: 'wdli-17', daily_log_id: 'wdl-7', piece_rate_item_id: 'pri-129', quantity: 120, rate_per_unit: 100, subtotal: 12000 },
-    { id: 'wdli-18', daily_log_id: 'wdl-7', piece_rate_item_id: 'pri-148', quantity: 120, rate_per_unit: 250, subtotal: 30000 },
-
-    { id: 'wdli-19', daily_log_id: 'wdl-8', piece_rate_item_id: 'pri-156', quantity: 50, rate_per_unit: 550, subtotal: 27500 },
-    { id: 'wdli-20', daily_log_id: 'wdl-8', piece_rate_item_id: 'pri-162', quantity: 50, rate_per_unit: 450, subtotal: 22500 },
-    { id: 'wdli-21', daily_log_id: 'wdl-8', piece_rate_item_id: 'pri-163', quantity: 50, rate_per_unit: 350, subtotal: 17500 },
-
-    { id: 'wdli-22', daily_log_id: 'wdl-9', piece_rate_item_id: 'pri-126', quantity: 100, rate_per_unit: 50, subtotal: 5000 },
-    { id: 'wdli-23', daily_log_id: 'wdl-9', piece_rate_item_id: 'pri-131', quantity: 100, rate_per_unit: 100, subtotal: 10000 },
-    { id: 'wdli-24', daily_log_id: 'wdl-9', piece_rate_item_id: 'pri-133', quantity: 100, rate_per_unit: 150, subtotal: 15000 },
-    { id: 'wdli-25', daily_log_id: 'wdl-9', piece_rate_item_id: 'pri-138', quantity: 80, rate_per_unit: 400, subtotal: 32000 },
-
-    { id: 'wdli-26', daily_log_id: 'wdl-10', piece_rate_item_id: 'pri-240', quantity: 100, rate_per_unit: 300, subtotal: 30000 },
-    { id: 'wdli-27', daily_log_id: 'wdl-10', piece_rate_item_id: 'pri-247', quantity: 100, rate_per_unit: 250, subtotal: 25000 },
-
-    { id: 'wdli-28', daily_log_id: 'wdl-11', piece_rate_item_id: 'pri-245', quantity: 50, rate_per_unit: 550, subtotal: 27500 },
-    { id: 'wdli-29', daily_log_id: 'wdl-11', piece_rate_item_id: 'pri-248', quantity: 50, rate_per_unit: 400, subtotal: 20000 },
-    { id: 'wdli-30', daily_log_id: 'wdl-11', piece_rate_item_id: 'pri-251', quantity: 50, rate_per_unit: 350, subtotal: 17500 },
-
-    { id: 'wdli-31', daily_log_id: 'wdl-12', piece_rate_item_id: 'pri-238', quantity: 60, rate_per_unit: 350, subtotal: 21000 },
-    { id: 'wdli-32', daily_log_id: 'wdl-12', piece_rate_item_id: 'pri-241', quantity: 60, rate_per_unit: 600, subtotal: 36000 },
-    { id: 'wdli-33', daily_log_id: 'wdl-12', piece_rate_item_id: 'pri-243', quantity: 60, rate_per_unit: 400, subtotal: 24000 }
-  ],
+  worker_daily_logs: [],
+  worker_daily_log_items: [],
   payroll_disbursements: [],
   cash_expenses: [],
   customers: [],
