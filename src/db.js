@@ -49,6 +49,34 @@ const mapCashExpenseForSupabase = (exp) => ({
   created_at: exp.created_at || new Date().toISOString()
 });
 
+const mapUserForSupabase = (u) => ({
+  id: u.id,
+  name: u.name,
+  username: u.username || u.name,
+  email: u.email || `${u.username || u.id}@oliviana.com`,
+  role: u.role || 'WORKER',
+  password: u.password || '123456'
+});
+
+const mapWorkerDailyLogForSupabase = (log) => ({
+  id: log.id,
+  worker_id: log.worker_id,
+  log_date: (log.log_date || new Date().toISOString().slice(0, 10)).slice(0, 10),
+  total_amount: Number(log.total_daily_amount || log.total_amount || 0),
+  total_daily_amount: Number(log.total_daily_amount || log.total_amount || 0),
+  status: log.status || 'PENDING',
+  created_at: log.created_at || new Date().toISOString()
+});
+
+const mapWorkerDailyLogItemForSupabase = (item) => ({
+  id: item.id,
+  daily_log_id: item.daily_log_id,
+  piece_rate_item_id: item.piece_rate_item_id,
+  quantity: Number(item.quantity || 0),
+  rate_per_unit: Number(item.rate_per_unit || 0),
+  subtotal: Number(item.subtotal || 0)
+});
+
 // Helper Supabase Sync
 const syncSupabaseUpsert = async (table, data) => {
   if (!isSupabaseConfigured() || !supabase || !table || !data) return;
@@ -62,6 +90,12 @@ const syncSupabaseUpsert = async (table, data) => {
       payload = Array.isArray(data) ? data.map(mapDebtPaymentForSupabase) : mapDebtPaymentForSupabase(data);
     } else if (table === 'cash_expenses') {
       payload = Array.isArray(data) ? data.map(mapCashExpenseForSupabase) : mapCashExpenseForSupabase(data);
+    } else if (table === 'users') {
+      payload = Array.isArray(data) ? data.map(mapUserForSupabase) : mapUserForSupabase(data);
+    } else if (table === 'worker_daily_logs') {
+      payload = Array.isArray(data) ? data.map(mapWorkerDailyLogForSupabase) : mapWorkerDailyLogForSupabase(data);
+    } else if (table === 'worker_daily_log_items') {
+      payload = Array.isArray(data) ? data.map(mapWorkerDailyLogItemForSupabase) : mapWorkerDailyLogItemForSupabase(data);
     }
 
     const { error } = await supabase.from(table).upsert(payload);
@@ -231,7 +265,10 @@ export const db = {
       const current = getDB();
 
       if (Array.isArray(remoteUsers) && remoteUsers.length > 0) {
-        current.users = remoteUsers;
+        const userMap = new Map();
+        (current.users || []).forEach(u => userMap.set(u.id, u));
+        remoteUsers.forEach(u => userMap.set(u.id, { ...userMap.get(u.id), ...u }));
+        current.users = Array.from(userMap.values());
       }
       if (Array.isArray(remoteCategories) && remoteCategories.length > 0) {
         current.categories = remoteCategories;
@@ -271,7 +308,7 @@ export const db = {
         }
       }
 
-      // Restore seluruh 428 varian master (stok 0) jika data di Supabase belum lengkap
+      // Restore seluruh 428 varian master jika data di Supabase belum lengkap
       if (Array.isArray(remoteVariants) && remoteVariants.length >= INITIAL_DATA.product_variants.length) {
         current.product_variants = remoteVariants;
       } else {
@@ -321,15 +358,25 @@ export const db = {
       }
 
       if (Array.isArray(remoteWorkerLogs)) {
-        current.worker_daily_logs = remoteWorkerLogs.map(l => ({
-          ...l,
-          total_daily_amount: Number(l.total_daily_amount || l.total_amount || 0),
-          status: l.status || 'PENDING'
-        }));
+        const logMap = new Map();
+        (current.worker_daily_logs || []).forEach(l => logMap.set(l.id, l));
+        remoteWorkerLogs.forEach(l => {
+          const local = logMap.get(l.id);
+          logMap.set(l.id, {
+            ...local,
+            ...l,
+            total_daily_amount: Number(l.total_daily_amount !== undefined ? l.total_daily_amount : (l.total_amount || local?.total_daily_amount || 0)),
+            status: l.status || local?.status || 'PENDING'
+          });
+        });
+        current.worker_daily_logs = Array.from(logMap.values());
       }
 
       if (Array.isArray(remoteWorkerLogItems)) {
-        current.worker_daily_log_items = remoteWorkerLogItems;
+        const itemMap = new Map();
+        (current.worker_daily_log_items || []).forEach(i => itemMap.set(i.id, i));
+        remoteWorkerLogItems.forEach(i => itemMap.set(i.id, { ...itemMap.get(i.id), ...i }));
+        current.worker_daily_log_items = Array.from(itemMap.values());
       }
 
       if (Array.isArray(remoteCustomers)) {
@@ -989,13 +1036,34 @@ export const db = {
 
     let filteredLogs = [...logs];
     if (workerId) {
-      filteredLogs = filteredLogs.filter(l => l.worker_id === workerId);
+      const targetWorker = users.find(u => u.id === workerId);
+      filteredLogs = filteredLogs.filter(l => {
+        if (l.worker_id === workerId) return true;
+        if (targetWorker) {
+          const lWorker = users.find(u => u.id === l.worker_id);
+          if (lWorker && (lWorker.name === targetWorker.name || lWorker.username === targetWorker.username)) return true;
+        }
+        return false;
+      });
     }
     if (monthYear) {
-      filteredLogs = filteredLogs.filter(l => l.log_date.startsWith(monthYear));
+      filteredLogs = filteredLogs.filter(l => {
+        if (!l) return false;
+        const dStr = String(l.log_date || l.created_at || '');
+        if (dStr.startsWith(monthYear)) return true;
+        try {
+          const dObj = new Date(dStr);
+          if (!isNaN(dObj.getTime())) {
+            const yyyy = dObj.getFullYear();
+            const mm = String(dObj.getMonth() + 1).padStart(2, '0');
+            return `${yyyy}-${mm}` === monthYear;
+          }
+        } catch (e) {}
+        return false;
+      });
     }
 
-    filteredLogs.sort((a, b) => new Date(b.log_date) - new Date(a.log_date));
+    filteredLogs.sort((a, b) => new Date(b.log_date || b.created_at || 0) - new Date(a.log_date || a.created_at || 0));
 
     return filteredLogs.map(log => {
       const worker = users.find(u => u.id === log.worker_id);
