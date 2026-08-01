@@ -58,8 +58,13 @@ export default function DebtView({
     return c.name.toLowerCase().includes(q) || c.phone_number.toLowerCase().includes(q);
   });
 
-  const activeDebtCustomers = filteredCustomers.filter(c => c.total_debt > 0);
-  const settledCustomers = filteredCustomers.filter(c => c.total_debt === 0);
+  const activeDebtCustomers = filteredCustomers.filter(c => Number(c.total_debt || 0) > 0);
+  const settledCustomers = filteredCustomers.filter(c => {
+    const debt = Number(c.total_debt || 0);
+    const hasDebtHistory = (allDebtPayments || []).some(p => p.customer_id === c.id) ||
+      (db.get('orders') || []).some(o => o.customer_id === c.id && o.payment_method === 'DEBT');
+    return debt === 0 && hasDebtHistory;
+  });
 
   // Pagination params for Active Debt
   const activeLimit = 5;

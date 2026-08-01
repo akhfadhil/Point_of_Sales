@@ -104,6 +104,17 @@ export default function useCart({
   const handleAddCustomer = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!newCustomerName) return;
+    const existing = (db.get('customers') || []).find(
+      c => c.name.toLowerCase().trim() === newCustomerName.toLowerCase().trim()
+    );
+    if (existing) {
+      setSelectedCustomerId(existing.id);
+      setNewCustomerName('');
+      setNewCustomerPhone('');
+      setIsAddingCustomer(false);
+      if (showToast) showToast(`Menggunakan data pelanggan ${existing.name} yang sudah ada.`, 'info');
+      return;
+    }
     const added = db.insert('customers', {
       name: newCustomerName,
       phone_number: newCustomerPhone || '-',
