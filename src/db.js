@@ -26,6 +26,15 @@ const syncSupabaseUpsert = async (table, data) => {
         if (!fallbackErr) return;
       }
 
+      if (table === 'orders' && (error.message?.includes('customer_id') || error.message?.includes('paid_amount') || error.message?.includes('change_amount'))) {
+        console.warn('⚠️ Supabase orders schema lacks customer_id/paid_amount/change_amount. Retrying with basic fields...');
+        const sanitized = Array.isArray(data)
+          ? data.map(({ customer_id, paid_amount, change_amount, ...rest }) => rest)
+          : (() => { const { customer_id, paid_amount, change_amount, ...rest } = data; return rest; })();
+        const { error: fallbackErr } = await supabase.from(table).upsert(sanitized);
+        if (!fallbackErr) return;
+      }
+
       const errMsg = `[Supabase Error ${table}] ${error.message || JSON.stringify(error)}`;
       console.error(errMsg);
       if (typeof window !== 'undefined') window.__lastSupabaseError = errMsg;
@@ -275,30 +284,43 @@ export const db = {
     try {
       console.log('🚀 Synchronizing all data to Supabase cloud...');
       const current = getDB();
+      const syncErrors = [];
 
       // 1. Users
       if (current.users?.length) {
         const { error } = await supabase.from('users').upsert(current.users);
-        if (error) console.error('Error syncing users:', error.message || error);
+        if (error) {
+          console.error('Error syncing users:', error.message || error);
+          syncErrors.push(`users (${error.message})`);
+        }
       }
 
       // 2. Categories
       if (current.categories?.length) {
         const { error } = await supabase.from('categories').upsert(current.categories);
-        if (error) console.error('Error syncing categories:', error.message || error);
+        if (error) {
+          console.error('Error syncing categories:', error.message || error);
+          syncErrors.push(`categories (${error.message})`);
+        }
       }
 
       // 3. Products
       if (current.products?.length) {
         const { error } = await supabase.from('products').upsert(current.products);
-        if (error) console.error('Error syncing products:', error.message || error);
+        if (error) {
+          console.error('Error syncing products:', error.message || error);
+          syncErrors.push(`products (${error.message})`);
+        }
       }
 
       // 4. Product Variants (chunks of 50)
       const variants = current.product_variants || [];
       for (let i = 0; i < variants.length; i += 50) {
         const { error } = await supabase.from('product_variants').upsert(variants.slice(i, i + 50));
-        if (error) console.error('Error syncing variants:', error.message || error);
+        if (error) {
+          console.error('Error syncing variants:', error.message || error);
+          syncErrors.push(`product_variants (${error.message})`);
+        }
       }
 
       // 5. Piece Rate Items
@@ -314,7 +336,10 @@ export const db = {
           notes: p.notes || ''
         }));
         const { error } = await supabase.from('piece_rate_items').upsert(pieceItems);
-        if (error) console.error('Error syncing piece items:', error.message || error);
+        if (error) {
+          console.error('Error syncing piece items:', error.message || error);
+          syncErrors.push(`piece_rate_items (${error.message})`);
+        }
       }
 
       // 6. Orders
@@ -324,16 +349,25 @@ export const db = {
           id: s.id,
           order_number: s.order_number || s.invoice_number || s.id,
           cashier_id: s.cashier_id || null,
+          customer_id: s.customer_id || null,
           customer_name: s.customer_name || 'Pelanggan Umum',
           customer_phone: s.customer_phone || '',
           total_amount: Number(s.total_amount || 0),
+          paid_amount: Number(s.paid_amount || 0),
+          change_amount: Number(s.change_amount || 0),
           payment_method: s.payment_method || 'CASH',
           payment_status: s.payment_status || 'PAID',
           notes: s.notes || '',
           created_at: s.created_at || new Date().toISOString()
         }));
         const { error } = await supabase.from('orders').upsert(mappedOrders);
-        if (error) console.error('Error syncing orders:', error.message || error);
+        if (error) {
+          console.error('Error syncing orders:', error.message || error);
+          // Fallback retry if customer_id/paid_amount columns don't exist yet on remote table
+          const fallbackOrders = mappedOrders.map(({ customer_id, paid_amount, change_amount, ...rest }) => rest);
+          const { error: err2 } = await supabase.from('orders').upsert(fallbackOrders);
+          if (err2) syncErrors.push(`orders (${err2.message})`);
+        }
       }
 
       // 7. Order Items
@@ -350,25 +384,45 @@ export const db = {
           subtotal: Number(i.subtotal || 0)
         }));
         const { error } = await supabase.from('order_items').upsert(mappedOrderItems);
-        if (error) console.error('Error syncing order items:', error.message || error);
+        if (error) {
+          console.error('Error syncing order items:', error.message || error);
+          syncErrors.push(`order_items (${error.message})`);
+        }
       }
 
       // 8. Customers
       if (current.customers?.length) {
         const { error } = await supabase.from('customers').upsert(current.customers);
-        if (error) console.error('Error syncing customers:', error.message || error);
+        if (error) {
+          console.error('Error syncing customers:', error.message || error);
+          syncErrors.push(`customers (${error.message})`);
+        }
       }
 
       // 9. Debt Payments
       if (current.debt_payments?.length) {
         const { error } = await supabase.from('debt_payments').upsert(current.debt_payments);
-        if (error) console.error('Error syncing debt_payments:', error.message || error);
+        if (error) {
+          console.error('Error syncing debt_payments:', error.message || error);
+          syncErrors.push(`debt_payments (${error.message})`);
+        }
       }
 
       // 10. Stock Movements
       if (current.stock_movements?.length) {
         const { error } = await supabase.from('stock_movements').upsert(current.stock_movements);
-        if (error) console.error('Error syncing stock_movements:', error.message || error);
+        if (error) {
+          console.error('Error syncing stock_movements:', error.message || error);
+          syncErrors.push(`stock_movements (${error.message})`);
+        }
+      }
+
+      if (syncErrors.length > 0) {
+        console.warn('⚠️ Some tables failed sync:', syncErrors);
+        return {
+          success: false,
+          message: `Sebagian tabel gagal disinkronkan ke Supabase: ${syncErrors.join(', ')}. Pastikan skrip SQL terbaru sudah di-run di Supabase SQL Editor.`
+        };
       }
 
       console.log('✅ Force sync to Supabase finished!');

@@ -51,15 +51,22 @@ CREATE TABLE IF NOT EXISTS public.orders (
     id TEXT PRIMARY KEY,
     order_number TEXT UNIQUE NOT NULL,
     cashier_id TEXT,
+    customer_id TEXT,
     customer_name TEXT,
     customer_phone TEXT,
     total_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    paid_amount NUMERIC(12, 2) DEFAULT 0,
+    change_amount NUMERIC(12, 2) DEFAULT 0,
     payment_method TEXT DEFAULT 'CASH',
     payment_status TEXT DEFAULT 'PAID',
     notes TEXT,
     work_order_number TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_id TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(12, 2) DEFAULT 0;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS change_amount NUMERIC(12, 2) DEFAULT 0;
 
 -- 6. TABEL ITEM ORDERS
 CREATE TABLE IF NOT EXISTS public.order_items (
