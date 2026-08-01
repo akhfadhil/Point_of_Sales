@@ -69,8 +69,8 @@ export default function PayrollDisbursementView({
     const pendingLogs = workerMonthLogs.filter(l => l.status !== 'PAID');
     const paidLogs = workerMonthLogs.filter(l => l.status === 'PAID');
 
-    const pendingTotal = pendingLogs.reduce((sum, l) => sum + Number(l.total_daily_amount), 0);
-    const paidTotal = paidLogs.reduce((sum, l) => sum + Number(l.total_daily_amount), 0);
+    const pendingTotal = pendingLogs.reduce((sum, l) => sum + Number(l.total_daily_amount || l.total_amount || 0), 0);
+    const paidTotal = paidLogs.reduce((sum, l) => sum + Number(l.total_daily_amount || l.total_amount || 0), 0);
 
     return {
       worker: w,
@@ -83,8 +83,10 @@ export default function PayrollDisbursementView({
   });
 
   // Calculate Overall Monthly Stats
-  const totalPendingMonth = workerSummaries.reduce((sum, s) => sum + s.pendingTotal, 0);
-  const totalDisbursedMonth = disbursements.reduce((sum, d) => sum + Number(d.total_amount), 0);
+  const totalPendingMonth = allLogs
+    .filter(l => l.status !== 'PAID')
+    .reduce((sum, l) => sum + Number(l.total_daily_amount || l.total_amount || 0), 0);
+  const totalDisbursedMonth = disbursements.reduce((sum, d) => sum + Number(d.total_amount || 0), 0);
 
   // Paginated Worker Summaries
   const totalWorkerPages = Math.max(1, Math.ceil(workerSummaries.length / ITEMS_PER_PAGE));
