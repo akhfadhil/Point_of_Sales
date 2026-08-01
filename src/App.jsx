@@ -603,9 +603,9 @@ function App() {
             isMobile={isMobile}
           />
 
-          {/* 3. INVENTARIS PRODUK & VARIANT (OWNER) */}
+          {/* 3. INVENTARIS PRODUK & VARIANT (OWNER & CASHIER) */}
           <InventoryView
-            isOpen={activeTab === 'inventory' && currentUser?.role === 'OWNER'}
+            isOpen={activeTab === 'inventory' && currentUser?.role !== 'WORKER'}
             allProducts={allProducts}
             allCategories={allCategories}
             allVariants={allVariants}
@@ -640,9 +640,9 @@ function App() {
             isMobile={isMobile}
           />
 
-          {/* 4. MANAGEMENT PIUTANG KASBON (OWNER) */}
+          {/* 4. MANAGEMENT PIUTANG KASBON (OWNER & CASHIER) */}
           <DebtView
-            isOpen={activeTab === 'debt' && currentUser?.role === 'OWNER'}
+            isOpen={activeTab === 'debt' && currentUser?.role !== 'WORKER'}
             allCustomers={allCustomers}
             allDebtPayments={allDebtPayments}
             db={db}
