@@ -338,7 +338,9 @@ export const db = {
         const { error } = await supabase.from('piece_rate_items').upsert(pieceItems);
         if (error) {
           console.error('Error syncing piece items:', error.message || error);
-          syncErrors.push(`piece_rate_items (${error.message})`);
+          const fallbackPiece = pieceItems.map(({ garment_type, product_id, item_name, ...rest }) => rest);
+          const { error: err2 } = await supabase.from('piece_rate_items').upsert(fallbackPiece);
+          if (err2) syncErrors.push(`piece_rate_items (${err2.message})`);
         }
       }
 
