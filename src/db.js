@@ -365,6 +365,12 @@ export const db = {
         if (error) console.error('Error syncing debt_payments:', error.message || error);
       }
 
+      // 10. Stock Movements
+      if (current.stock_movements?.length) {
+        const { error } = await supabase.from('stock_movements').upsert(current.stock_movements);
+        if (error) console.error('Error syncing stock_movements:', error.message || error);
+      }
+
       console.log('✅ Force sync to Supabase finished!');
       return { success: true, message: 'Berhasil menyinkronkan seluruh data ke Supabase Cloud!' };
     } catch (err) {
@@ -512,7 +518,7 @@ export const db = {
         syncSupabaseUpsert('product_variants', current.product_variants[variantIdx]);
       }
 
-      current.stock_movements.push({
+      const movement = {
         id: `m-${Date.now()}-${idx}`,
         variant_id: item.variant_id,
         type: 'SALE',
@@ -520,7 +526,9 @@ export const db = {
         notes: `Penjualan ${invoiceNumber}`,
         created_by: userId,
         created_at: new Date().toISOString()
-      });
+      };
+      current.stock_movements.push(movement);
+      syncSupabaseUpsert('stock_movements', movement);
 
       return newItem;
     });
@@ -533,6 +541,7 @@ export const db = {
           addedDebt = newSale.total_amount - newSale.paid_amount;
         }
         current.customers[customerIdx].total_debt = Number(current.customers[customerIdx].total_debt) + Number(addedDebt);
+        syncSupabaseUpsert('customers', current.customers[customerIdx]);
       }
     }
 
