@@ -168,6 +168,7 @@ export const db = {
       const { data: remoteWorkerLogItems } = await supabase.from('worker_daily_log_items').select('*');
       const { data: remoteCustomers } = await supabase.from('customers').select('*');
       const { data: remoteDebtPayments } = await supabase.from('debt_payments').select('*');
+      const { data: remoteStockMovements } = await supabase.from('stock_movements').select('*');
 
       const current = getDB();
 
@@ -260,9 +261,37 @@ export const db = {
       if (Array.isArray(remoteDebtPayments) && remoteDebtPayments.length > 0) {
         current.debt_payments = remoteDebtPayments;
       }
+      if (Array.isArray(remoteStockMovements) && remoteStockMovements.length > 0) {
+        current.stock_movements = remoteStockMovements;
+      }
       saveDB(current);
     } catch (err) {
       console.error('❌ Supabase Init/Sync Failed:', err);
+    }
+  },
+
+  // Real-time Supabase Subscription Listener for multi-device instant sync (HP <-> Laptop)
+  subscribeSupabaseRealtime: (onUpdateCallback) => {
+    if (!isSupabaseConfigured() || !supabase) return null;
+    try {
+      console.log('📡 Subscribing to Supabase Real-Time database changes...');
+      const channel = supabase
+        .channel('pos-realtime-channel')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public' },
+          (payload) => {
+            console.log('⚡ Real-Time DB Event from Supabase:', payload.table, payload.eventType);
+            db.initSupabaseSync().then(() => {
+              if (onUpdateCallback) onUpdateCallback(payload);
+            });
+          }
+        )
+        .subscribe();
+      return channel;
+    } catch (err) {
+      console.error('❌ Failed to subscribe to Supabase Real-time:', err);
+      return null;
     }
   },
 

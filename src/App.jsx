@@ -1,6 +1,7 @@
 // src/App.jsx
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { db } from './db';
+import { supabase } from './supabaseClient';
 import { formatRupiah } from './utils/formatters';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Toast from './components/common/Toast';
@@ -111,6 +112,15 @@ function App() {
     db.initSupabaseSync().then(() => {
       setRefreshKey(prev => prev + 1);
     });
+
+    // Supabase Real-Time Listener for Multi-Device Auto-Sync (HP <-> Laptop)
+    const channel = db.subscribeSupabaseRealtime(() => {
+      setRefreshKey(prev => prev + 1);
+    });
+
+    return () => {
+      if (channel && supabase) supabase.removeChannel(channel);
+    };
   }, []);
 
   // Proteksi Navigasi khusus Role WORKER (Penjahit)
