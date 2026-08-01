@@ -316,7 +316,17 @@ export const db = {
       // 4. Product Variants (chunks of 50)
       const variants = current.product_variants || [];
       for (let i = 0; i < variants.length; i += 50) {
-        const { error } = await supabase.from('product_variants').upsert(variants.slice(i, i + 50));
+        const chunk = variants.slice(i, i + 50).map(v => ({
+          id: v.id,
+          product_id: v.product_id,
+          sku: v.sku || `SKU-${v.id}`,
+          size: v.size || '',
+          color: v.color || '',
+          selling_price: Number(v.selling_price || 0),
+          stock_quantity: Number(v.stock_quantity || 0),
+          created_at: v.created_at || new Date().toISOString()
+        }));
+        const { error } = await supabase.from('product_variants').upsert(chunk);
         if (error) {
           console.error('Error syncing variants:', error.message || error);
           syncErrors.push(`product_variants (${error.message})`);
@@ -394,7 +404,15 @@ export const db = {
 
       // 8. Customers
       if (current.customers?.length) {
-        const { error } = await supabase.from('customers').upsert(current.customers);
+        const mappedCustomers = current.customers.map(c => ({
+          id: c.id,
+          name: c.name || 'Pelanggan',
+          phone_number: c.phone_number || c.phone || '',
+          type: c.type || 'UMUM',
+          total_debt: Number(c.total_debt || c.totalDebt || 0),
+          created_at: c.created_at || new Date().toISOString()
+        }));
+        const { error } = await supabase.from('customers').upsert(mappedCustomers);
         if (error) {
           console.error('Error syncing customers:', error.message || error);
           syncErrors.push(`customers (${error.message})`);
@@ -403,7 +421,15 @@ export const db = {
 
       // 9. Debt Payments
       if (current.debt_payments?.length) {
-        const { error } = await supabase.from('debt_payments').upsert(current.debt_payments);
+        const mappedDebtPayments = current.debt_payments.map(dp => ({
+          id: dp.id,
+          customer_id: dp.customer_id || dp.customerId,
+          amount: Number(dp.amount || 0),
+          payment_method: dp.payment_method || dp.paymentMethod || 'CASH',
+          cashier_id: dp.cashier_id || dp.cashierId || null,
+          created_at: dp.created_at || new Date().toISOString()
+        }));
+        const { error } = await supabase.from('debt_payments').upsert(mappedDebtPayments);
         if (error) {
           console.error('Error syncing debt_payments:', error.message || error);
           syncErrors.push(`debt_payments (${error.message})`);
