@@ -563,6 +563,45 @@ export const db = {
     return current.product_variants[variantIdx];
   },
 
+  addDebtPayment: (customerId, amount, paymentMethod = 'CASH', cashierId = null) => {
+    const current = getDB();
+    if (!current.customers) current.customers = [];
+    if (!current.debt_payments) current.debt_payments = [];
+
+    const custIdx = current.customers.findIndex(c => c.id === customerId);
+    if (custIdx === -1) return { success: false, message: 'Pelanggan tidak ditemukan.' };
+
+    const amtNum = Number(amount) || 0;
+    const currentDebt = Number(current.customers[custIdx].total_debt || 0);
+    const newDebt = Math.max(0, currentDebt - amtNum);
+
+    current.customers[custIdx] = {
+      ...current.customers[custIdx],
+      total_debt: newDebt
+    };
+
+    const newPayment = {
+      id: `dp-${Date.now()}`,
+      customer_id: customerId,
+      amount: amtNum,
+      payment_method: paymentMethod,
+      cashier_id: cashierId,
+      created_at: new Date().toISOString()
+    };
+
+    current.debt_payments.push(newPayment);
+
+    saveDB(current);
+    syncSupabaseUpsert('customers', current.customers[custIdx]);
+    syncSupabaseUpsert('debt_payments', newPayment);
+
+    return {
+      success: true,
+      customer: current.customers[custIdx],
+      payment: newPayment
+    };
+  },
+
   getPieceRateItems: () => {
     const current = getDB();
     const pieceItems = current.piece_rate_items || [];
