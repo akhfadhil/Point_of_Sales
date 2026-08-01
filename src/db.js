@@ -228,41 +228,77 @@ export const db = {
         }
       }
 
-      if (Array.isArray(remoteOrders)) {
-        current.orders = remoteOrders;
-        current.sales = remoteOrders.map(o => ({
+      if (Array.isArray(remoteOrders) && remoteOrders.length > 0) {
+        const orderMap = new Map();
+        (current.orders || []).forEach(o => orderMap.set(o.id, o));
+        remoteOrders.forEach(o => {
+          const local = orderMap.get(o.id);
+          orderMap.set(o.id, {
+            ...local,
+            ...o,
+            invoice_number: o.order_number || o.invoice_number || local?.invoice_number || o.id,
+            total_amount: Number(o.total_amount !== undefined ? o.total_amount : (local?.total_amount || 0)),
+            paid_amount: Number(o.paid_amount !== undefined ? o.paid_amount : (local?.paid_amount || o.total_amount || 0))
+          });
+        });
+        current.orders = Array.from(orderMap.values());
+        current.sales = current.orders.map(o => ({
           ...o,
           invoice_number: o.order_number || o.invoice_number || o.id,
           total_amount: Number(o.total_amount || 0),
-          paid_amount: Number(o.paid_amount || o.total_amount || 0)
+          paid_amount: Number(o.paid_amount !== undefined ? o.paid_amount : (o.total_amount || 0))
         }));
       }
-      if (Array.isArray(remoteOrderItems)) {
-        current.order_items = remoteOrderItems;
-        current.sale_items = remoteOrderItems.map(i => ({
+
+      if (Array.isArray(remoteOrderItems) && remoteOrderItems.length > 0) {
+        const itemMap = new Map();
+        (current.order_items || []).forEach(i => itemMap.set(i.id, i));
+        remoteOrderItems.forEach(i => itemMap.set(i.id, { ...itemMap.get(i.id), ...i }));
+        current.order_items = Array.from(itemMap.values());
+        current.sale_items = current.order_items.map(i => ({
           ...i,
           sale_id: i.order_id || i.sale_id,
           price_per_unit: i.unit_price || i.price_per_unit
         }));
       }
-      if (Array.isArray(remoteWorkerLogs)) {
-        current.worker_daily_logs = remoteWorkerLogs.map(l => ({
+
+      if (Array.isArray(remoteWorkerLogs) && remoteWorkerLogs.length > 0) {
+        const logMap = new Map();
+        (current.worker_daily_logs || []).forEach(l => logMap.set(l.id, l));
+        remoteWorkerLogs.forEach(l => logMap.set(l.id, { ...logMap.get(l.id), ...l }));
+        current.worker_daily_logs = Array.from(logMap.values()).map(l => ({
           ...l,
           total_daily_amount: Number(l.total_daily_amount || l.total_amount || 0),
           status: l.status || 'PENDING'
         }));
       }
-      if (Array.isArray(remoteWorkerLogItems)) {
-        current.worker_daily_log_items = remoteWorkerLogItems;
+
+      if (Array.isArray(remoteWorkerLogItems) && remoteWorkerLogItems.length > 0) {
+        const itemMap = new Map();
+        (current.worker_daily_log_items || []).forEach(i => itemMap.set(i.id, i));
+        remoteWorkerLogItems.forEach(i => itemMap.set(i.id, { ...itemMap.get(i.id), ...i }));
+        current.worker_daily_log_items = Array.from(itemMap.values());
       }
+
       if (Array.isArray(remoteCustomers) && remoteCustomers.length > 0) {
-        current.customers = remoteCustomers;
+        const custMap = new Map();
+        (current.customers || []).forEach(c => custMap.set(c.id, c));
+        remoteCustomers.forEach(c => custMap.set(c.id, { ...custMap.get(c.id), ...c }));
+        current.customers = Array.from(custMap.values());
       }
+
       if (Array.isArray(remoteDebtPayments) && remoteDebtPayments.length > 0) {
-        current.debt_payments = remoteDebtPayments;
+        const dpMap = new Map();
+        (current.debt_payments || []).forEach(dp => dpMap.set(dp.id, dp));
+        remoteDebtPayments.forEach(dp => dpMap.set(dp.id, { ...dpMap.get(dp.id), ...dp }));
+        current.debt_payments = Array.from(dpMap.values());
       }
+
       if (Array.isArray(remoteStockMovements) && remoteStockMovements.length > 0) {
-        current.stock_movements = remoteStockMovements;
+        const movMap = new Map();
+        (current.stock_movements || []).forEach(m => movMap.set(m.id, m));
+        remoteStockMovements.forEach(m => movMap.set(m.id, { ...movMap.get(m.id), ...m }));
+        current.stock_movements = Array.from(movMap.values());
       }
       saveDB(current);
     } catch (err) {
