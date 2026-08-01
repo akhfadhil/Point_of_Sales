@@ -157,6 +157,8 @@ export const db = {
       const { data: remoteOrderItems } = await supabase.from('order_items').select('*');
       const { data: remoteWorkerLogs } = await supabase.from('worker_daily_logs').select('*');
       const { data: remoteWorkerLogItems } = await supabase.from('worker_daily_log_items').select('*');
+      const { data: remoteCustomers } = await supabase.from('customers').select('*');
+      const { data: remoteDebtPayments } = await supabase.from('debt_payments').select('*');
 
       const current = getDB();
 
@@ -242,6 +244,12 @@ export const db = {
       }
       if (Array.isArray(remoteWorkerLogItems)) {
         current.worker_daily_log_items = remoteWorkerLogItems;
+      }
+      if (Array.isArray(remoteCustomers) && remoteCustomers.length > 0) {
+        current.customers = remoteCustomers;
+      }
+      if (Array.isArray(remoteDebtPayments) && remoteDebtPayments.length > 0) {
+        current.debt_payments = remoteDebtPayments;
       }
       saveDB(current);
     } catch (err) {
@@ -343,6 +351,18 @@ export const db = {
         }));
         const { error } = await supabase.from('order_items').upsert(mappedOrderItems);
         if (error) console.error('Error syncing order items:', error.message || error);
+      }
+
+      // 8. Customers
+      if (current.customers?.length) {
+        const { error } = await supabase.from('customers').upsert(current.customers);
+        if (error) console.error('Error syncing customers:', error.message || error);
+      }
+
+      // 9. Debt Payments
+      if (current.debt_payments?.length) {
+        const { error } = await supabase.from('debt_payments').upsert(current.debt_payments);
+        if (error) console.error('Error syncing debt_payments:', error.message || error);
       }
 
       console.log('✅ Force sync to Supabase finished!');

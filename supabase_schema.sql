@@ -168,6 +168,26 @@ CREATE TABLE IF NOT EXISTS public.stock_movements (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 13. TABEL PELANGGAN & UTANG KASBON
+CREATE TABLE IF NOT EXISTS public.customers (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    phone_number TEXT,
+    type TEXT DEFAULT 'UMUM',
+    total_debt NUMERIC(12, 2) DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 14. TABEL PEMBAYARAN CICILAN KASBON
+CREATE TABLE IF NOT EXISTS public.debt_payments (
+    id TEXT PRIMARY KEY,
+    customer_id TEXT,
+    amount NUMERIC(12, 2) DEFAULT 0,
+    payment_method TEXT DEFAULT 'CASH',
+    cashier_id TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- DROP STRICT FOREIGN KEY CONSTRAINTS IF THEY ALREADY EXIST
 ALTER TABLE IF EXISTS public.orders DROP CONSTRAINT IF EXISTS orders_cashier_id_fkey;
 ALTER TABLE IF EXISTS public.order_items DROP CONSTRAINT IF EXISTS order_items_order_id_fkey;
@@ -184,6 +204,7 @@ ALTER TABLE IF EXISTS public.worker_daily_log_items DROP CONSTRAINT IF EXISTS wo
 ALTER TABLE IF EXISTS public.payroll_disbursements DROP CONSTRAINT IF EXISTS payroll_disbursements_worker_id_fkey;
 ALTER TABLE IF EXISTS public.payroll_disbursements DROP CONSTRAINT IF EXISTS payroll_disbursements_approved_by_fkey;
 ALTER TABLE IF EXISTS public.cash_expenses DROP CONSTRAINT IF EXISTS cash_expenses_created_by_fkey;
+ALTER TABLE IF EXISTS public.debt_payments DROP CONSTRAINT IF EXISTS debt_payments_customer_id_fkey;
 
 -- DISABLE ROW LEVEL SECURITY (RLS) FOR UNRESTRICTED POS API ACCESS
 ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
@@ -199,3 +220,6 @@ ALTER TABLE public.worker_daily_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.worker_daily_log_items DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payroll_disbursements DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cash_expenses DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_movements DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.debt_payments DISABLE ROW LEVEL SECURITY;
