@@ -30,6 +30,15 @@ const mapOrderItemForSupabase = (i) => ({
   subtotal: Number(i.subtotal || 0)
 });
 
+const mapDebtPaymentForSupabase = (dp) => ({
+  id: dp.id,
+  customer_id: dp.customer_id || dp.customerId,
+  amount: Number(dp.amount !== undefined ? dp.amount : (dp.amount_paid || 0)),
+  payment_method: dp.payment_method || dp.paymentMethod || 'CASH',
+  cashier_id: dp.cashier_id || dp.cashierId || null,
+  created_at: dp.created_at || new Date().toISOString()
+});
+
 // Helper Supabase Sync
 const syncSupabaseUpsert = async (table, data) => {
   if (!isSupabaseConfigured() || !supabase || !table || !data) return;
@@ -39,6 +48,8 @@ const syncSupabaseUpsert = async (table, data) => {
       payload = Array.isArray(data) ? data.map(mapOrderForSupabase) : mapOrderForSupabase(data);
     } else if (table === 'order_items') {
       payload = Array.isArray(data) ? data.map(mapOrderItemForSupabase) : mapOrderItemForSupabase(data);
+    } else if (table === 'debt_payments') {
+      payload = Array.isArray(data) ? data.map(mapDebtPaymentForSupabase) : mapDebtPaymentForSupabase(data);
     }
 
     const { error } = await supabase.from(table).upsert(payload);
@@ -314,7 +325,18 @@ export const db = {
       }
 
       if (Array.isArray(remoteDebtPayments)) {
-        current.debt_payments = remoteDebtPayments;
+        const dpMap = new Map();
+        (current.debt_payments || []).forEach(dp => dpMap.set(dp.id, dp));
+        remoteDebtPayments.forEach(dp => {
+          const local = dpMap.get(dp.id);
+          dpMap.set(dp.id, {
+            ...local,
+            ...dp,
+            amount: Number(dp.amount !== undefined ? dp.amount : (local?.amount || 0)),
+            amount_paid: Number(dp.amount !== undefined ? dp.amount : (local?.amount_paid || 0))
+          });
+        });
+        current.debt_payments = Array.from(dpMap.values());
       }
 
       if (Array.isArray(remoteStockMovements)) {
