@@ -395,7 +395,9 @@ export default function DashboardView({
             <span className="stat-value" style={{ color: '#10b981' }}>
               {formatRupiah(realizedCashIn)}
             </span>
-            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Total Uang Masuk (Lunas & DP)</small>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              {formatRupiah(salesCashReceived)} (Sales) {debtRepaymentReceived > 0 ? `+ ${formatRupiah(debtRepaymentReceived)} (Cicilan)` : ''}
+            </small>
           </div>
         </div>
 
