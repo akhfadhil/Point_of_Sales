@@ -180,6 +180,7 @@ export default function PayrollDisbursementView({
             className="btn btn-secondary btn-sm"
             style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}
             onClick={() => {
+              const totalMonthWorkAmount = totalPendingMonth + totalDisbursedMonth;
               const reportHtml = `
                 <div class="summary-box">
                   <div class="stat-card">
@@ -188,11 +189,11 @@ export default function PayrollDisbursementView({
                   </div>
                   <div class="stat-card">
                     <div class="stat-label">Sudah Dicairkan</div>
-                    <div class="stat-value" style="color:#166534;">${formatRupiah(paidDisbursedAmount)}</div>
+                    <div class="stat-value" style="color:#166534;">${formatRupiah(totalDisbursedMonth)}</div>
                   </div>
                   <div class="stat-card">
                     <div class="stat-label">Belum Dicairkan</div>
-                    <div class="stat-value" style="color:#854d0e;">${formatRupiah(pendingDisbursementAmount)}</div>
+                    <div class="stat-value" style="color:#854d0e;">${formatRupiah(totalPendingMonth)}</div>
                   </div>
                 </div>
 
@@ -202,8 +203,9 @@ export default function PayrollDisbursementView({
                     <tr>
                       <th>Nama Penjahit</th>
                       <th class="text-center">Total Log</th>
-                      <th class="text-right">Upah Disetujui</th>
-                      <th class="text-center">Status Pencairan</th>
+                      <th class="text-right">Upah Pending</th>
+                      <th class="text-right">Upah Dicairkan</th>
+                      <th class="text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -211,9 +213,10 @@ export default function PayrollDisbursementView({
                       <tr>
                         <td class="bold">${s.worker.name}</td>
                         <td class="text-center">${s.logs.length} Log</td>
-                        <td class="text-right bold">${formatRupiah(s.totalAmount)}</td>
+                        <td class="text-right bold" style="color:#ea580c;">${formatRupiah(s.pendingTotal)}</td>
+                        <td class="text-right bold" style="color:#166534;">${formatRupiah(s.paidTotal)}</td>
                         <td class="text-center">
-                          ${s.hasPaid ? '<span class="badge badge-success">Sudah Dicairkan</span>' : '<span class="badge badge-warning">Pending</span>'}
+                          ${s.pendingTotal === 0 && s.paidTotal > 0 ? '<span class="badge badge-success">Lunas / Dicairkan</span>' : '<span class="badge badge-warning">Ada Pending</span>'}
                         </td>
                       </tr>
                     `).join('')}
