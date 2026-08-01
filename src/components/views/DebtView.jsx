@@ -108,7 +108,7 @@ export default function DebtView({
     return custName.includes(q) || custPhone.includes(q);
   });
 
-  const totalHistoryAmount = filteredDebtPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+  const totalHistoryAmount = filteredDebtPayments.reduce((sum, p) => sum + Number(p.amount !== undefined ? p.amount : (p.amount_paid || 0)), 0);
 
   const historyLimit = 5;
   const historyTotalPages = Math.ceil(filteredDebtPayments.length / historyLimit) || 1;
@@ -416,7 +416,7 @@ export default function DebtView({
                       </div>
                     </div>
                     <span style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--success)' }}>
-                      + {formatRupiah(payment.amount_paid)}
+                      + {formatRupiah(payment.amount !== undefined ? payment.amount : (payment.amount_paid || 0))}
                     </span>
                   </div>
 
@@ -470,7 +470,7 @@ export default function DebtView({
                       <td style={{ whiteSpace: 'nowrap' }}>{new Date(payment.created_at).toLocaleString('id-ID')}</td>
                       <td><strong>{cust ? cust.name : 'Unknown'}</strong></td>
                       <td style={{ color: 'var(--success)', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                        {formatRupiah(payment.amount_paid)}
+                        {formatRupiah(payment.amount !== undefined ? payment.amount : (payment.amount_paid || 0))}
                       </td>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         <span className="badge info">{payment.payment_method}</span>

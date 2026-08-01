@@ -780,6 +780,7 @@ export const db = {
       id: `dp-${Date.now()}`,
       customer_id: customerId,
       amount: amtNum,
+      amount_paid: amtNum,
       payment_method: paymentMethod,
       cashier_id: cashierId,
       created_at: new Date().toISOString()
