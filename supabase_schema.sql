@@ -230,3 +230,11 @@ ALTER TABLE public.cash_expenses DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.stock_movements DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.customers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.debt_payments DISABLE ROW LEVEL SECURITY;
+
+-- 15. AKTIFKAN REALTIME PUBLICATION UNTUK SINKRONISASI MULTI-DEVICE OTOMATIS
+-- Jalankan perintah ini agar perubahan dari Device A langsung ter-broadcast ke Device B secara instan via WebSocket
+BEGIN;
+  DROP PUBLICATION IF EXISTS supabase_realtime;
+  CREATE PUBLICATION supabase_realtime FOR ALL TABLES;
+COMMIT;
+

@@ -113,15 +113,42 @@ function App() {
       setRefreshKey(prev => prev + 1);
     });
 
+    // Auto-sync when window regains focus (e.g. user opens screen on Device B)
+    const handleFocus = () => {
+      db.initSupabaseSync().then(() => {
+        setRefreshKey(prev => prev + 1);
+      });
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Periodic background sync poll (every 15 seconds) so Device B gets updates seamlessly
+    const syncInterval = setInterval(() => {
+      db.initSupabaseSync().then(() => {
+        setRefreshKey(prev => prev + 1);
+      });
+    }, 15000);
+
     // Supabase Real-Time Listener for Multi-Device Auto-Sync (HP <-> Laptop)
     const channel = db.subscribeSupabaseRealtime(() => {
-      setRefreshKey(prev => prev + 1);
+      db.initSupabaseSync().then(() => {
+        setRefreshKey(prev => prev + 1);
+      });
     });
 
     return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(syncInterval);
       if (channel && supabase) supabase.removeChannel(channel);
     };
   }, []);
+
+  // Sync cloud data automatically whenever switching navigation tabs
+  useEffect(() => {
+    db.initSupabaseSync().then(() => {
+      setRefreshKey(prev => prev + 1);
+    });
+  }, [activeTab]);
+
 
   // Proteksi Navigasi khusus Role WORKER (Penjahit)
   useEffect(() => {
