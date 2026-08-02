@@ -35,7 +35,7 @@ export default function DashboardView({
   const [salesPage, setSalesPage] = useState(1);
   const [movementsPage, setMovementsPage] = useState(1);
   const [workerLogsPage, setWorkerLogsPage] = useState(1);
-  const [inspectWorkerLogModal, setInspectWorkerLogModal] = useState(null);
+
 
   // Reset pagination when date filter changes
   useEffect(() => {
@@ -747,20 +747,6 @@ export default function DashboardView({
                       <span>🗓️ {new Date(log.created_at || log.log_date).toLocaleDateString('id-ID')}</span>
                       <span style={{ fontWeight: 'bold', color: '#9333ea' }}>{formatRupiah(totalAmt)}</span>
                     </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px', borderTop: '1px dashed var(--card-border)' }}>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        {log.items?.length || 0} Item Pekerjaan
-                      </span>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        style={{ fontSize: '11px', padding: '2px 8px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        onClick={() => setInspectWorkerLogModal(log)}
-                      >
-                        <Eye size={12} /> Detail
-                      </button>
-                    </div>
                   </div>
                 );
               })}
@@ -780,7 +766,6 @@ export default function DashboardView({
                     <th>Nama Penjahit</th>
                     <th className="text-right">Total Upah</th>
                     <th style={{ whiteSpace: 'nowrap' }}>Status Gaji</th>
-                    <th style={{ textAlign: 'center' }}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -803,22 +788,12 @@ export default function DashboardView({
                             {isPaid ? 'LUNAS / DICAIRKAN' : 'PENDING (Belum Dicairkan)'}
                           </span>
                         </td>
-                        <td style={{ textAlign: 'center' }}>
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            style={{ fontSize: '11px', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                            onClick={() => setInspectWorkerLogModal(log)}
-                          >
-                            <Eye size={12} /> Detail
-                          </button>
-                        </td>
                       </tr>
                     );
                   })}
                   {sortedWorkerLogs.length === 0 && (
                     <tr>
-                      <td colSpan="5" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
+                      <td colSpan="4" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
                         Belum ada log input hasil kerja penjahit pada periode ini.
                       </td>
                     </tr>
@@ -859,87 +834,6 @@ export default function DashboardView({
         </div>
 
       </div>
-
-      {/* Detail Worker Log Inspect Modal */}
-      {inspectWorkerLogModal && (
-        <div className="modal-backdrop" onClick={() => setInspectWorkerLogModal(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '95%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)', paddingBottom: '12px', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Scissors size={18} style={{ color: '#9333ea' }} /> Detail Log Hasil Kerja Penjahit
-              </h3>
-              <button type="button" className="btn-icon" onClick={() => setInspectWorkerLogModal(null)}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', borderBottom: '1px dashed var(--card-border)', paddingBottom: '8px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Penjahit:</span>
-                <strong>{inspectWorkerLogModal.worker_name || 'Penjahit'}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', borderBottom: '1px dashed var(--card-border)', paddingBottom: '8px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Waktu Submit:</span>
-                <span>{new Date(inspectWorkerLogModal.created_at || inspectWorkerLogModal.log_date).toLocaleString('id-ID')}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', borderBottom: '1px dashed var(--card-border)', paddingBottom: '8px' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Status Pencairan:</span>
-                <span className={`badge ${inspectWorkerLogModal.status === 'PAID' ? 'badge-success' : 'badge-warning'}`}>
-                  {inspectWorkerLogModal.status === 'PAID' ? 'LUNAS / DICAIRKAN' : 'PENDING'}
-                </span>
-              </div>
-
-              <h4 style={{ margin: '8px 0 4px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>Tabel Detail Log Hasil Kerja Penjahit:</h4>
-              <div className="table-wrapper" style={{ margin: '4px 0' }}>
-                <table className="table" style={{ width: '100%', fontSize: '12px' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: 'center', width: '40px' }}>No</th>
-                      <th style={{ textAlign: 'left' }}>Jenis Pekerjaan / Item</th>
-                      <th style={{ textAlign: 'center' }}>Qty</th>
-                      <th style={{ textAlign: 'right' }}>Tarif / Pcs</th>
-                      <th style={{ textAlign: 'right' }}>Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(inspectWorkerLogModal.items || []).map((it, idx) => (
-                      <tr key={it.id || idx}>
-                        <td style={{ textAlign: 'center' }}>{idx + 1}</td>
-                        <td><strong>{it.item_name || 'Pekerjaan Borongan'}</strong></td>
-                        <td style={{ textAlign: 'center' }}>{it.quantity} Pcs</td>
-                        <td style={{ textAlign: 'right' }}>{formatRupiah(it.rate_per_unit)}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#9333ea' }}>
-                          {formatRupiah(it.subtotal || (it.quantity * it.rate_per_unit))}
-                        </td>
-                      </tr>
-                    ))}
-                    {(!inspectWorkerLogModal.items || inspectWorkerLogModal.items.length === 0) && (
-                      <tr>
-                        <td colSpan="5" style={{ textAlign: 'center', padding: '12px', color: 'var(--text-muted)' }}>
-                          Belum ada rincian item pekerjaan.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '12px', borderTop: '2px solid var(--card-border)', fontSize: '14px', fontWeight: 'bold' }}>
-                <span>Total Upah Borongan:</span>
-                <span style={{ color: '#9333ea', fontSize: '16px' }}>
-                  {formatRupiah(inspectWorkerLogModal.total_daily_amount || inspectWorkerLogModal.total_amount || 0)}
-                </span>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setInspectWorkerLogModal(null)}>
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
