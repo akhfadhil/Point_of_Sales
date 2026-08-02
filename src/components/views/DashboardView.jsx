@@ -778,7 +778,6 @@ export default function DashboardView({
                   <tr>
                     <th style={{ whiteSpace: 'nowrap' }}>Waktu Submit</th>
                     <th>Nama Penjahit</th>
-                    <th>Rincian Pekerjaan</th>
                     <th className="text-right">Total Upah</th>
                     <th style={{ whiteSpace: 'nowrap' }}>Status Gaji</th>
                     <th style={{ textAlign: 'center' }}>Aksi</th>
@@ -795,13 +794,6 @@ export default function DashboardView({
                         </td>
                         <td>
                           <strong>{log.worker_name || 'Penjahit'}</strong>
-                        </td>
-                        <td style={{ fontSize: '12px' }}>
-                          {log.items && log.items.length > 0 ? (
-                            <span>{log.items.length} Pekerjaan ({log.items.map(i => `${i.item_name || 'Item'} x${i.quantity}`).join(', ')})</span>
-                          ) : (
-                            <span style={{ color: 'var(--text-muted)' }}>Log Pekerjaan Harian</span>
-                          )}
                         </td>
                         <td className="text-right bold" style={{ color: '#9333ea' }}>
                           {formatRupiah(totalAmt)}
@@ -826,7 +818,7 @@ export default function DashboardView({
                   })}
                   {sortedWorkerLogs.length === 0 && (
                     <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
                         Belum ada log input hasil kerja penjahit pada periode ini.
                       </td>
                     </tr>
@@ -871,7 +863,7 @@ export default function DashboardView({
       {/* Detail Worker Log Inspect Modal */}
       {inspectWorkerLogModal && (
         <div className="modal-backdrop" onClick={() => setInspectWorkerLogModal(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', width: '95%' }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '95%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)', paddingBottom: '12px', marginBottom: '16px' }}>
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Scissors size={18} style={{ color: '#9333ea' }} /> Detail Log Hasil Kerja Penjahit
@@ -897,25 +889,42 @@ export default function DashboardView({
                 </span>
               </div>
 
-              <h4 style={{ margin: '8px 0 4px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>Rincian Pekerjaan Borongan:</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {(inspectWorkerLogModal.items || []).map((it, idx) => (
-                  <div key={it.id || idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', padding: '8px', borderRadius: '6px', backgroundColor: 'var(--bg-tertiary)' }}>
-                    <div>
-                      <strong>{it.item_name || 'Pekerjaan Borongan'}</strong>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{it.quantity} Pcs x {formatRupiah(it.rate_per_unit)}</div>
-                    </div>
-                    <span style={{ fontWeight: 'bold', color: '#9333ea' }}>{formatRupiah(it.subtotal || (it.quantity * it.rate_per_unit))}</span>
-                  </div>
-                ))}
-                {(!inspectWorkerLogModal.items || inspectWorkerLogModal.items.length === 0) && (
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center' }}>
-                    Rincian item pekerjaan harian.
-                  </div>
-                )}
+              <h4 style={{ margin: '8px 0 4px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>Tabel Detail Log Hasil Kerja Penjahit:</h4>
+              <div className="table-wrapper" style={{ margin: '4px 0' }}>
+                <table className="table" style={{ width: '100%', fontSize: '12px' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'center', width: '40px' }}>No</th>
+                      <th style={{ textAlign: 'left' }}>Jenis Pekerjaan / Item</th>
+                      <th style={{ textAlign: 'center' }}>Qty</th>
+                      <th style={{ textAlign: 'right' }}>Tarif / Pcs</th>
+                      <th style={{ textAlign: 'right' }}>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(inspectWorkerLogModal.items || []).map((it, idx) => (
+                      <tr key={it.id || idx}>
+                        <td style={{ textAlign: 'center' }}>{idx + 1}</td>
+                        <td><strong>{it.item_name || 'Pekerjaan Borongan'}</strong></td>
+                        <td style={{ textAlign: 'center' }}>{it.quantity} Pcs</td>
+                        <td style={{ textAlign: 'right' }}>{formatRupiah(it.rate_per_unit)}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#9333ea' }}>
+                          {formatRupiah(it.subtotal || (it.quantity * it.rate_per_unit))}
+                        </td>
+                      </tr>
+                    ))}
+                    {(!inspectWorkerLogModal.items || inspectWorkerLogModal.items.length === 0) && (
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '12px', color: 'var(--text-muted)' }}>
+                          Belum ada rincian item pekerjaan.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '2px solid var(--card-border)', fontSize: '14px', fontWeight: 'bold' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '12px', borderTop: '2px solid var(--card-border)', fontSize: '14px', fontWeight: 'bold' }}>
                 <span>Total Upah Borongan:</span>
                 <span style={{ color: '#9333ea', fontSize: '16px' }}>
                   {formatRupiah(inspectWorkerLogModal.total_daily_amount || inspectWorkerLogModal.total_amount || 0)}
